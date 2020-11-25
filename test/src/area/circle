@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import integrate area .group)
+help() {
+    echo "Arguments"
+    echo "    --radius     [Required] : Radius of the circle."
+}
+main() { 
+    echo $(integrate::multiply ${INTEGRATE_PI} \
+        $(integrate::area::square ${arg_radius}))
+}
+cli::load "$@"

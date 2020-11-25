@@ -1,4 +1,4 @@
-REPO_DIR=$(dirname ${BASH_SOURCE})
+REPO_DIR=$(cd $(dirname ${BASH_SOURCE}); pwd)
 GIT_DIR=$(cd "${REPO_DIR}/.."; pwd)
 
 # basic command prompt
@@ -9,6 +9,7 @@ if [[ -z "${PATH_ORIG}" ]]; then
 fi
 
 PATH="${PATH_ORIG}"
+PATH+=":${GIT_DIR}/bin"
 PATH+=":${GIT_DIR}/cli"
 PATH+=":${GIT_DIR}/cli_assert"
 PATH+=":${GIT_DIR}/cli_util"
@@ -16,3 +17,6 @@ PATH+=":${GIT_DIR}/cli_emit"
 PATH+=":${GIT_DIR}/integrate"
 PATH+=":${GIT_DIR}/vscs"
 PATH+=":${GIT_DIR}/azx"
+
+alias re="source ${REPO_DIR}/.profile"
+alias packcli="time cli pack --dir ${REPO_DIR}/src --name cli --output-dir ${GIT_DIR}/bin"

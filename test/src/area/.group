@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+main() { 
+    cli::export_import integrate .group
+    cli::export integrate area
+}
+integrate::area::square() { integrate::multiply $1 $1; }
+cli::load "$@"

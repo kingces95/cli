@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+cli shim "$(dirname ${BASH_SOURCE})/src" "$@"

@@ -11,44 +11,76 @@ Summary
     Package a group of commands into a into a single file.
     
 Description
-    Recursively discovers cli commands developed as individual files
+    Recursively discover cli commands developed as individual files
     and hosted in a specified directory, and package them into a 
-    single file. 
+    single file. For example, a cli 'integrate' with commands 'circle',
+    'square', 'cube', 'sphere' could be arranged as a files 'integrate', 
+    'circle', 'square', 'cube', 'square' and '.group' in a directory 'src':
+
+        integrate
+        src/.group
+        src/area/.group
+        src/area/square
+        src/area/circle
+        src/volume/.group
+        src/volume/circle
+        src/volume/circle
     
-    Commands must start with the following:
+    File 'integrate' must be on the path and contain:
+
+        #!/usr/bin/env bash
+        cli shim "\$(dirname \${BASH_SOURCE})/src" "\$@"
+
+    The remaining files must all start with the following:
     
         #!/usr/bin/env bash
         source /dev/stdin < <(cli loader)
 
-    This will define 'cli::import' and 'cli::export'. Commands must use the 
-    former instead of 'source' and libraries may use the latter to emit
-    functions and variables with common prefixes. 
+    This will define 'cli::import' and 'cli::export' and 'cli::export_import'.
+    Commands must use 'cli::import' instead of 'source' to reference libraries. 
+    Libraries use 'cli::export' to emit functions and variables with common 
+    prefixes and 'cli::export_import' to reference other libraries. 
 
-    For example, imagine a cli hosted in directory 'area' with that contains
-    two files, a command 'square' and a library '.lib' which are defined as:
+    For example, 'src/.group' could define and export 'integrate::multiply' and
+    'INTEGRATE_PI' like this:
 
         #!/usr/bin/env bash
         source /dev/stdin < <(cli loader)
-        source /dev/stdin < <(cli::import area .lib)
-        main() { echo \$(area::multiply \${arg_side} \${arg_side}); }
+        main() { cli::export 'integrate'; }
+        INTEGRATE_PI='3.14159'
+        integrate::multiply() { IFS='*' expr=\$*; echo "\$expr" | bc -l; }
         cli::load "\$@"
 
-    and
-    
+    then 'src/area/.group' could import 'src/.group' and use it to
+    define and export 'integrate::area::square':
+
         #!/usr/bin/env bash
         source /dev/stdin < <(cli loader)
-        main() { cli::export 'area'; }
-        AREA_PI='3.14159'
-        area::multiply() { echo "\$1 * \$2" | bc -l; }
+        main() { 
+            cli::export_import integrate .group
+            cli::export integrate area
+        }
+        integrate::area::square() { integrate::multiply \$1 \$1; }
         cli::load "\$@"
-    
-    respectively. 
-    
-    Note the use of 'cli::import' to source the library and 'cli::export' 
-    to print all functions and variables that start with 'area::' or 'AREA_'.
+
+     finally 'circle' could reference 'src/area/.group' like this:
+
+        #!/usr/bin/env bash
+        source /dev/stdin < <(cli loader)
+        source /dev/stdin < <(cli::import integrate area .group)
+        help() {
+            echo "Arguments"
+            echo "    --radius     [Required] : Radius of the circle."
+        }
+        main() { 
+            echo \$(integrate::multiply \${INTEGRATE_PI} \\
+                \$(integrate::area::square \${arg_radius}))
+        }
+        cli::load "\$@"
+        
     To pack the 'area' cli into a single file:
 
-        cli pack --dir ./area --name area --output /usr/bin/area
+        cli pack --dir src --name area --output-dir /usr/bin
 
 Arguments
     --dir -d        [Required] : Root directory hosting groups of commands
@@ -59,7 +91,8 @@ Arguments
 Global Arguments
     --help -h           [Flag] : Show this message and exit.
     --self-test         [Flag] : Runs a self test.
-    --dry-run           [Flag] : Show the commands that would be packed.
+    --dry-run           [Flag] : Show a table of content of the commands and
+                                 libraries that would be packed.
 EOF
 }
 

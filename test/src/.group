@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+main() { cli::export 'integrate'; }
+INTEGRATE_PI='3.14159'
+integrate::multiply() { IFS='*' expr=$*; echo "$expr" | bc -l; }
+cli::load "$@"
