@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+
+help() {
+cat << EOF
+Command
+    cli find commands
+
+Arguments
+    --dir -d                : Directory to search.
+    --recursive  -r  [Flag] : Recurse.
+    --all            [Flag] : Include commands beginning with dot.
+    --base-dir              : Internal. The base directory. Default: ".".
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+main() (
+    local glob='*'
+    if ${arg_all}; then
+        glob='* .[^.]*'
+    fi
+
+    cd "${arg_dir}"
+    for entry in ${glob}; do
+        if [ -f "${entry}" ] && [ -x "${entry}" ]; then
+            echo "${arg_base_dir}/${entry}"
+        fi
+    done
+
+    if [[ ! "${arg_recursive}" == 'true' ]]; then
+        exit
+    fi
+
+    for entry in *; do
+        if [ -d "${entry}" ] && [ -x "${entry}" ]; then
+            cli find commands \
+                --dir "$(pwd)/${entry}" \
+                --base-dir "${arg_base_dir}/${entry}" \
+                --recursive
+        fi
+    done
+)
+
+cli::load "$@"

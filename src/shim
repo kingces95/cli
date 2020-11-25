@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+# source /dev/stdin < <(cli loader)
+
+help() {
+cat << EOF
+Command
+    cli shim
+
+Summary
+    Bind to and invoke a command using an abstract path that hides the
+    difference between consumer and developer cli configurations.
+
+Consumer User Story
+    As a script consumer, I want to deploy a single file packed with
+    many commands. I want to specify the command I wish to invoke using
+    the first arguments, and have the remaining key/value arguments passed 
+    to the actual command. For example, given a cli 'integrate', to find 
+    the area of a circle of radius 10 I want to execute:
+
+        $ integrate area circle --radius 10
+
+Developer User Story
+    As a script developer, I want to develop each command in a file whose name
+    matches the command name, and whose relative path from a desginated root 
+    directory represent the group to which the command belongs. For example,
+    given a root directory '/usr/bin/cli_scripts/integrate' the logic for command 
+    'circle' in group 'area' would would live at:
+    
+        '/usr/bin/cli_scripts/integrate/area/circle'
+    
+    I want to create a "shim file" on the path (e.g. '/usr/bin/integrate') which 
+    accepts the same arguments the consumer would pass, and uses the first arguments
+    to construct a path to the file corrisponding to the command, and invokes that 
+    command with the remaining key/value arguments. 
+
+    I want to 'pack' all those commands into a single file for my consumers.
+
+Description
+    The first argument to the shim is a root directory, the next arguments 
+    upto the first argument prefixed with a dash are joined with the root 
+    directory to form the relative path. The remaing arguments are passed 
+    to the invoked command. For example, to find the area of a circle with 
+    radius 10, an call of:
+
+        $ cli shim /usr/bin/cli_scipts/integrate area circle --radius 10
+
+    would join '/usr/bin/cli_scipts/integrate', 'area', and 'circle' to form:
+
+        /usr/bin/cli_scripts/integrate/area/circle
+
+    and then invoke that command with the remaining arguments '--radius 10'.
+    Conventionally, this logic would be put in a file 'integrate' which would 
+    be put on the path. For example, '/usr/bin/integrate' would contain:
+
+        #!/usr/bin/env bash
+        cli shim "/usr/bin/cli_scipts/integrate" "\$@"
+    
+    Commands could then be hosted as files nested at '/usr/bin/cli_scipts/integrate' 
+    whose sub-directories represent command groups. For example, command 'circle' 
+    and 'square' in group 'area' would be hosted at:
+
+        /usr/bin/cli_scripts/integrate/area/circle
+        /usr/bin/cli_scripts/integrate/area/square
+
+Description (packed)
+    If the shim is invoked without any arguments, then it emits a function
+    'cli::shim' (along with other internal functions and variables) that is
+    suitable for including in a "packed" cli file. The first non key value 
+    arguments passed to this version of the shim are joined with '::'. The
+    the shim attempts to resolve that joined result to a function name in 
+    the packed file. For example, after development of 'integrate', calling:
+
+        $ cli pack \\
+            --dir /usr/bin/cli_scripts/integrate \\
+            --name integrate \\
+            --output ./release
+
+    would package all the commands into a single file './release/integrate'.
+    To find the area of a circle using that command, the call is the same
+    but internally all subsequent calls are made to functions within 
+    './release/integarte'. For example,
+
+        $ integrate area circle --radius 10
+
+    would call:
+        
+        cli::shim area circle --radius 10 
+        
+    which would call:
+
+        area::circle --radius 10
+        
+    which will contain the logic found in:
+
+        /usr/bin/cli_scripts/integrate/area/circle
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Use the shim to print help for /usr/bin/base64
+        cli shim /usr/bin base64 -h
+
+    Use the shim to encode 'Hello World' in base 64
+        echo Hello World | cli shim /usr/bin base64 -i -
+
+    Print the shim that is included in packed files
+        cli shim
+
+    Create a cli 'sayhi' that speaks in english and french
+        echo "#"'!'"/usr/bin/env bash" > sayhi
+        cli shim >> sayhi
+        echo "sayhi::english::speak() { echo Hi; }" >> sayhi
+        echo "sayhi::french::speak() { echo Bonjour; }" >> sayhi
+        echo "cli::shim sayhi \\\$@" >> sayhi
+        chmod a+x sayhi
+        ./sayhi english speak
+        ./sayhi french speak
+EOF
+}
+
+cli::shim() {
+    # use filesystem to resolve command, and first argument is the 
+    # base directory where commands are under development
+    local delimiter='/'
+    local path=$1; shift
+    local -a args=
+
+    cli::shim::join "$@"
+
+    # file
+    if [[ -f "${path}" ]] && [[ -x "${path}" ]]; then
+        "${path}" "${args[@]}"
+
+    # directory
+    elif [[ -d "${path}" ]]; then
+        echo 'nyi'
+
+    # fail
+    else
+        cli::shim::command_not_found
+    fi
+}
+
+cli::shim::join() {
+    local CLI_SHIM_ARG_GLOB="-*"
+    local CLI_SHIM_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
+
+    # assert caller defined 'delimiter', 'path', and 'args' variable
+    : ${delimiter?}
+    : ${path?}
+    : ${args?}
+
+    # bind to command path
+    while (( $# > 0 )); do
+
+        # stop joining path segments if an argument is found (e.g. --foo)
+        if [[ "$1" == $CLI_SHIM_ARG_GLOB ]]; then 
+            break
+        fi
+
+        # ensure uniformity of group names (e.g. foo-bar, not foo_bar)
+        if [[ ! "$1" == $CLI_SHIM_PATH_SEGMENT_GLOB ]]; then
+            echo "Unexpected command name or group '$1' does not match '$CLI_SHIM_PATH_SEGMENT_GLOB'."
+            exit 1
+        fi
+
+        # add path delimiter (e.g. '::' or '/')
+        if [[ -n "${path}" ]]; then
+            path="${path}${delimiter}"
+        fi
+
+        # convert command or group name into file or function name (e.g. foo-bar -> foo_bar)
+        path="${path}${1//-/_}"
+        shift
+    done
+
+    args=( "$@" )
+}
+
+cli::shim::command_not_found() {
+    set "${1//${delimiter}/ }"
+    set "${1//_/-}"
+    echo "Command '$1' not found."
+    exit 1
+}
+
+main() {
+
+    cli::shim() {
+
+        # use namespaces to resolve command
+        local delimiter='::'
+        local path=
+        local -a args=
+
+        cli::shim::join "$@"
+
+        # function
+        if declare -F "$path" > /dev/null; then
+            "${path}" "${args[@]}"
+
+        # fail
+        else
+            cli::shim::command_not_found "${path}"
+        fi
+    }
+
+    declare -f cli::shim
+    declare -f cli::shim::join
+    declare -f cli::shim::command_not_found
+}
+
+if (( "$#" == 0 )); then
+    main
+else
+    case $1 in
+        '-h') help; exit ;;
+        '--help') help; exit ;;
+        '--pack') main; exit ;;
+        -*) echo "Unrecognized argument '$1'."; exit 1 ;;
+        *) cli::shim "$@"
+    esac
+fi

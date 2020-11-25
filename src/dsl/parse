@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli dsl .group)
+
+help() {
+    cat << EOF
+Command
+    cli dsl parse
+
+Description
+    Read command help tokens from stdin and emit productions to stdout 
+    one per line in the form:
+
+        key production_id production_name [identifier]
+
+    The productions harvested from a command's help are designed to
+    be joined with productions harvested from the parsing of the 
+    command line arguments to simplify validating the arguments
+    against the help metadata. The join is constructed by
+    mergeing the streams of production tokens and sorting them by 
+    'key' and then by 'production_id'. In this way, if PRODUCTION_NAME
+    appears before PRODUCTION_ARG_NAME, then the argument is expected,
+    otherwise it is unexpected.
+
+Arguments
+    --file                  : The file to report is being parsed if an error occurs.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+
+Examples
+    Parse the sample help.
+        cli dsl help sample -h | cli dsl help tokenize | cli dsl help parse
+EOF
+}
+
+declare line
+declare word
+declare token
+declare token_name
+declare identifier
+declare arg_name='.'
+
+yield() {
+    echo ${arg_name} $1 ${CLI_DSL_PRODUCTION[$1]} ${2-}
+}
+
+error() {
+    arg_name='.'
+    # callstack=$(cli::log_callstack)
+    yield ${CLI_DSL_PRODUCTION_ERROR} "$1"
+    exit
+}
+
+bad_token() {
+    local message
+    local -a expected
+    
+    for i in "$@"; do
+        expected+=( ${CLI_DSL_TOKEN[$i]} )
+    done
+    
+    message="Error parsing help of '${arg_file:="<unknown>"}' at
+         line ${line}, word ${word}: Expected token in { ${expected[@]} }, 
+        but got ${token_name}, identifier='${identifier}'"
+
+    error "${message}"
+}
+
+assert_token_is() {
+    for expected_token in "$@"; do
+        if (( token == expected_token )); then
+            return
+
+        elif (( token == CLI_DSL_TOKEN_ERROR )); then
+            error "${identifier}"
+        fi
+    done
+
+    bad_token $@
+}
+
+read_token() {
+    read token_name line word identifier
+    token="CLI_DSL_TOKEN_${token_name}"
+    token=${!token}
+
+    if (( $# > 0 )); then
+        assert_token_is "$@"
+    fi
+}
+
+main() {
+
+    START() {
+        ARGUMENTS
+    }
+
+    ARGUMENTS() {
+        read_token
+
+        while (( token != CLI_DSL_TOKEN_EOF )); do
+            ARGUMENT
+        done
+    }
+
+    ARGUMENT() {
+        assert_token_is $CLI_DSL_TOKEN_NAME
+    
+        arg_name=${identifier}
+        yield ${CLI_DSL_PRODUCTION_NAME} ${identifier}
+        read_token
+
+        if (( token == CLI_DSL_TOKEN_ALIAS )); then
+            ALIAS
+        fi
+
+        if (( token == CLI_DSL_TOKEN_REQUIRED )); then
+            REQUIRED
+        fi
+
+        if (( token == CLI_DSL_TOKEN_FLAG )); then
+            FLAG
+        fi
+
+        ATTRIBUES
+    }
+
+    ATTRIBUES() {
+        while true; do
+            if (( token == CLI_DSL_TOKEN_DEFAULT )); then
+                DEFAULT
+            elif (( token == CLI_DSL_TOKEN_ALLOWED_VALUES )); then
+                ALLOWED_VALUES
+            else
+                break
+            fi
+       done
+    }
+
+    ALIAS() {
+        yield ${CLI_DSL_PRODUCTION_ALIAS} ${identifier}
+        read_token
+    }
+
+    REQUIRED() {
+        yield ${CLI_DSL_PRODUCTION_REQUIRED}
+        read_token
+    }
+
+    FLAG() {
+        yield ${CLI_DSL_PRODUCTION_FLAG}
+        read_token
+    }
+
+    DEFAULT() {
+        read_token ${CLI_DSL_TOKEN_VALUE_PERIOD}
+        yield ${CLI_DSL_PRODUCTION_DEFAULT} "${identifier}"
+        read_token
+    }
+
+    ALLOWED_VALUES() {
+        yield ${CLI_DSL_PRODUCTION_ALLOWED} "${identifier}"
+
+        while true; do
+            read_token $CLI_DSL_TOKEN_VALUE_COMMA $CLI_DSL_TOKEN_VALUE_PERIOD
+
+            if (( token == CLI_DSL_TOKEN_VALUE_COMMA )); then
+                yield ${CLI_DSL_PRODUCTION_ALLOWED_VALUE} "${identifier}"
+
+            elif (( token == CLI_DSL_TOKEN_VALUE_PERIOD )); then
+                yield ${CLI_DSL_PRODUCTION_ALLOWED_VALUE} "${identifier}"
+                yield ${CLI_DSL_PRODUCTION_ALLOWED_END}
+                read_token
+                break
+            fi
+        done
+    }
+
+    START
+}
+
+self_test() {
+    source /dev/stdin < <(cli_assert)
+
+    cd "$(dirname ${BASH_SOURCE})"
+
+    "./sample" -h \
+        | "./tokenize" \
+        | "./parse" \
+        | assert::pipe_eq \
+            'run-as 0 NAME run-as' \
+            'fruit 0 NAME fruit' \
+            'fruit 2 DEFAULT banana' \
+            'fruit 5 ALLOWED' \
+            'fruit 6 ALLOWED_VALUE orange' \
+            'fruit 6 ALLOWED_VALUE banana' \
+            'fruit 7 ALLOWED_END' \
+            'header 0 NAME header' \
+            'header 3 REQUIRED' \
+            'display-args 0 NAME display-args' \
+            'display-args 4 FLAG' \
+            'help 0 NAME help' \
+            'help 1 ALIAS h' \
+            'help 4 FLAG' \
+            'self-test 0 NAME self-test' \
+            'self-test 4 FLAG'
+}
+
+cli::load "$@"

@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli_emit)
+
+help() {
+    cat << EOF
+Command
+    cli pack
+
+Summary
+    Package a group of commands into a into a single file.
+    
+Description
+    Recursively discovers cli commands developed as individual files
+    and hosted in a specified directory, and package them into a 
+    single file. 
+    
+    Commands must start with the following:
+    
+        #!/usr/bin/env bash
+        source /dev/stdin < <(cli loader)
+
+    This will define 'cli::import' and 'cli::export'. Commands must use the 
+    former instead of 'source' and libraries may use the latter to emit
+    functions and variables with common prefixes. 
+
+    For example, imagine a cli hosted in directory 'area' with that contains
+    two files, a command 'square' and a library '.lib' which are defined as:
+
+        #!/usr/bin/env bash
+        source /dev/stdin < <(cli loader)
+        source /dev/stdin < <(cli::import area .lib)
+        main() { echo \$(area::multiply \${arg_side} \${arg_side}); }
+        cli::load "\$@"
+
+    and
+    
+        #!/usr/bin/env bash
+        source /dev/stdin < <(cli loader)
+        main() { cli::export 'area'; }
+        AREA_PI='3.14159'
+        area::multiply() { echo "\$1 * \$2" | bc -l; }
+        cli::load "\$@"
+    
+    respectively. 
+    
+    Note the use of 'cli::import' to source the library and 'cli::export' 
+    to print all functions and variables that start with 'area::' or 'AREA_'.
+    To pack the 'area' cli into a single file:
+
+        cli pack --dir ./area --name area --output /usr/bin/area
+
+Arguments
+    --dir -d        [Required] : Root directory hosting groups of commands
+                                 which are to be packaged into a single cli.
+    --name -n       [Required] : Name of the cli.
+    --output-dir -o            : Ouput directory. Default: ".".
+
+Global Arguments
+    --help -h           [Flag] : Show this message and exit.
+    --self-test         [Flag] : Runs a self test.
+    --dry-run           [Flag] : Show the commands that would be packed.
+EOF
+}
+
+main() (
+    if ${arg_dry_run}; then
+        table_of_content
+    else
+        local path="${arg_output_dir}/${arg_name}"
+        emit > "${path}"
+        chmod a+x "${path}"
+    fi
+)
+
+find_commands() {
+    cli find commands --recursive --dir "${arg_dir}"
+}
+
+find_references() {
+    find_commands \
+        | while read; do \
+            CLI_REFLECT='true' "${arg_dir}/${REPLY}" -h 2>&1 >/dev/null; \
+          done \
+        | sort -u
+}
+
+table_of_content() {
+    echo 'commands:'
+    find_commands \
+        | while read; do echo "$(emit_command_name "${REPLY}")"; done \
+        | sed 's/^/    /'
+    echo
+
+    echo 'libraries:'
+    find_references \
+        | while read; do echo "$(emit_library_name "${REPLY}")"; done \
+        | sed 's/^/    /'
+}
+
+emit() {
+    echo \#!/usr/bin/env bash
+    echo
+
+    # toc
+    table_of_content | sed 's/^/\# /' | emit_section 'Table Of Content'
+
+    # commands
+    find_commands \
+        | while read; do \
+            cat <("${arg_dir}/${REPLY}" '---emit-initialize') \
+                <(cat "${arg_dir}/${REPLY}" | sed 1,2d | emit::file) \
+            | emit::subproc "$(emit_command_name "${REPLY}")"; \
+          done \
+        | emit_section 'Commands'
+
+    # libraries
+    find_references \
+        | while read; do \
+            ${REPLY} | emit::function "$(emit_library_name "${REPLY}")"; \
+          done \
+        | emit_section 'Libraries'
+
+    # loader
+    cli loader | emit_section 'Loader'
+
+    # shim
+    cli shim --pack | emit_section 'Shim'
+
+    echo cli::shim "${arg_name}" \"\$@\"
+}
+
+emit_section() {
+    echo \#
+    echo \# $1
+    echo \#
+    while read -r; do echo "${REPLY}"; done
+    echo
+}
+
+emit_library_name() {
+    echo "${1// /::}"
+}
+
+emit_command_name() {
+    # e.g. given a cli 'integrate' with command './area/circle'
+    # emit 'integrate::area::circle'
+    local name="${1#./}"
+    echo "${arg_name}::${name//\//::}"
+}
+
+self_test() (
+    return
+)
+
+cli::load "$@"

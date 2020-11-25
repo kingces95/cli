@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli dsl .group)
+source /dev/stdin < <(cli::import cli_emit)
+source /dev/stdin < <(cli::reference cli_assert)
+
+help() {
+    cat << EOF
+Command
+    cli dsl tokenize
+
+Description
+    Read command help from stdin and emit tokens to stdout one per 
+    line in the form:
+
+        token_name line word [identifier]
+
+    Tokenize is the first step in harvesting metadata from a command's 
+    help. Metadata harvested includes names and alises of arguments,
+    whether arguments are required, have an optional default value, 
+    and/or a list of optional acceptable values.
+
+    The tokenizer has a preprocessor that exlcudes processing of
+    help sections that do not include the word "Arguments". 
+    
+    Within "Arguments" help sections the preporcessor excludes 
+    argument copy as defined as text after a colon up to 
+    "Required:", "Allowed values:", or a new command name. 
+
+    Within "Arguments" help sections: CLI_DSL_TOKEN_NAME is returned for
+    an argument which is a word preceeded by an indentation and 
+    a double dash. CLI_DSL_TOKEN_ALIAS is returned for words which are
+    preceeded by a dash. CLI_DSL_TOKEN_DEFAULT and CLI_DSL_TOKEN_ALLOWED_VALUES are
+    returned for "Default:" and "Allowed values:" respectively.
+    CLI_DSL_TOKEN_VALUE_COMMA and CLI_DSL_TOKEN_VALUE_PEROID are returned for words
+    followed by a comma or period respectively (e.g. a default 
+    value and/or allowed value lists). CLI_DSL_TOKEN_EOF is emitted last 
+    except if CLI_DSL_TOKEN_ERROR is emitted, in which case it's last.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Parse this help.
+        cli dsl help tokenize -h | cli dsl help tokenize
+
+    Parse the sample help.
+        cli dsl help sample -h | cli dsl help tokenize
+EOF
+}
+
+main() {
+    local line
+    local word=
+    local last_word=
+    local word_number=0
+    local line_number=0
+
+    # preprocessor; e.g. like #IF 0 ... #ENDIF where we are only lexing
+    # when we are in an argument header and not in argument copy
+    local in_argument_header=false
+    local in_argument_copy=false
+    yield() {
+        if $in_argument_header && ! $in_argument_copy; then
+            echo ${CLI_DSL_TOKEN[$1]} ${line_number} ${word_number} ${2-}
+        fi
+    }
+
+    # processor; read a line, break it up, emit tokens
+    while IFS= read line; do
+        line_number=$(( line_number + 1 ))
+        word_number=0
+
+        # is the line a header?
+        if [[ "${line}" =~ ^[a-zA-Z] ]]; then
+            word_number=1
+
+            # does the header section declare arguments?
+            if [[ "${line}" =~ 'Arguments' ]]; then
+                in_argument_header=true
+                in_argument_copy=false
+            else
+                in_argument_header=false
+            fi
+            continue
+        fi
+
+        # split the line on spaces
+        shopt -u nullglob # else [Required] expands to ''
+        words=( ${line} )
+        shopt -s nullglob
+
+        while (( word_number < ${#words[@]} )); do
+            last_word=${word}
+            word=${words[${word_number}]}
+            word_number=$(( word_number + 1 ))
+
+            # e.g. ": this is argument copy."
+            if [[ "$word" == "${CLI_DSL_LITERAL_COLON}" ]]; then
+                in_argument_copy=true
+
+            # e.g. "--help"
+            elif [[ "${word}" == ${CLI_DSL_ARG_NAME_GLOB} ]] && \
+                    [[ "${line}" =~ ^"${CLI_DSL_LITERAL_TAB}${word}" ]]; then
+                in_argument_copy=false
+                yield ${CLI_DSL_TOKEN_NAME} "${word#--}"
+
+            # e.g. "-h"
+            elif [[ "${word}" == ${CLI_DSL_ARG_ALIAS_GLOB} ]]; then
+                yield ${CLI_DSL_TOKEN_ALIAS} "${word#-}"
+
+            # e.g. "[Required]"
+            elif [[ "${word}" == "${CLI_DSL_LITERAL_REQUIRED}" ]]; then
+                yield ${CLI_DSL_TOKEN_REQUIRED}
+
+            # e.g. "[Flag]"
+            elif [[ "${word}" == "${CLI_DSL_LITERAL_FLAG}" ]]; then
+                yield ${CLI_DSL_TOKEN_FLAG}
+
+            # e.g. "Default:"
+            elif [[ "${word}" == "${CLI_DSL_LITERAL_DEFAULT}" ]]; then
+                in_argument_copy=false
+                yield ${CLI_DSL_TOKEN_DEFAULT}
+
+            # e.g. "values:"
+            elif [[ "${word}" == "${CLI_DSL_LITERAL_VALUES}" ]]; then
+
+                if [[ "${last_word}" == "${CLI_DSL_LITERAL_ALLOWED}" ]]; then
+                    in_argument_copy=false
+                    yield ${CLI_DSL_TOKEN_ALLOWED_VALUES}
+                fi
+
+            # elements; e.g. 'foo' of "Allowed values: foo, bar."
+            elif [[ "${word}" == *, ]]; then
+                yield ${CLI_DSL_TOKEN_VALUE_COMMA} "${word/%,}"
+
+            # last element; e.g. bar of "Allowed values: foo, bar."
+            elif [[ "${word}" == *. ]]; then
+                yield ${CLI_DSL_TOKEN_VALUE_PERIOD} "${word/%.}"
+                in_argument_copy=true
+            fi
+        done
+    done
+
+    in_argument_copy=false
+    in_argument_header=true
+    line_number=$(( line_number + 1 ))
+    yield $CLI_DSL_TOKEN_EOF
+}
+
+self_test() (
+    source /dev/stdin < <(cli_assert)
+    
+    cd "$(dirname ${BASH_SOURCE})"
+
+    "./sample" -h \
+        | "./tokenize" \
+        | assert::pipe_eq \
+            'NAME 5 1 run-as' \
+            'NAME 7 1 fruit' \
+            'DEFAULT 7 5' \
+            'VALUE_PERIOD 7 6 banana' \
+            'ALLOWED_VALUES 8 1' \
+            'VALUE_COMMA 8 2 orange' \
+            'VALUE_PERIOD 8 3 banana' \
+            'NAME 9 1 header' \
+            'REQUIRED 9 2' \
+            'NAME 10 1 display-args' \
+            'FLAG 10 2' \
+            'NAME 13 1 help' \
+            'ALIAS 13 2 h' \
+            'FLAG 13 3' \
+            'NAME 14 1 self-test' \
+            'FLAG 14 2' \
+            'EOF 18 6'
+)
+
+cli::load "$@"

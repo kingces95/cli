@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli_util)
+
+help() {
+    cat << EOF
+Command
+    cli dsl .group
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+readonly CLI_DSL_ARG_CHAR_GLOB="[a-zA-Z0-9_-]"
+readonly CLI_DSL_ARG_ALIAS_GLOB="-@(${CLI_DSL_ARG_CHAR_GLOB})" 
+readonly CLI_DSL_ARG_NAME_GLOB="--@(${CLI_DSL_ARG_CHAR_GLOB})+(${CLI_DSL_ARG_CHAR_GLOB})"
+
+readonly CLI_DSL_LITERAL_TAB='    '
+readonly CLI_DSL_LITERAL_COLON=':'
+readonly CLI_DSL_LITERAL_DEFAULT='Default:'
+readonly CLI_DSL_LITERAL_ALLOWED='Allowed'
+readonly CLI_DSL_LITERAL_VALUES='values:'
+readonly CLI_DSL_LITERAL_REQUIRED='[Required]'
+readonly CLI_DSL_LITERAL_FLAG='[Flag]'
+
+readonly CLI_DSL_TOKEN=(
+    'DEFAULT'
+    'FLAG'
+    'ALLOWED_VALUES'
+    'VALUE_COMMA'
+    'VALUE_PERIOD'
+    'IDENTIFIER'
+    'NAME'
+    'ALIAS'
+    'COLON'
+    'REQUIRED'
+    'EOF' 
+    'ERROR' 
+) && util::declare_enums CLI_DSL_TOKEN
+
+readonly CLI_DSL_PRODUCTION=(
+    'NAME'
+    'ALIAS'
+    'DEFAULT'
+    'REQUIRED'
+    'FLAG'
+    'ALLOWED'
+    'ALLOWED_VALUE'
+    'ALLOWED_END'
+    'ERROR'
+) && util::declare_enums CLI_DSL_PRODUCTION
+
+main() {
+    cli::export cli dsl
+    declare -f initialize
+}
+
+initialize() {
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') arg_help=true ;;
+            '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            *) echo "Unexpected argument $1."; exit 1 ;;
+        esac
+
+        shift
+    done
+}
+
+cli::load "$@"

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+CLI_SRC="$(dirname ${BASH_SOURCE})/src"
+
+if [[ "$1" == 'shim' ]]; then
+    shift
+    "${CLI_SRC}/shim" "$@"
+    exit
+fi
+
+"${CLI_SRC}/shim" "${CLI_SRC}" "$@"

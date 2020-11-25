@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+
+help() {
+    cat << EOF
+Command
+    cli self-test
+
+Summary
+    Run a self test for every command. 
+    
+Description
+    Commands are found via recursive search starting at '--dir'.
+    Those commands are then invoked with the flag '--self-test'.
+    If all test succeed, the exit code is 0, otherwise 1.
+
+Arguments
+    --dir                   : The directory to start searching for commands.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --dry-run        [Flag] : Show the commands that would be run.
+EOF
+}
+
+report() {
+    local command="$1"
+
+    # interpret no output as a success
+    if ! read result; then
+        return
+    fi
+
+    # interpret any output as a failure
+    exit_code=1
+    echo "${command}"
+    cat <(echo ${result}) - | sed 's/^/>   /'
+}
+
+main() {
+    local exit_code=0
+
+    cd "${arg_dir}"
+
+    # search for commands starting at --dir
+    cli find commands --recursive | {
+        while read command; do 
+
+            if $arg_dry_run; then
+                echo "${command} --self-test"
+                continue
+            fi
+
+            # execute each command's self test
+            "${command}" --self-test 2>&1 | report "${command}"
+        done
+    }
+
+    exit "${exit_code}"
+}
+
+cli::load "$@"

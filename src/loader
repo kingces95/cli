@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+# source /dev/stdin < <(cli loader)
+
+help() {
+    cat << EOF
+Command
+    cli loader
+
+Summary
+    Prints the source for function 'cli::load'.
+    
+Description
+
+Arguments
+
+Global Arguments
+    --help -h       : Show this message and exit.
+    --self-test     : Runs a self test.
+EOF
+}
+
+cli::export_functions() {
+    local glob
+
+    for i in "$@"; do 
+        glob+="${i}::"
+    done
+
+    while read keyword flags name; do
+        if [[ "${name}" == ${glob}* ]]; then
+            declare -f "${name}"
+        fi
+    done < <(declare -F)
+}
+
+cli::export_variables() {
+    local -u glob
+
+    for i in "$@"; do 
+        glob+="${i}_"; 
+    done
+
+    for i in $(eval echo "\${!${glob}@}"); do
+        declare -p "${i}" \
+            | sed 's/^declare/declare -g/'
+    done
+}
+
+cli::export_import() {
+    echo "source /dev/stdin < <(cli::import $@)"
+}
+
+cli::export() {
+    cli::export_variables "$@"
+    cli::export_functions "$@"
+}
+
+cli::reference() {
+    if [[ ${CLI_REFLECT:=} == 'true' ]]; then
+        echo $@ > /dev/stderr
+    fi
+}
+
+cli::import() {
+    if declare -F 'cli::shim' > /dev/null; then
+        # convert file/function name to argument name
+        # only $0 needs to undergo conversion as only it may be a file name
+        echo "cli::shim ${1//_/-} ${@:2}"
+    else
+        cli::reference "$@"
+        "$@"
+    fi
+}
+
+# dry run support
+cli::dry_run() {
+    if [[ "${arg_dry_run:=}" == "true" ]]; then 
+        # removes extra spaces which is typically what we want
+        while read; do echo ${REPLY}; done
+    else
+        if [[ "${arg_debug:=}" == "true" ]]; then set -x; fi
+        source /dev/stdin
+        if [[ "${arg_debug:=}" == "true" ]]; then set +x; fi
+    fi
+}
+
+cli::escape_args_then_call_as() {
+    local user=$1
+    shift
+
+    local -a args
+    for i in "$@"; do
+        args+=( $(printf %q "${i}") )
+    done
+
+    sudo su "${user}" -c "${args[*]}"
+}
+
+cli::emit_initialize() {
+    # emit initialize, but only if not already defined
+    if declare -F initialize > /dev/null; then
+        return
+    fi
+
+    help \
+        | cli dsl tokenize \
+        | cli dsl parse \
+        | cli dsl emit
+}
+
+cli::load() {
+
+    # implement well know feature flags
+    for i in "$@"; do
+
+        # dump help
+        if [[ "${i}" == '-h' ]] || [[ "${i}" == '--help' ]]; then 
+            help; exit
+
+        # run self test
+        elif [[ "${i}" == '--self-test' ]]; then
+            self_test; exit
+
+        # emit initialize
+        elif [[ "${i}" == '---emit-initialize' ]]; then
+            cli::emit_initialize
+            exit
+        fi
+    done
+
+    # emit 'initialize' function from help if not already defined
+    cli::emit_initialize | source /dev/stdin
+    unset i
+
+    # declare well known variables
+    : ${arg_run_as:=}
+
+    # save and verify args, then define/initialize variables
+    local -a args=( "$@" )
+    initialize "$@"
+
+    # implement well known features
+    if [[ -n "${arg_run_as}" ]] && [[ ! "${arg_run_as}" == "$(whoami)" ]]; then
+        cli::escape_args_then_call_as "${arg_run_as}" "$0" "${args[@]}"
+    else
+        # clean up known arguments
+        unset arg_run_as
+        unset arg_self_test
+        unset arg_help
+        unset args
+        main
+    fi
+}
+
+main() {
+
+    # supress background processes from displaying their exit status upon completion.
+    # see https://mywiki.wooledge.org/BashFAQ/024
+    echo 'set +m'
+
+    echo 'set -e'
+    echo 'set -u' 
+    # set -o pipefail
+    echo
+
+    # run the last segment of a pipeline in the current execution process, not a subshell.
+    # see https://mywiki.wooledge.org/BashFAQ/024
+    echo 'shopt -s lastpipe'
+
+    # If set, the pattern ‘**’ used in a filename expansion context will match all 
+    # files and zero or more directories and subdirectories. If the pattern is followed 
+    # by a ‘/’, only directories and subdirectories match.
+    echo 'shopt -s globstar'
+
+    # If the extglob shell option is enabled using the shopt builtin, 
+    # several extended pattern matching operators are recognized. 
+    echo 'shopt -s extglob'
+
+    # If set, Bash allows filename patterns which match 
+    # no files to expand to a null string, rather than themselves.
+    echo 'shopt -s nullglob' 
+    echo
+
+    echo "help() { echo \"Unexpected missing 'help' in \${BASH_SOURCE[1]}.\"; }"
+    echo "self_test() { return; }"
+    echo
+
+    if [[ ${CLI_REFLECT:=} == 'true' ]]; then
+        echo "initialize() { return; }"
+    fi
+    
+    cli::export cli
+}
+
+initialize() {
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') arg_help=true ;;
+            '--help') arg_help=true ;;
+            *) echo "Unexpected argument $1."; exit 1 ;;
+        esac
+
+        shift
+    done
+}
+
+cli::load "$@"
