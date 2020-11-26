@@ -2,7 +2,7 @@
 # source /dev/stdin < <(cli loader)
 
 help() {
-cat << EOF
+    cat << EOF
 Command
     cli shim
 
@@ -120,12 +120,36 @@ Examples
 EOF
 }
 
-cli::shim() {
+cli::shim::help() {
+    cat << EOF
+Command
+    $1
+
+Summary
+    List available commands and groups.
+    
+Description
+    Operations on a group of commands include listing sub-groups,
+    commands, and both.
+
+Arguments
+    --list -l               : List commands and groups.
+    --commands -c           : List commands.
+    --groups -g             : List command groups.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+EOF
+}
+
+cli::shim() {    
     # use filesystem to resolve command, and first argument is the 
     # base directory where commands are under development
     local delimiter='/'
-    local path=$1; shift
     local -a args=
+    local name=$1; shift
+    local dir=$1; shift
+    local path="${dir}"
 
     cli::shim::join "$@"
 
@@ -135,13 +159,60 @@ cli::shim() {
 
     # directory
     elif [[ -d "${path}" ]]; then
-        echo 'nyi'
+
+        # list commands and groups
+        case "${args}" in
+            '-h') ;& '--help')
+                cli::shim::help "${path}" ;; 
+            '-l') ;& '--list') 
+                cli::shim::list "${path}" ;;
+            '-c') ;& '--commands') 
+                cli::shim::list "${path}" | grep ^c | sed 's/. //' ;;
+            '-g') ;& '--groups') 
+                cli::shim::list "${path}" | grep ^g | sed 's/. //' ;;
+            '-p') ;& '--pack') 
+                cli pack --dir "${path}" --name "${name}" --output-dir "${@:2}" ;;
+            '') 
+                cli::shim::list "${path}" | grep ^[gc] | sed 's/. //' ;;
+            *)
+                cli::shim::unexpected_argument "${args}"
+        esac
 
     # fail
     else
-        cli::shim::command_not_found
+        cli::shim::command_not_found "${path#${dir}}"
     fi
 }
+
+cli::shim::list() (
+
+    # include dot files
+    local glob='* .[^.]*'
+
+    cd "$1"
+
+    # print '<type> <name>'
+    for entry in ${glob}; do
+        if [[ -f "${entry}" || -d "${entry}" ]] && [[ -x "${entry}" ]]; then
+
+            # print type
+            if [[ -f "${entry}" ]]; then
+                if [[ "${entry}" == '.group' ]]; then 
+                    echo -n 'i' # info
+                else 
+                    echo -n 'c' # command
+                fi
+            elif [[ -d "${entry}" ]]; then 
+                echo -n 'g' # group
+            else 
+                continue
+            fi
+
+            # print name
+            echo " ${entry//_/-}"
+        fi
+    done
+)
 
 cli::shim::join() {
     local CLI_SHIM_ARG_GLOB="-*"
@@ -179,10 +250,19 @@ cli::shim::join() {
     args=( "$@" )
 }
 
-cli::shim::command_not_found() {
+cli::shim::split() {
     set "${1//${delimiter}/ }"
     set "${1//_/-}"
-    echo "Command '$1' not found."
+    echo $1
+}
+
+cli::shim::unexpected_argument() {
+    echo "Unexpected argument '$1'."
+    exit 1
+}
+
+cli::shim::command_not_found() {
+    echo "Command '$(cli::shim::split $1)' not found."
     exit 1
 }
 
@@ -209,6 +289,8 @@ main() {
 
     declare -f cli::shim
     declare -f cli::shim::join
+    declare -f cli::shim::split
+    declare -f cli::shim::unexpected_argument
     declare -f cli::shim::command_not_found
 }
 
@@ -216,10 +298,9 @@ if (( "$#" == 0 )); then
     main
 else
     case $1 in
-        '-h') help; exit ;;
-        '--help') help; exit ;;
+        '-h') ;& '--help') help; exit ;;
         '--pack') main; exit ;;
-        -*) echo "Unrecognized argument '$1'."; exit 1 ;;
+        -*) cli::shim::unexpected_argument "$1" ;;
         *) cli::shim "$@"
     esac
 fi

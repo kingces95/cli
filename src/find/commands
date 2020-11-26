@@ -8,8 +8,8 @@ Command
 
 Arguments
     --dir -d                : Directory to search.
-    --recursive  -r  [Flag] : Recurse.
-    --all            [Flag] : Include commands beginning with dot.
+    --recursive -r   [Flag] : Recurse.
+    --all -a         [Flag] : Include commands beginning with dot.
     --base-dir              : Internal. The base directory. Default: ".".
 
 Global Arguments

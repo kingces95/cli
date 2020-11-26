@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli loader --library)
 source /dev/stdin < <(cli::import cli_util)
 
 help() {

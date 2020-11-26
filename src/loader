@@ -108,6 +108,21 @@ cli::emit_initialize() {
         | cli dsl emit
 }
 
+cli::initialize() {
+    : ${arg_help:=false}
+    : ${arg_self_test:=false}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') ;& '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            *) echo "Unexpected argument $1."; exit 1 ;;
+        esac
+
+        shift
+    done
+}
+
 cli::load() {
 
     # implement well know feature flags
@@ -145,11 +160,26 @@ cli::load() {
     else
         # clean up known arguments
         unset arg_run_as
-        unset arg_self_test
-        unset arg_help
         unset args
         main
     fi
+}
+
+initialize() {
+    : ${arg_help:=false}
+    : ${arg_library:=false}
+    : ${arg_self_test:=false}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') ;& '--help') arg_help=true ;;
+            '-l') ;& '--library') arg_library=true ;;
+            '--self-test') arg_self_test=true ;;
+            *) echo "Unexpected argument $1."; exit 1 ;;
+        esac
+
+        shift
+    done
 }
 
 main() {
@@ -187,21 +217,16 @@ main() {
 
     if [[ ${CLI_REFLECT:=} == 'true' ]]; then
         echo "initialize() { return; }"
+
+    # constructing libraries as commands-with-a-common-initialize-function allows:
+    # 1. using PATH to resolve libraries which helps hide paths which aids packing
+    # 2. support packaging test in libraries and executing them via '--self-test'
+    # 3. support '.group' as a library that doubles as metadata via '-h' for the group
+    elif ${arg_library}; then
+        echo "initialize() { cli::initialize "\$@"; }"
     fi
     
     cli::export cli
-}
-
-initialize() {
-    while (( $# > 0 )); do
-        case $1 in
-            '-h') arg_help=true ;;
-            '--help') arg_help=true ;;
-            *) echo "Unexpected argument $1."; exit 1 ;;
-        esac
-
-        shift
-    done
 }
 
 cli::load "$@"

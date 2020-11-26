@@ -7,4 +7,4 @@ if [[ "$1" == 'shim' ]]; then
     exit
 fi
 
-"${CLI_SRC}/shim" "${CLI_SRC}" "$@"
+"${CLI_SRC}/shim" "${BASH_SOURCE##*/}" "${CLI_SRC}" "$@"

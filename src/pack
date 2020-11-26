@@ -101,6 +101,7 @@ main() (
         table_of_content
     else
         local path="${arg_output_dir}/${arg_name}"
+        if [[ -f ${path} ]]; then rm ${path}; fi
         emit > "${path}"
         chmod a+x "${path}"
     fi
@@ -140,16 +141,20 @@ emit() {
 
     # commands
     find_commands \
-        | while read; do \
+        | while read; do {
+            echo ${REPLY} > /dev/stderr
+            # echo "initialize() { ${REPLY}::initialize; }"
             cat <("${arg_dir}/${REPLY}" '---emit-initialize') \
                 <(cat "${arg_dir}/${REPLY}" | sed 1,2d | emit::file) \
-            | emit::subproc "$(emit_command_name "${REPLY}")"; \
+            | emit::subproc "$(emit_command_name "${REPLY}")"
+          }
           done \
         | emit_section 'Commands'
 
     # libraries
     find_references \
         | while read; do \
+            echo ${REPLY} > /dev/stderr; \
             ${REPLY} | emit::function "$(emit_library_name "${REPLY}")"; \
           done \
         | emit_section 'Libraries'
