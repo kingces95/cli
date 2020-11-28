@@ -56,31 +56,25 @@ cli::export() {
 }
 
 cli::reference() {
-    if [[ ${CLI_REFLECT:=} == 'true' ]]; then
+    if [[ ${CLI_REFLECT:-} == 'true' ]]; then
         echo $@ > /dev/stderr
     fi
 }
 
 cli::import() {
-    if declare -F 'cli::shim' > /dev/null; then
-        # convert file/function name to argument name
-        # only $0 needs to undergo conversion as only it may be a file name
-        echo "cli::shim ${1//_/-} ${@:2}"
-    else
-        cli::reference "$@"
-        "$@"
-    fi
+    cli::reference "$@"
+    "$@"
 }
 
 # dry run support
 cli::dry_run() {
-    if [[ "${arg_dry_run:=}" == "true" ]]; then 
+    if [[ "${arg_dry_run:-}" == "true" ]]; then 
         # removes extra spaces which is typically what we want
         while read; do echo ${REPLY}; done
     else
-        if [[ "${arg_debug:=}" == "true" ]]; then set -x; fi
+        if [[ "${arg_debug:-}" == "true" ]]; then set -x; fi
         source /dev/stdin
-        if [[ "${arg_debug:=}" == "true" ]]; then set +x; fi
+        if [[ "${arg_debug:-}" == "true" ]]; then set +x; fi
     fi
 }
 
@@ -96,16 +90,20 @@ cli::escape_args_then_call_as() {
     sudo su "${user}" -c "${args[*]}"
 }
 
-cli::emit_initialize() {
-    # emit initialize, but only if not already defined
+cli::define_initialize() {
     if declare -F initialize > /dev/null; then
         return
-    fi
+        
+    elif declare -F $1::define_initialize > /dev/null; then
+        $1::define_initialize
 
-    help \
-        | cli dsl tokenize \
-        | cli dsl parse \
-        | cli dsl emit
+    else
+        help \
+            | cli dsl tokenize \
+            | cli dsl parse \
+            | cli dsl emit \
+            | source /dev/stdin
+    fi
 }
 
 cli::initialize() {
@@ -124,6 +122,7 @@ cli::initialize() {
 }
 
 cli::load() {
+    cli::define_initialize "${FUNCNAME[1]}"
 
     # implement well know feature flags
     for i in "$@"; do
@@ -138,13 +137,10 @@ cli::load() {
 
         # emit initialize
         elif [[ "${i}" == '---emit-initialize' ]]; then
-            cli::emit_initialize
+            declare -f initialize
             exit
         fi
     done
-
-    # emit 'initialize' function from help if not already defined
-    cli::emit_initialize | source /dev/stdin
     unset i
 
     # declare well known variables
@@ -157,6 +153,7 @@ cli::load() {
     # implement well known features
     if [[ -n "${arg_run_as}" ]] && [[ ! "${arg_run_as}" == "$(whoami)" ]]; then
         cli::escape_args_then_call_as "${arg_run_as}" "$0" "${args[@]}"
+
     else
         # clean up known arguments
         unset arg_run_as
@@ -215,14 +212,16 @@ main() {
     echo "self_test() { return; }"
     echo
 
-    if [[ ${CLI_REFLECT:=} == 'true' ]]; then
+    if [[ ${CLI_REFLECT:-} == 'true' ]]; then
+        # prevent JIT to prevent capturing libraries used during JIT
         echo "initialize() { return; }"
 
-    # constructing libraries as commands-with-a-common-initialize-function allows:
-    # 1. using PATH to resolve libraries which helps hide paths which aids packing
-    # 2. support packaging test in libraries and executing them via '--self-test'
-    # 3. support '.group' as a library that doubles as metadata via '-h' for the group
     elif ${arg_library}; then
+
+        # defining libraries as commands-with-a-common-initialize-function allows:
+        # 1. using PATH to resolve libraries which helps hide paths which aids packing
+        # 2. support packaging test in libraries and executing them via '--self-test'
+        # 3. support '.group' as a library that doubles as metadata via '-h' for the group
         echo "initialize() { cli::initialize "\$@"; }"
     fi
     

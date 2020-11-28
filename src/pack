@@ -83,8 +83,6 @@ Description
         cli pack --dir src --name area --output-dir /usr/bin
 
 Arguments
-    --dir -d        [Required] : Root directory hosting groups of commands
-                                 which are to be packaged into a single cli.
     --name -n       [Required] : Name of the cli.
     --output-dir -o            : Ouput directory. Default: ".".
 
@@ -107,65 +105,106 @@ main() (
     fi
 )
 
-find_commands() {
-    cli find commands --recursive --dir "${arg_dir}"
+list_cases() {
+
+    # list commands
+    "$@" '--list' \
+        | while read; do {
+            echo "echo '$REPLY'"
+        } done \
+        | emit::case "$(emit_library_name $@)"
+
+    # recurse into each group
+    "$@" '--groups' | readarray
+    for i in "${MAPFILE[@]}"; do
+        list_cases "$@" $i
+    done
 }
 
-find_references() {
-    find_commands \
+list_commands() {
+
+    # list commands
+    "$@" '--commands' | while read; do {
+        echo "$@ $REPLY"
+    } 
+    done
+
+    # recurse into each group
+    "$@" '--groups' | readarray
+    for i in "${MAPFILE[@]}"; do
+        list_commands "$@" $i
+    done
+}
+
+list_references() {
+    list_commands "$1" \
         | while read; do \
-            CLI_REFLECT='true' "${arg_dir}/${REPLY}" -h 2>&1 >/dev/null; \
+            CLI_REFLECT='true' ${REPLY} '-h' 2>&1 >/dev/null; \
           done \
         | sort -u
 }
 
-table_of_content() {
-    echo 'commands:'
-    find_commands \
-        | while read; do echo "$(emit_command_name "${REPLY}")"; done \
-        | sed 's/^/    /'
-    echo
+# table_of_content() {
+#     echo 'commands:'
+#     find_commands \
+#         | while read; do echo "$(emit_command_name "${REPLY}")"; done \
+#         | sed 's/^/    /'
+#     echo
 
-    echo 'libraries:'
-    find_references \
-        | while read; do echo "$(emit_library_name "${REPLY}")"; done \
-        | sed 's/^/    /'
-}
+#     echo 'libraries:'
+#     find_references \
+#         | while read; do echo "$(emit_library_name "${REPLY}")"; done \
+#         | sed 's/^/    /'
+# }
 
 emit() {
-    echo \#!/usr/bin/env bash
+    emit::shebang
     echo
 
     # toc
-    table_of_content | sed 's/^/\# /' | emit_section 'Table Of Content'
+    # table_of_content | sed 's/^/\# /' | emit_section 'Table Of Content'
 
     # commands
-    find_commands \
-        | while read; do {
-            echo ${REPLY} > /dev/stderr
-            # echo "initialize() { ${REPLY}::initialize; }"
-            cat <("${arg_dir}/${REPLY}" '---emit-initialize') \
-                <(cat "${arg_dir}/${REPLY}" | sed 1,2d | emit::file) \
-            | emit::subproc "$(emit_command_name "${REPLY}")"
-          }
-          done \
+    list_commands "${arg_name}" \
+        | while read; do \
+            ${REPLY} '---emit' \
+                | emit::file \
+                | emit::subproc "$(emit_library_name ${REPLY})"; \
+        done \
         | emit_section 'Commands'
 
     # libraries
-    find_references \
+    list_references "${arg_name}" \
         | while read; do \
-            echo ${REPLY} > /dev/stderr; \
-            ${REPLY} | emit::function "$(emit_library_name "${REPLY}")"; \
-          done \
+            ${REPLY} \
+                | emit::function "$(emit_library_name ${REPLY})"; \
+        done \
         | emit_section 'Libraries'
 
+    # initializers
+    list_commands "${arg_name}" \
+        | while read; do \
+            ${REPLY} '---emit-initialize' \
+                | emit::file \
+                | emit::function "$(emit_library_name ${REPLY} 'define_initialize')"; \
+        done \
+        | emit_section 'Initializers'
+
     # loader
-    cli loader | emit_section 'Loader'
+    cli loader \
+        | emit_section 'Loader'
+
+    # reflection
+    list_cases "${arg_name}" \
+        | emit::case_statement '$@' \
+        | emit::function 'cli::shim::list' \
+        | emit_section 'Reflection'
 
     # shim
-    cli shim --pack | emit_section 'Shim'
+    cli shim \
+        | emit_section 'Shim'
 
-    echo cli::shim "${arg_name}" \"\$@\"
+    echo "cli::shim ${arg_name} \"\$@\""
 }
 
 emit_section() {
@@ -177,14 +216,8 @@ emit_section() {
 }
 
 emit_library_name() {
-    echo "${1// /::}"
-}
-
-emit_command_name() {
-    # e.g. given a cli 'integrate' with command './area/circle'
-    # emit 'integrate::area::circle'
-    local name="${1#./}"
-    echo "${arg_name}::${name//\//::}"
+    local name=$*
+    echo "${name// /::}"
 }
 
 self_test() (
