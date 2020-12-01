@@ -157,6 +157,21 @@ list_references() {
 #         | sed 's/^/    /'
 # }
 
+emit_loader_overrides() (
+    cli::import() { 
+        echo cli::shim "$@"
+    }
+
+    cli() {
+        # intercept and ignore 'cli loader' calls
+        if [[ "$1" == 'loader' ]]; then return; fi
+        ( unset cli; cli "$@"; )
+    }
+
+    declare -f cli::import
+    declare -f cli
+)
+
 emit() {
     emit::shebang
     echo
@@ -180,6 +195,7 @@ emit() {
                 | emit::function "$(emit_library_name ${REPLY})"; \
         done \
         | emit_section 'Libraries'
+    return
 
     # initializers
     list_commands "${arg_name}" \
@@ -191,8 +207,10 @@ emit() {
         | emit_section 'Initializers'
 
     # loader
-    cli loader \
+    cli loader '--pack' \
         | emit_section 'Loader'
+    emit_loader_overrides \
+        | emit_section 'Loader Overrides'
 
     # reflection
     list_cases "${arg_name}" \

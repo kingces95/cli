@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# source /dev/stdin < <(cli loader)
 
 help() {
     cat << EOF
@@ -203,14 +202,8 @@ cli::shim() {
 
     # file
     if cli::shim::is_command "${path}"; then
-        case "${1-}" in
-            '---emit')
-                # emit file (e.g. for packing)
-                cli::shim::emit "${path}" ;;
-            *)
-                 # exeucte command
-                "${path}" "$@"
-        esac 
+        # exeucte command
+        "${path}" "$@"
 
     # directory
     elif cli::shim::is_group "${path}"; then
@@ -355,21 +348,6 @@ main() {
     cli::shim::emit() {
         cli::shim::emit_function "$@"
     }
-
-    cli::import() {
-        cli::reference "$@"
-        echo cli::shim "$@"
-    }
-
-    cli() {
-        # intercept and ignore 'cli loader' calls
-        if [[ "$1" == 'loader' ]]; then return; fi
-        ( unset cli; cli "$@"; )
-    }
-
-    # overrides
-    declare -f cli
-    declare -f cli::import
 
     declare -f cli::shim
     declare -f cli::shim::is_command

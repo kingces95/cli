@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli initialize)
+
+help() {
+    cat << EOF
+Command
+    cli export
+
+Summary
+    Emit functions for exporting functions, variables, and import statements.
+    
+Description
+
+Global Arguments
+    --help -h       : Show this message and exit.
+    --self-test     : Runs a self test.
+EOF
+}
+
+cli::export::functions() {
+    local glob
+
+    for i in "$@"; do 
+        glob+="${i}::"
+    done
+
+    while read keyword flags name; do
+        if [[ "${name}" == ${glob}* ]]; then
+            declare -f "${name}"
+        fi
+    done < <(declare -F)
+}
+
+cli::export::variables() {
+    local -u glob
+
+    for i in "$@"; do 
+        glob+="${i}_"; 
+    done
+
+    for i in $(eval echo "\${!${glob}@}"); do
+        declare -p "${i}" \
+            | sed 's/^declare/declare -g/'
+    done
+}
+
+cli::export::source() {
+    echo "source /dev/stdin < <($@)"
+}
+
+cli::export::import() {
+    echo "source /dev/stdin < <(cli::import $@)"
+}
+
+cli::export() {
+    cli::export::variables "$@"
+    cli::export::functions "$@"
+}
+
+main() {
+    declare -f cli::export
+    declare -f cli::export::source
+    declare -f cli::export::import
+    declare -f cli::export::variables
+    declare -f cli::export::functions
+}
+
+cli::load "$@"

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+
+help() {
+    cat << EOF
+Command
+    cli initialize
+
+Summary
+    Emit a minimum implementation of initialize.
+
+Description
+    Emits a minimum implementation of initialize that supports 
+    '-h', '--help', and '--self-test'.
+
+Global Arguments
+    --help -h       : Show this message and exit.
+    --self-test     : Runs a self test.
+EOF
+}
+
+cli::initialize() {
+    : ${arg_help:=false}
+    : ${arg_self_test:=false}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') ;& '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            *) echo "Unexpected argument $1."; exit 1 ;;
+        esac
+
+        shift
+    done
+}
+
+initialize() {
+    cli::initialize "$@"
+}
+
+main() {
+    declare -f cli::initialize
+    declare -f initialize
+}
+
+cli::load "$@"

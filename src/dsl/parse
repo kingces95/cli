@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli dsl .group)
+source /dev/stdin < <(cli dsl .group)
 
 help() {
     cat << EOF
@@ -207,6 +207,24 @@ self_test() {
             'help 4 FLAG' \
             'self-test 0 NAME self-test' \
             'self-test 4 FLAG'
+}
+
+initialize() {
+    : ${arg_help:=false}
+    : ${arg_self_test:=false}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') ;& '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            '--file') arg_file=${2-}; shift; ;;
+            *) echo "Unexpected argument $1."; exit 1 ;;
+        esac
+
+        shift
+    done
+
+    : ${arg_file:='UNKNOWN'}
 }
 
 cli::load "$@"
