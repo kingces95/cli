@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli initialize)
+source /dev/stdin < <(cli::import cli export)
+source /dev/stdin < <(cli::import cli_emit)
+
+help() {
+    cat << EOF
+Command
+    cli emit .group
+
+Global Arguments
+    --help -h           [Flag] : Show this message and exit.
+    --self-test         [Flag] : Runs a self test.
+EOF
+}
+
+cli::emit::library_name() {
+    local name=$*
+    echo "${name// /::}"
+}
+
+cli::emit::initialize_cli () 
+{ 
+    declare -g arg_help="";
+    declare -g arg_self_test="";
+    declare -g arg_cli="";
+    declare -g arg_help="";
+    declare -g arg_cli="";
+    arg_self_test=false;
+    arg_help=false;
+    while (( $# > 0 )); do
+        case "$1" in 
+            '--help')
+                arg_help=true
+            ;;
+            '--self-test')
+                arg_self_test=true
+            ;;
+            '-c')
+                arg_cli="${2:-}";
+                shift
+            ;;
+            '-h')
+                arg_help=true
+            ;;
+            '--cli')
+                arg_cli="${2:-}";
+                shift
+            ;;
+            *)
+                echo "Unexpected argument '$1'.";
+                exit 1
+            ;;
+        esac;
+        if (( $# > 0 )); then
+            shift;
+        fi;
+    done;
+    if [[ -z "${arg_cli}" ]]; then
+        echo "Missing required argument '--cli'.";
+        exit 1;
+    fi
+}
+
+main() {
+    cli::export::import cli_emit
+    cli::export cli emit
+}
+
+cli::load "$@"

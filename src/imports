@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+
+help() {
+cat << EOF
+Command
+    cli imports : find set of transitive imports for a cli.
+
+Arguments
+    --cli -c                : Name of a cli command.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Emit the unique sorted imports of 'cli dsl emit'
+        cli imports -c "cli dsl emit" | sort -u
+
+    Emit the unique sorted imports of 'cli dsl' group
+        cli find --cli "cli dsl" --type c \\
+            | while read; do cli imports --cli "\${REPLY}"; done \\
+            | sort -u
+EOF
+}
+
+main() {
+    CLI_REFLECT='true' ${arg_cli} '-h' 2>&1 >/dev/null
+}
+
+cli::load "$@"

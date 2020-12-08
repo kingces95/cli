@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli initialize)
-source /dev/stdin < <(cli dsl .group)
+source /dev/stdin < <(cli::import cli initialize)
+source /dev/stdin < <(cli::import cli dsl .group)
 source /dev/stdin < <(cli::import cli_emit)
 
 help() {

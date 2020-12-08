@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli emit .group)
+
+help() {
+    cat << EOF
+Command
+    cli emit define-initialize : Emit a function that defines 'initialize' for a cli.
+
+Description
+    Emit a function that defines initialize for a cli unless initialize is
+    already defined.
+
+Arguments
+    --cli -c     [Required] : Name of the cli.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Exmaples
+    cli emit define-initialize --name "cli find"
+EOF
+}
+
+main() (
+    if ${arg_cli} '---test-initialize'; then
+        return
+    fi
+
+    ${arg_cli} '---emit-initialize' \
+        | emit::file \
+        | emit::function "$(cli::emit::library_name ${arg_cli} 'define_initialize')"
+)
+
+cli::load "$@"

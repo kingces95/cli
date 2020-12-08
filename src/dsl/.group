@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli initialize)
-source /dev/stdin < <(cli export)
-source /dev/stdin < <(cli_util)
+source /dev/stdin < <(cli::import cli initialize)
+source /dev/stdin < <(cli::import cli export)
+source /dev/stdin < <(cli::import cli_util)
 
 help() {
     cat << EOF

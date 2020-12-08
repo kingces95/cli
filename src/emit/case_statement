@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli emit .group)
+
+help() {
+    cat << EOF
+Command
+    cli emit case-statement : emit case statement that list commands given a group
+
+Arguments
+    --cli -c     [Required] : Name of the cli.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    cli emit case-statement --cli cli
+EOF
+}
+
+list_cases() {
+    $@ \
+        | awk '{print "echo", $1, $2}' \
+        | emit::case "$(cli::emit::library_name $@)"
+
+    $@ \
+        | awk '$1 == "g" {print $2}' \
+        | while read; do list_cases "$@" "${REPLY}"; done
+}
+
+main() (
+    list_cases "${arg_cli}" \
+        | emit::case_statement '$@'
+)
+
+cli::load "$@"

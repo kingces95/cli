@@ -93,77 +93,37 @@ Global Arguments
 EOF
 }
 
-# shim functions abstracting paths
-CLI_SHIM_NAMESPACE='cli::shim'
-CLI_SHIM_IS_COMMAND="${CLI_SHIM_NAMESPACE}::is_command"
-CLI_SHIM_IS_GROUP="${CLI_SHIM_NAMESPACE}::is_group"
-CLI_SHIM_LIST="${CLI_SHIM_NAMESPACE}::list"
+main() (
+    if ${arg_dry_run}; then
+        table_of_content
+    else
+        local path="${arg_output_dir}/${arg_name}"
+        if [[ -f ${path} ]]; then rm ${path}; fi
+        emit > "${path}"
+        chmod a+x "${path}"
+    fi
+)
 
-entries() {
-    cli find --cli "${arg_cli}" --type "$1"
-}
-
-groups() {
-    entries 'g'
-}
-
-commands() {
-    entries 'c'
-}
-
-emit_is_command() {
-    commands \
-        | cli emit contains --name "${CLI_SHIM_IS_COMMAND}"
-}
-
-emit_is_group() {
-    groups \
-        | cli emit contains --name "${CLI_SHIM_IS_GROUP}"
-}
-
-emit_case_statement() {
-    cli emit case-statement --cli "${arg_cli}" \
-        | emit::function "${CLI_SHIM_LIST}"
-}
-
-emit_commands() {
-    commands \
-        | while read; do cli emit subproc --cli "${REPLY}"; done \
-        | emit_section 'Commands'
-}
-
-emit_libraries() {
-    commands \
-        | while read; do cli imports --cli "${REPLY}"; done \
-        | sort -u \
-        | while read; do cli emit source --cli "${REPLY}"; done \
-        | emit_section 'Libraries'
-}
-
-emit_reflection() {
-    cat \
-        <(emit_is_command) \
-        <(emit_is_group) \
-        <(emit_case_statement) \
-        | emit_section 'Reflection'
-}
-
-emit_initializers() {
-    commands \
-        | while read; do cli emit define-initialize --cli "${REPLY}"; done \
-        | emit_section 'Initializers'
-}
-
-main() {
+emit() {
     emit::shebang
     echo
 
-    # body (emit in parallel)
-    cat \
-        <(emit_commands) \
-        <(emit_libraries) \
-        <(emit_initializers) \
-        <(emit_reflection)
+    # commands
+    cli emit commands "${arg_name}" \
+        | emit_section 'Commands'
+
+    # libraries
+    cli emit libraries "${arg_name}" \
+        | emit_section 'Libraries'
+
+    # reflection
+    cli emit entries \
+        | emit::function 'cli::shim::list' \
+        | emit_section 'Reflection'
+
+    # initializers
+    cli emit initializers "${arg_name}" \
+        | emit_section 'Initializers'
 
     # loader
     cli loader ---pack \
@@ -173,7 +133,7 @@ main() {
     cli shim \
         | emit_section 'Shim'
 
-    echo "cli::shim::main ${arg_cli} \"\$@\""
+    echo "cli::shim::main ${arg_name} \"\$@\""
 }
 
 emit_section() {

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli emit .group)
+
+help() {
+    cat << EOF
+Command
+    cli emit subproc
+
+Arguments
+    --cli -c     [Required] : Name of the cli.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Exmpales
+    Emit this command as a subproc 'cli::emit::subproc'
+        cli emit subproc --cli "cli emit subproc"
+EOF
+}
+
+main() (
+    ${arg_cli} '---emit' \
+        | emit::file \
+        | emit::subproc "$(cli::emit::library_name ${arg_cli})"; \
+)
+
+initialize() {
+    cli::emit::initialize_cli "$@"
+}
+
+cli::load "$@"

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli::import cli emit .group)
+
+help() {
+    cat << EOF
+Command
+    cli emit source : emit a function containing the emission of a cli
+
+Arguments
+    --cli -c     [Required] : Name of the cli.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Emit a function that defines the source emitted by 'cli dsl .group'
+        cli emit source --cli "cli dsl .group"
+EOF
+}
+
+main() (
+    ${arg_cli} \
+        | emit::function "$(cli::emit::library_name "${arg_cli}" 'source')"
+)
+
+cli::load "$@"

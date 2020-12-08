@@ -150,7 +150,7 @@ shopt -s globstar
 shopt -s extglob
 shopt -s nullglob
 
-cli::shim() {    
+cli::shim::main() {    
     local CLI_SHIM_ARG_GLOB="-*"
     local CLI_SHIM_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
 
@@ -176,7 +176,7 @@ cli::shim() {
     # pick a path dilimiter
     cli::shim::is_packed && delimiter='::' || delimiter='/'
 
-    # compose command path
+    # compose command path by consuming args upto first dash argument 
     while (( $# > 0 )); do
 
         # stop joining path segments if an argument is found (e.g. --foo)
@@ -198,12 +198,23 @@ cli::shim() {
         # convert command or group name into file or function name (e.g. foo-bar -> foo_bar)
         path="${path}${1//-/_}"
         shift
+
+        # break if path is a command
+        if cli::shim::is_command "${path}"; then 
+            break
+        fi
     done
 
     # file
     if cli::shim::is_command "${path}"; then
-        # exeucte command
-        "${path}" "$@"
+        case "${1-}" in
+            '---emit') 
+                # emit command
+                cli::shim::emit "${path}" ;;
+            *)
+                # exeucte command
+                "${path}" "$@"
+        esac
 
     # directory
     elif cli::shim::is_group "${path}"; then
@@ -211,15 +222,9 @@ cli::shim() {
             '-h') ;& '--help')
                 cli::shim::help "${path}" ;; 
             '-p') ;& '--pack') 
-                cli pack --name "${name}" --output-dir "${@:2}" ;;
-            '-l') ;& '--list') 
-                cli::shim::list "${path}" ;;
-            '-c') ;& '--commands') 
-                cli::shim::list "${path}" | grep '^c' | sed 's/. //' ;;
-            '-g') ;& '--groups') 
-                cli::shim::list "${path}" | grep '^g' | sed 's/. //' ;;
+                cli pack --cli "${name}" ;;
             '') 
-                cli::shim::list "${path}" | grep '^[gc]' | sed 's/. //' ;;
+                cli::shim::list "${path}" | sort ;;
             *)
                 cli::shim::unexpected_argument "$@"
         esac
@@ -228,35 +233,6 @@ cli::shim() {
     else
         cli::shim::command_not_found "${path#${dir}}"
     fi
-}
-
-cli::shim::emit_function() {
-    local tab='    '
-    local regex='<< ([A-Z]+)'
-    local name="^$1\(\)"
-    local eof=
-
-    while read -r; do
-        if [[ ! "${REPLY}" =~ ${name} ]]; then continue; fi
-
-        while read -r; do
-            if [[ "${REPLY}" == ')' ]]; then return; fi
-
-            echo "${REPLY#${tab}}"
-
-            # start heredoc
-            if [[ "${REPLY}" =~ ${regex} ]]; then
-                eof=${BASH_REMATCH[1]}
-                while read -r; do
-                    echo "${REPLY}"
-                
-                    # end heredoc
-                    if [[ "${REPLY}" == "${eof}" ]]; then break; fi
-                done
-                continue
-            fi
-        done
-    done < <(cat "$BASH_SOURCE")
 }
 
 cli::shim::emit() {
@@ -291,11 +267,7 @@ cli::shim::list() (
 
             # print type
             if [[ -f "${entry}" ]]; then
-                if [[ "${entry}" == '.group' ]]; then 
-                    echo -n 'i' # info
-                else 
-                    echo -n 'c' # command
-                fi
+                echo -n 'c' # command
             elif [[ -d "${entry}" ]]; then 
                 echo -n 'g' # group
             else 
@@ -309,8 +281,8 @@ cli::shim::list() (
 )
 
 cli::shim::split() {
-    set "${1//${delimiter}/ }"
-    set "${1//_/-}"
+    set "${1//${delimiter}/ }"  # replace '::' or '/' with space
+    set "${1//_/-}"             # replace '_' with '-'
     echo $1
 }
 
@@ -331,44 +303,32 @@ cli::shim::command_not_found() {
 
 main() {
 
-    cli::shim::is_command() {
-        local path="$1"
-        declare -F "${path}" > /dev/null
-    }
-
-    cli::shim::is_group() {
-        local path="$1"
-        test -n "$(cli::shim::list "${path}")"
-    }
-
     cli::shim::is_packed() {
         true
     }
 
     cli::shim::emit() {
-        cli::shim::emit_function "$@"
+        echo "Unexpected '---emit' option. Emit unsupported in packed files."
     }
 
-    declare -f cli::shim
-    declare -f cli::shim::is_command
-    declare -f cli::shim::is_group
+    declare -f cli::shim::main
     declare -f cli::shim::is_packed
-    declare -f cli::shim::split
     declare -f cli::shim::emit
-    declare -f cli::shim::emit_function
+    declare -f cli::shim::split
     declare -f cli::shim::unexpected_argument
     declare -f cli::shim::unexpected_argument_when_packed
     declare -f cli::shim::command_not_found
-    # declare -f cli::shim::list (emitted during packing)
+
+    # these functions generated during packing
+    # declare -f cli::shim::is_command
+    # declare -f cli::shim::is_group
+    # declare -f cli::shim::list
 }
 
-if (( "$#" == 0 )); then
-    # emit shim used in a packed cli
-    main
-else
-    case $1 in
-        '-h') ;& '--help') help; exit ;;
-        -*) cli::shim::unexpected_argument "$1" ;;
-        *) cli::shim "$@"
-    esac
-fi
+case ${1-} in
+    '') main ;;                         # emit shim used in a packed cli
+    '---emit') cat ${BASH_SOURCE} ;;    # emit shim into packed 'cli' tool
+    '-h') ;& '--help') help; exit ;;
+    -*) cli::shim::unexpected_argument "$1" ;;
+    *) cli::shim::main "$@" ;;
+esac
