@@ -26,7 +26,7 @@ cli::reference() {
 
 cli::import() {
     cli::reference "$@"
-    "$@"
+    CLI_IMPORTS+=( "$*" )
 }
 
 # dry run support
@@ -53,27 +53,109 @@ cli::escape_args_then_call_as() {
     sudo su "${user}" -c "${args[*]}"
 }
 
+cli::declare_dirs() {
+    declare -g CLI_SOURCE_PATH="$1"
+    declare -g CLI_SOURCE_NAME="${CLI_SOURCE_PATH##*/}"
+    declare -g CLI_SOURCE_DIR="${CLI_SOURCE_PATH%/*}"
+    declare -g CLI_CACHE_DIR="${CLI_SOURCE_DIR}/.cli/${CLI_SOURCE_NAME}"
+    declare -g CLI_INITIALIZE_PATH="${CLI_CACHE_DIR}/initialize.sh"
+    declare -g CLI_IMPORTS_PATH="${CLI_CACHE_DIR}/imports.sh"
+}
+
+cli::cache() {
+    local path="$1"
+    local temp_path=$(mktemp "$1.XXXXXX")
+    
+    while read -r; do
+        echo "${REPLY}" >> "$temp_path"
+    done
+
+    mv "$temp_path" "$path"
+}
+
+cli::cached() {
+
+    if [[ ! -f "$1"  ]] || [[ "$1" -ot "${CLI_SOURCE_PATH}" ]]; then
+        false
+    else
+        true
+    fi
+}
+
 cli::define_initialize() {
 
-    # hard coded
+    # initialize hard coded
     if declare -F initialize > /dev/null; then
-        return
-        
-    # eagerly generated (like ngen)
-    elif declare -F $1::define_initialize > /dev/null; then
-        $1::define_initialize
 
-    # lazily generated (like JIT)
-    else
+        # cache empty result
+        if [[ ! -f "${CLI_INITIALIZE_PATH}" ]]; then
+            : > "${CLI_INITIALIZE_PATH}"
+        fi
+
+        return
+    fi
+
+    # initialize not cached OR cache out of date 
+    if ! cli::cached "${CLI_INITIALIZE_PATH}"; then
+
+        # lazily generated (like JIT)
         help \
             | cli dsl tokenize \
             | cli dsl parse \
             | cli dsl emit \
-            | source /dev/stdin
+            | cli::cache "${CLI_INITIALIZE_PATH}"
     fi
+
+    source "${CLI_INITIALIZE_PATH}"
+}
+
+cli::source_imports() {
+
+    # imports not cached OR cache out of date
+    if ! cli::cached "${CLI_IMPORTS_PATH}"; then
+
+        while [[ -n ${CLI_IMPORTS[@]} ]]; do
+
+            # pipe the import into the cache
+            ${CLI_IMPORTS[0]}
+
+            # source the import to capture its imports
+            source /dev/stdin < <(${CLI_IMPORTS[0]}) 
+
+            # pop this import
+            CLI_IMPORTS=( "${CLI_IMPORTS[@]:1}" )
+
+        done | cli::cache "${CLI_IMPORTS_PATH}"
+    fi
+
+    source "${CLI_IMPORTS_PATH}"
 }
 
 cli::load() {
+
+    # create cache dir
+    mkdir -p "${CLI_CACHE_DIR}"
+
+    case "${1-}" in
+        '---imports')
+            for i in "${CLI_IMPORTS[@]}"; do
+                echo "$i"
+            done
+            exit
+        ;;
+
+        # emit initialize generated from help
+        '---initialize-path')
+            if [[ -f "${CLI_INITIALIZE_PATH}" ]]; then
+                if [[ -s "${CLI_INITIALIZE_PATH}" ]]; then
+                    echo "${CLI_INITIALIZE_PATH}"
+                fi
+                exit
+            fi
+        ;;
+    esac 
+
+    cli::source_imports
 
     # dump help if '-h' or '--help' appear anywhere on the command line
     for i in "$@"; do
@@ -97,23 +179,32 @@ cli::load() {
             exit ${result}
         ;;
 
-        # only emit initialize if generated from help
-        '---test-initialize')
-            declare -F initialize > /dev/null
-            exit
-        ;;
     esac 
 
-    cli::define_initialize "${FUNCNAME[1]}"
+    cli::define_initialize
 
     case "${1-}" in
  
-        # emit initialize generated from help
-        '---emit-initialize')
-            declare -f initialize
+        # emit path after population by cli::define_initialize
+        '---initialize-path')
+            if [[ -s "${CLI_INITIALIZE_PATH}" ]]; then
+                echo "${CLI_INITIALIZE_PATH}"
+            fi
             exit
         ;;
     esac 
+
+    unset CLI_SOURCE_PATH
+    unset CLI_SOURCE_NAME
+    unset CLI_SOURCE_DIR
+    unset CLI_CACHE_DIR
+    unset CLI_INITIALIZE_PATH
+    unset CLI_IMPORTS
+
+    cli::execute "$@"
+}
+
+cli::execute() {
 
     # declare well known variables
     : ${arg_run_as:=}
@@ -134,26 +225,7 @@ cli::load() {
     fi
 }
 
-initialize() {
-    : ${arg_pack:=false}
-    : ${arg_help:=false}
-    : ${arg_self_test:=false}
-
-    while (( $# > 0 )); do
-        case $1 in
-            '-h') ;& '--help') arg_help=true ;;
-            '--self-test') arg_self_test=true ;;
-            # emit the version used in packed clis
-            '---pack') arg_pack=true ;; 
-            *) echo "Unexpected argument '$1'."; exit 1 ;;
-        esac
-
-        shift
-    done
-}
-
 main() {
-
     # supress background processes from displaying their exit status upon completion.
     # see https://mywiki.wooledge.org/BashFAQ/024
     echo 'set +m'
@@ -185,15 +257,34 @@ main() {
     echo "self_test() { return; }"
     echo
 
+    echo "declare -a CLI_IMPORTS"
+
     if [[ ${CLI_REFLECT:-} == 'true' ]]; then
         # prevent JIT to prevent capturing libraries used during JIT
         echo "initialize() { return; }"
     fi
 
+    declare -f cli::import
+    declare -f cli::dry_run
+    declare -f cli::escape_args_then_call_as
+    declare -f cli::load
+    declare -f cli::execute
+
     if ${arg_pack}; then
         cli::import() { 
             local name=$*
             echo "${name// /::}::source"
+        }
+
+        cli::define_initialize() {
+
+            # hard coded
+            if declare -F initialize > /dev/null; then
+                return
+            fi
+
+            # generated (ala ngen)
+            ${FUNCNAME[2]}::define_initialize
         }
 
         cli() {
@@ -205,13 +296,38 @@ main() {
         declare -f cli
     else
         declare -f cli::reference
-    fi
+        declare -f cli::define_initialize
+        declare -f cli::source_imports
+        declare -f cli::declare_dirs
+        declare -f cli::cached
+        declare -f cli::cache
 
-    declare -f cli::import
-    declare -f cli::dry_run
-    declare -f cli::escape_args_then_call_as
-    declare -f cli::define_initialize
-    declare -f cli::load
+        echo
+        echo "cli::declare_dirs \"\${BASH_SOURCE[1]}\""
+  fi
 }
+
+initialize() {
+    : ${arg_pack:=false}
+    : ${arg_help:=false}
+    : ${arg_self_test:=false}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') ;& '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            # emit the version used in packed clis
+            '---pack') arg_pack=true ;; 
+            *) echo "Unexpected argument '$1'."; exit 1 ;;
+        esac
+
+        shift
+    done
+}
+
+set -e
+set -u 
+declare -a CLI_IMPORTS
+cli::declare_dirs ${BASH_SOURCE}
 
 cli::load "$@"

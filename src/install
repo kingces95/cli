@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli_emit)
+cli::import cli_emit
 
 help() {
     cat << EOF

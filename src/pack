@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli_emit)
+cli::import cli_emit
 
 help() {
     cat << EOF
@@ -9,12 +9,12 @@ Command
 
 Summary
     Package a group of commands into a into a single file.
-    
+
 Description
     Recursively discover cli commands developed as individual files
-    and hosted in a specified directory, and package them into a 
+    and hosted in a specified directory, and package them into a
     single file. For example, a cli 'integrate' with commands 'circle',
-    'square', 'cube', 'sphere' could be arranged as a files 'integrate', 
+    'square', 'cube', 'sphere' could be arranged as a files 'integrate',
     'circle', 'square', 'cube', 'square' and '.group' in a directory 'src':
 
         integrate
@@ -25,21 +25,21 @@ Description
         src/volume/.group
         src/volume/circle
         src/volume/circle
-    
+
     File 'integrate' must be on the path and contain:
 
         #!/usr/bin/env bash
         cli shim "\$(dirname \${BASH_SOURCE})/src" "\$@"
 
     The remaining files must all start with the following:
-    
+
         #!/usr/bin/env bash
         source /dev/stdin < <(cli loader)
 
     This will define 'cli::import' and 'cli::export' and 'cli::export_import'.
-    Commands must use 'cli::import' instead of 'source' to reference libraries. 
-    Libraries use 'cli::export' to emit functions and variables with common 
-    prefixes and 'cli::export_import' to reference other libraries. 
+    Commands must use 'cli::import' instead of 'source' to reference libraries.
+    Libraries use 'cli::export' to emit functions and variables with common
+    prefixes and 'cli::export_import' to reference other libraries.
 
     For example, 'src/.group' could define and export 'integrate::multiply' and
     'INTEGRATE_PI' like this:
@@ -56,7 +56,7 @@ Description
 
         #!/usr/bin/env bash
         source /dev/stdin < <(cli loader)
-        main() { 
+        main() {
             cli::export_import integrate .group
             cli::export integrate area
         }
@@ -72,12 +72,12 @@ Description
             echo "Arguments"
             echo "    --radius     [Required] : Radius of the circle."
         }
-        main() { 
+        main() {
             echo \$(integrate::multiply \${INTEGRATE_PI} \\
                 \$(integrate::area::square \${arg_radius}))
         }
         cli::load "\$@"
-        
+
     To pack the 'area' cli into a single file:
 
         cli pack --dir src --name area --output-dir /usr/bin
@@ -164,6 +164,11 @@ main() {
         <(emit_libraries) \
         <(emit_initializers) \
         <(emit_reflection)
+
+    # emit_commands
+    # emit_libraries
+    # emit_initializers
+    # emit_reflection
 
     # loader
     cli loader ---pack \

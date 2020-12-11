@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli initialize)
+cli::import cli initialize
 
 help() {
     cat << EOF
@@ -46,7 +46,7 @@ cli::export::variables() {
 }
 
 cli::export::import() {
-    echo "source /dev/stdin < <(cli::import $@)"
+    echo "cli::import $@"
 }
 
 cli::export() {

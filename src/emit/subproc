@@ -26,8 +26,4 @@ main() (
         | emit::subproc "$(cli::emit::library_name ${arg_cli})"; \
 )
 
-initialize() {
-    cli::emit::initialize_cli "$@"
-}
-
 cli::load "$@"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli initialize)
-source /dev/stdin < <(cli::import cli dsl .group)
+cli::import cli initialize
+cli::import cli dsl .group
 
 help() {
     cat << EOF
@@ -49,7 +49,7 @@ Examples
 EOF
 }
 
-main() {
+main() {  
     local line
     local word=
     local last_word=

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli initialize)
-source /dev/stdin < <(cli::import cli dsl .group)
-source /dev/stdin < <(cli::import cli_emit)
+cli::import cli initialize
+cli::import cli dsl .group
+cli::import cli_emit
 
 help() {
     cat << EOF
@@ -18,7 +18,7 @@ EOF
 # name of function which declares variables and verifies/assigns values
 INITIALIZE=initialize
 
-main() {
+main() {    
     local -A names # eg +=( ['--foo']='arg_foo' ) and maybe +=( ['-f']='arg_foo' )
     local -A flags # eg +=( ['arg_bar']='true' )
     local -A defaults # eg +=( ['arg_foo']='bar' )

@@ -2,12 +2,11 @@
 source /dev/stdin < <(cli loader)
 source /dev/stdin < <(cli::import cli initialize)
 source /dev/stdin < <(cli::import cli export)
-source /dev/stdin < <(cli::import cli_emit)
 
 help() {
     cat << EOF
 Command
-    cli emit .group
+    cli emit section .group
 
 Global Arguments
     --help -h           [Flag] : Show this message and exit.
@@ -15,9 +14,12 @@ Global Arguments
 EOF
 }
 
-cli::emit::library_name() {
-    local name=$*
-    echo "${name// /::}"
+cli::emit::section() {
+    echo \#
+    echo \# $1
+    echo \#
+    while read -r; do echo "${REPLY}"; done
+    echo
 }
 
 main() {

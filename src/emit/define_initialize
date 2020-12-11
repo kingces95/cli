@@ -24,10 +24,12 @@ EOF
 }
 
 main() (
+    echo "define-initialize --test ${arg_cli}" > /dev/stderr
     if ${arg_cli} '---test-initialize'; then
         return
     fi
 
+    echo "define-initialize --emit ${arg_cli}" > /dev/stderr
     ${arg_cli} '---emit-initialize' \
         | emit::file \
         | emit::function "$(cli::emit::library_name ${arg_cli} 'define_initialize')"

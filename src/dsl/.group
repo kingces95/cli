@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli initialize)
-source /dev/stdin < <(cli::import cli export)
-source /dev/stdin < <(cli::import cli_util)
+cli::import cli initialize
+cli::import cli export
+cli::import cli_util
 
 help() {
     cat << EOF
@@ -27,34 +27,35 @@ readonly CLI_DSL_LITERAL_VALUES='values:'
 readonly CLI_DSL_LITERAL_REQUIRED='[Required]'
 readonly CLI_DSL_LITERAL_FLAG='[Flag]'
 
-readonly CLI_DSL_TOKEN=(
-    'DEFAULT'
-    'FLAG'
-    'ALLOWED_VALUES'
-    'VALUE_COMMA'
-    'VALUE_PERIOD'
-    'IDENTIFIER'
-    'NAME'
-    'ALIAS'
-    'COLON'
-    'REQUIRED'
-    'EOF' 
-    'ERROR' 
-) && util::declare_enums CLI_DSL_TOKEN
-
-readonly CLI_DSL_PRODUCTION=(
-    'NAME'
-    'ALIAS'
-    'DEFAULT'
-    'REQUIRED'
-    'FLAG'
-    'ALLOWED'
-    'ALLOWED_VALUE'
-    'ALLOWED_END'
-    'ERROR'
-) && util::declare_enums CLI_DSL_PRODUCTION
-
 main() {
+
+    readonly CLI_DSL_TOKEN=(
+        'DEFAULT'
+        'FLAG'
+        'ALLOWED_VALUES'
+        'VALUE_COMMA'
+        'VALUE_PERIOD'
+        'IDENTIFIER'
+        'NAME'
+        'ALIAS'
+        'COLON'
+        'REQUIRED'
+        'EOF' 
+        'ERROR' 
+    ) && util::declare_enums CLI_DSL_TOKEN
+
+    readonly CLI_DSL_PRODUCTION=(
+        'NAME'
+        'ALIAS'
+        'DEFAULT'
+        'REQUIRED'
+        'FLAG'
+        'ALLOWED'
+        'ALLOWED_VALUE'
+        'ALLOWED_END'
+        'ERROR'
+    ) && util::declare_enums CLI_DSL_PRODUCTION
+
     cli::export cli dsl
 }
 

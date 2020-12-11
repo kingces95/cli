@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+source /dev/stdin < <(cli loader)
+source /dev/stdin < <(cli_emit)
+source /dev/stdin < <(cli::import cli emit section .group)
+
+help() {
+    cat << EOF
+Command
+    cli emit section initializers
+
+Summary
+    
+Description
+
+Arguments
+
+Global Arguments
+    --help -h           [Flag] : Show this message and exit.
+    --self-test         [Flag] : Runs a self test.
+EOF
+}
+
+emit::parallel_cat() {
+    { 
+        echo "cat"
+        while read; do 
+            emit::process_substitution "${REPLY}"
+        done | emit::indent
+    } | emit::continuation
+}
+
+parallel_cat() {
+    emit::parallel_cat | source /dev/stdin
+}
+
+main() {
+    time {
+        while read; do
+            echo "cli emit define-initialize --cli \"${REPLY}\""
+        done
+    } \
+    | parallel_cat \
+    | cli::emit::section 'Initializers'
+
+    # time while read; do cli emit define-initialize --cli "${REPLY}"; done \
+    #     | cli::emit::section 'Initializers'
+}
+
+self_test() (
+    return
+)
+
+cli::load "$@"

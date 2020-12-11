@@ -7,7 +7,7 @@ Command
     cli imports : find set of transitive imports for a cli.
 
 Arguments
-    --cli -c                : Name of a cli command.
+    --cli -c     [Required] : Name of a cli command.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -25,6 +25,7 @@ EOF
 }
 
 main() {
+    # echo "imports ${arg_cli}" > /dev/stderr
     CLI_REFLECT='true' ${arg_cli} '-h' 2>&1 >/dev/null
 }
 
