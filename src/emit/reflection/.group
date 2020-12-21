@@ -4,7 +4,7 @@ source $(cli loader)
 help() {
     cat << EOF
 Command
-    cli emit .group
+    cli emit reflection .group
 
 Global Arguments
     --help -h           [Flag] : Show this message and exit.
@@ -12,14 +12,15 @@ Global Arguments
 EOF
 }
 
-cli::emit::library_name() {
-    local name=$*
-    echo "${name// /::}"
+cli::emit::reflection::contains() {
+    while read; do cli::emit::library_name ${REPLY}; done \
+        | emit::function_contains ${arg_name}
 }
 
 export() {
     cli::export::import cli_emit
-    cli::export cli emit
+    cli::export::import cli emit .group
+    cli::export cli emit reflection
 }
 
 cli::load "$@"

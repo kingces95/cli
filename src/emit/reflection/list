@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli emit .group)
+source $(cli loader)
+cli::import cli emit reflection .group
 
 help() {
     cat << EOF
 Command
-    cli emit case-statement : emit case statement that list commands given a group
+    cli emit reflection list : emit function 'list' for a cli.
+    
+Summary
+    Emit a function that lists commands and groups of a group 
+    encoded as a library name.
 
 Arguments
     --cli -c     [Required] : Name of the cli.
@@ -15,7 +19,7 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Examples
-    cli emit case-statement --cli cli
+    cli emit reflection list --cli cli
 EOF
 }
 
@@ -31,7 +35,8 @@ list_cases() {
 
 main() (
     list_cases "${arg_cli}" \
-        | emit::case_statement '$@'
+        | emit::case_statement '$@' \
+        | emit::function 'cli::shim::list'
 )
 
 cli::load "$@"

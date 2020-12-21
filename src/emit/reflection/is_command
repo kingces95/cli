@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli emit reflection .group
+
+help() {
+    cat << EOF
+Command
+    cli emit contains : Emit predicate 'is_command' for a cli.
+
+Arguments
+    --name -n    [Required] : Name of the function. 
+                              Default: cli::shim::is_command. 
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Emit a predicate that test if a path is a command.
+        cli find --cli cli --type c \
+            | cli emit reflection is-command
+EOF
+}
+
+main() (
+    while read; do cli::emit::library_name ${REPLY}; done \
+        | emit::function_contains "${arg_name}"
+)
+
+cli::load "$@"

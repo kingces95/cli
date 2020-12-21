@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source $(cli loader)
 
 help() {
     cat << EOF

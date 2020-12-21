@@ -6,92 +6,13 @@ Command
     cli shim
 
 Summary
-    Bind to and invoke a command using an abstract path that hides the
-    difference between consumer and developer cli configurations.
+    Bind to and invoke a command.
 
-Consumer User Story
-    As a script consumer, I want to deploy a single file packed with
-    many commands. I want to specify the command I wish to invoke using
-    the first arguments, and have the remaining key/value arguments passed 
-    to the actual command. For example, given a cli 'integrate', to find 
-    the area of a circle of radius 10 I want to execute:
-
-        $ integrate area circle --radius 10
-
-Developer User Story
-    As a script developer, I want to develop each command in a file whose name
-    matches the command name, and whose relative path from a desginated root 
-    directory represent the group to which the command belongs. For example,
-    given a root directory '/usr/bin/cli_scripts/integrate' the logic for command 
-    'circle' in group 'area' would would live at:
-    
-        '/usr/bin/cli_scripts/integrate/area/circle'
-    
-    I want to create a "shim file" on the path (e.g. '/usr/bin/integrate') which 
-    accepts the same arguments the consumer would pass, and uses the first arguments
-    to construct a path to the file corrisponding to the command, and invokes that 
-    command with the remaining key/value arguments. 
-
-    I want to 'pack' all those commands into a single file for my consumers.
-
-Description
-    The first argument to the shim is a root directory, the next arguments 
-    upto the first argument prefixed with a dash are joined with the root 
-    directory to form the relative path. The remaing arguments are passed 
-    to the invoked command. For example, to find the area of a circle with 
-    radius 10, an call of:
-
-        $ cli shim /usr/bin/cli_scipts/integrate area circle --radius 10
-
-    would join '/usr/bin/cli_scipts/integrate', 'area', and 'circle' to form:
-
-        /usr/bin/cli_scripts/integrate/area/circle
-
-    and then invoke that command with the remaining arguments '--radius 10'.
-    Conventionally, this logic would be put in a file 'integrate' which would 
-    be put on the path. For example, '/usr/bin/integrate' would contain:
-
-        #!/usr/bin/env bash
-        cli shim "/usr/bin/cli_scipts/integrate" "\$@"
-    
-    Commands could then be hosted as files nested at '/usr/bin/cli_scipts/integrate' 
-    whose sub-directories represent command groups. For example, command 'circle' 
-    and 'square' in group 'area' would be hosted at:
-
-        /usr/bin/cli_scripts/integrate/area/circle
-        /usr/bin/cli_scripts/integrate/area/square
-
-Description (packed)
-    If the shim is invoked without any arguments, then it emits a function
-    'cli::shim' (along with other internal functions and variables) that is
-    suitable for including in a "packed" cli file. The first non key value 
-    arguments passed to this version of the shim are joined with '::'. The
-    the shim attempts to resolve that joined result to a function name in 
-    the packed file. For example, after development of 'integrate', calling:
-
-        $ cli pack \\
-            --dir /usr/bin/cli_scripts/integrate \\
-            --name integrate \\
-            --output ./release
-
-    would package all the commands into a single file './release/integrate'.
-    To find the area of a circle using that command, the call is the same
-    but internally all subsequent calls are made to functions within 
-    './release/integarte'. For example,
-
-        $ integrate area circle --radius 10
-
-    would call:
-        
-        cli::shim area circle --radius 10 
-        
-    which would call:
-
-        area::circle --radius 10
-        
-    which will contain the logic found in:
-
-        /usr/bin/cli_scripts/integrate/area/circle
+Arguments
+    --dry-run    [Flag] : Print the command that would be called.
+    --type              : Type of path. Allowed values: file, function.
+                          Default: file.
+    --                  : Positional and named arguments.
 
 Global Arguments
     --help -h    [Flag] : Show this message and exit.
@@ -141,6 +62,8 @@ Global Arguments
 EOF
 }
 
+# support [Params], unify paths + function names + library_name, support relative paths
+
 # copied from 'loader'
 set +m
 set -e
@@ -150,86 +73,37 @@ shopt -s globstar
 shopt -s extglob
 shopt -s nullglob
 
-cli::shim::main() {    
+cli::shim::main() { 
     local CLI_SHIM_ARG_GLOB="-*"
     local CLI_SHIM_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
 
-    # use filesystem to resolve command, and first argument is the 
-    # base directory where commands are under development
-    local delimiter=
-    local -a args=()
-    local name=
-    local dir=
     local path=
+    local callsite=
 
-    # shift 'name' if packed, else name is the file name
-    if ! cli::shim::is_packed; then
-        name=$1; shift
-    else
-        name="${BASH_SOURCE##*/}"
-    fi
-
-    # shift path root
-    dir=$1; shift
-    path="${dir}"
-
-    # pick a path dilimiter
-    cli::shim::is_packed && delimiter='::' || delimiter='/'
-
-    # compose command path by consuming args upto first dash argument 
-    while (( $# > 0 )); do
-
-        # stop joining path segments if an argument is found (e.g. --foo)
-        if [[ "$1" == $CLI_SHIM_ARG_GLOB ]]; then 
-            break
-        fi
-
-        # ensure uniformity of group names (e.g. foo-bar, not foo_bar)
-        if [[ ! "$1" == $CLI_SHIM_PATH_SEGMENT_GLOB ]]; then
-            echo "Unexpected command name or group '$1' does not match '$CLI_SHIM_PATH_SEGMENT_GLOB'."
-            exit 1
-        fi
-
-        # add path delimiter (e.g. '::' or '/')
-        if [[ -n "${path}" ]]; then
-            path="${path}${delimiter}"
-        fi
-
-        # convert command or group name into file or function name (e.g. foo-bar -> foo_bar)
-        path="${path}${1//-/_}"
-        shift
-
-        # break if path is a command
-        if cli::shim::is_command "${path}"; then 
-            break
-        fi
-    done
+    callsite=$(cli::shim::callsite "$@")
+    eval "set ${callsite}"
+    path=$1; shift
 
     # file
     if cli::shim::is_command "${path}"; then
+
         case "${1-}" in
-            '---emit') 
-                # emit command
-                cli::shim::emit "${path}" ;;
-            '---cache-dir')
-                cli::shim::cache_dir "${path}" ;;
+            # optimization
+            '---which')
+                echo "${path}" ;; 
             *)
-                # exeucte command
+                if ! declare -p CLI_LOADER_IMPORTS_EXPIRATION_PATH >/dev/null 2>&1; then
+                    declare -xg CLI_LOADER_IMPORTS_EXPIRATION_PATH="$(mktemp "/tmp/cli.XXXXXX")"
+                    trap cli::shim::on_exit EXIT
+                fi
                 "${path}" "$@"
+                ;;
+
         esac
 
     # directory
     elif cli::shim::is_group "${path}"; then
-        case "${1-}" in
-            '-h') ;& '--help')
-                cli::shim::help "${path}" ;; 
-            '-p') ;& '--pack') 
-                cli pack --cli "${name}" ;;
-            '') 
-                cli::shim::list "${path}" | sort ;;
-            *)
-                cli::shim::unexpected_argument "$@"
-        esac
+        cli::shim::list "${path}"
 
     # fail
     else
@@ -237,9 +111,60 @@ cli::shim::main() {
     fi
 }
 
-cli::shim::emit() {
-    local path="$1"
-    cat "${path}"
+# copied from callsite
+cli::shim::callsite() {
+    declare CLI_CALL_ARG_GLOB="-*"
+    declare CLI_CALL_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
+
+    # use filesystem to resolve command, and first argument is the 
+    # base directory where commands are under development
+    local delimiter=
+    local dir=
+    local path=
+
+    # shift path root
+    dir=${arg_base}
+    path="${dir}"
+
+    # pick a path dilimiter
+    delimiter='/'
+    if [[ "${arg_type}" == 'function' ]]; then
+        delimiter='::'
+    fi
+
+    # compose command path by consuming args upto first dash argument 
+    while (( $# > 0 )); do
+
+        # stop joining path segments if an argument is found (e.g. --foo)
+        if [[ "$1" == $CLI_CALL_ARG_GLOB ]]; then 
+            break
+        fi
+
+        # ensure uniformity of group names (e.g. foo-bar, not foo_bar)
+        if [[ ! "$1" == $CLI_CALL_PATH_SEGMENT_GLOB ]]; then
+            echo "Unexpected command name or group '$1' does not match '$CLI_CALL_PATH_SEGMENT_GLOB'."
+            exit 1
+        fi
+
+        # if path does not end in a delimiter, then add one (e.g. '::' or '/')
+        if [[ -n "${path}" && ! "${path}" =~ .*${delimiter}$ ]]; then
+            path="${path}${delimiter}"
+        fi
+
+        # convert command or group name into file or function name (e.g. foo-bar -> foo_bar)
+        path="${path}${1//-/_}"
+        shift
+    done
+
+    printf '%q' "${path}"
+    for i in "$@"; do
+        printf ' %q' "${i}"
+    done
+    echo
+}
+
+cli::shim::on_exit() {
+    rm "${CLI_LOADER_IMPORTS_EXPIRATION_PATH}"
 }
 
 cli::shim::is_command() {
@@ -252,59 +177,14 @@ cli::shim::is_group() {
     test -d "${path}" && test -x "${path}"
 }
 
-cli::shim::is_packed() {
-    false
-}
-
 cli::shim::list() (
-
-    # include dot files
-    local glob='* .[^.]*'
-
-    cd "$1"
-
-    # print '<type> <name>'
-    for entry in ${glob}; do
-        if [[ -f "${entry}" || -d "${entry}" ]] && [[ -x "${entry}" ]]; then
-
-            # print type
-            if [[ -f "${entry}" ]]; then
-                echo -n 'c' # command
-            elif [[ -d "${entry}" ]]; then 
-                echo -n 'g' # group
-            else 
-                continue
-            fi
-
-            # print name
-            echo " ${entry//_/-}"
-        fi
-    done
+    cli list --dir "$1"
 )
-
-cli::shim::cache_dir() {
-    local file_path=$1
-    local file_name="${file_path##*/}"
-    local file_dir="${file_path%/*}"
-    local cache_dir="${file_dir}/.cli/${file_name}"
-    
-    echo "${cache_dir}"
-}
 
 cli::shim::split() {
     set "${1//${delimiter}/ }"  # replace '::' or '/' with space
     set "${1//_/-}"             # replace '_' with '-'
     echo $1
-}
-
-cli::shim::unexpected_argument() {
-    echo "Unexpected argument '$1'."
-    exit 1
-}
-
-cli::shim::unexpected_argument_when_packed() {
-    echo "Unexpected argument '$1' when already packed."
-    exit 1
 }
 
 cli::shim::command_not_found() {
@@ -313,39 +193,118 @@ cli::shim::command_not_found() {
 }
 
 main() {
-
-    cli::shim::is_packed() {
-        true
-    }
-
-    cli::shim::emit() {
-        echo "Unexpected '---emit' option. Emit unsupported in packed files."
-    }
-
     declare -f cli::shim::main
-    declare -f cli::shim::is_packed
-    declare -f cli::shim::emit
     declare -f cli::shim::split
-    declare -f cli::shim::unexpected_argument
-    declare -f cli::shim::unexpected_argument_when_packed
     declare -f cli::shim::command_not_found
 
     # these functions generated during packing
     # declare -f cli::shim::is_command
     # declare -f cli::shim::is_group
     # declare -f cli::shim::list
+    # declare -g cli::shim::callsite
+}
+
+
+initialize() {
+    
+    # declarations
+    declare -g arg_help=""
+    declare -g arg_base=""
+    declare -g arg_type=""
+    declare -g arg_self_test=""
+    declare -g arg_help=""
+    declare -ga arg_=()
+    declare -gA arg__=()
+    
+    # defaults
+    arg_type="file"
+    arg_self_test=false
+    arg_help=false
+    
+    # assign variables from command line arguments
+    while (( $# > 0 )); do
+        case "$1" in
+            '--help') arg__[arg_help]="true"; arg_help=true ;;
+            '--base') arg__[arg_base]="${2:-}"; arg_base="${2:-}"; shift ;;
+            '--type') arg__[arg_type]="${2:-}"; arg_type="${2:-}"; shift ;;
+            '--self-test') arg__[arg_self_test]="true"; arg_self_test=true ;;
+            '-h') arg__[arg_help]="true"; arg_help=true ;;
+            '--') shift; arg_=( "$@" ); break ;;
+            *)
+                echo "Unexpected argument '$1'."
+                exit 1
+            ;;
+        esac
+        if (( $# > 0 )); then shift; fi
+    done
+
+    # allowed values
+    case "${arg_type}" in
+        'file') ;;
+        'function') ;;
+        *)
+            echo "Unexpected value '${arg_type}' for argument '--type'."
+            exit 1
+        ;;
+    esac
 }
 
 # echo "$@" > /dev/stderr
-
 case ${1-} in
     '') main ;;
     '-h') ;& '--help') help ;;
     '--self-test') ;;
-    '---emit') cat ${BASH_SOURCE} ;;
-    '---emit-initialize') ;;
-    '---test-initialize') ;;
-    '---cache-dir') cli::shim::cache_dir ;;
-    -*) cli::shim::unexpected_argument "$1" ;;
-    *) cli::shim::main "$@" ;;
+    '---print') cat ${BASH_SOURCE} ;;
+    '---which') echo ${BASH_SOURCE} ;;
+    '---exports') main ;;
+    '---initialize') ;;
+    '---imports') ;;
+    # -*) cli::shim::unexpected_argument "$1" ;;
+    *) 
+        initialize "$@"
+        if (( ${#arg_[0]} > 0)); then set "${arg_[@]}"; fi
+        cli::shim::main "$@" 
+    ;;
 esac
+
+# trash
+cli::shim::callsite::hide() (
+    local this_path="${BASH_SOURCE}"
+    local this_dir="${this_path%/*}"
+
+    # resolve well-known callsites (prevents inifinite recursion)
+    local loader="${this_dir}/loader"
+    if [[ "${arg_base}/$@" -ef "${loader}" ]]; then
+        echo "${loader}"
+        return
+    fi
+
+    set -- '--base' "${arg_base}" '--' "$@"
+
+    source "${this_dir}/callsite"
+)
+cli::shim::callsite::hide() {
+    local this_path="${BASH_SOURCE}"
+    local this_dir="${this_path%/*}"
+
+    # resolve well-known callsites (prevents inifinite recursion)
+    local loader="${this_dir}/loader"
+    if [[ "${arg_base}/$@" -ef "${loader}" ]]; then
+        echo "${loader}"
+        return
+    fi
+
+    local shim="${this_dir}/shim"
+    if [[ "${arg_base}/$1" -ef "${shim}" ]]; then
+        shift
+        echo "${shim} $@"
+        return
+    fi
+
+    # echo ${callsite} '--base' "${arg_base}" '--' "$@" > /dev/stderr
+    # ${callsite} '--base' "${arg_base}" '--' "$@" > /dev/stderr
+    # echo '---' > /dev/stderr
+
+    local callsite="${this_dir}/callsite"
+    ${callsite} '--base' "${arg_base}" '--' "$@"
+}

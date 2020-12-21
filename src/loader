@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 help() {
     cat << EOF
 Command
@@ -18,19 +17,44 @@ Global Arguments
 EOF
 }
 
-cli::reference() {
-    if [[ ${CLI_REFLECT:-} == 'true' ]]; then
-        echo $@ > /dev/stderr
+cli::loader::cache::load() {
+    declare -g CLI_LOADER_SOURCE_PATH="$1"
+    declare -g CLI_LOADER_SOURCE_NAME="${CLI_LOADER_SOURCE_PATH##*/}"
+    declare -g CLI_LOADER_SOURCE_DIR="${CLI_LOADER_SOURCE_PATH%/*}"
+    declare -g CLI_LOADER_CACHE_DIR="${CLI_LOADER_SOURCE_DIR}/.cli/${CLI_LOADER_SOURCE_NAME}"
+
+    declare -g CLI_LOADER_GROUP_IMPORT=". .group"
+    declare -g CLI_LOADER_GROUP_IMPORT_PATH="${CLI_LOADER_SOURCE_DIR}/.group"
+    declare -g CLI_LOADER_PARENT_GROUP_IMPORT=".. .group"
+    declare -g CLI_LOADER_PARENT_GROUP_IMPORT_PATH="${CLI_LOADER_SOURCE_DIR}/../.group"
+
+    declare -g CLI_LOADER_INITIALIZE_PATH="${CLI_LOADER_CACHE_DIR}/initialize.sh"
+    declare -g CLI_LOADER_BINDINGS_PATH="${CLI_LOADER_CACHE_DIR}/bindings.sh"
+    declare -g CLI_LOADER_IMPORTS_SOURCE_PATH="${CLI_LOADER_CACHE_DIR}/imports.sh"
+    declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
+
+    if [[ ! -d "${CLI_LOADER_CACHE_DIR}" ]]; then
+        mkdir -p "${CLI_LOADER_CACHE_DIR}"
     fi
 }
 
-cli::import() {
-    cli::reference "$@"
-    CLI_IMPORTS+=( "$*" )
+cli::loader::cache::test() {
+    if [[ -n "${CLI_LOADER_DISABLE_CACHE-}" ]]; then
+        false
+        return
+    fi
+
+    local cache="$1"
+    local expiration="${CLI_LOADER_SOURCE_PATH}"
+
+    if [[ ! -f "${cache}"  ]] || [[ "${cache}" -ot "${expiration}" ]]; then
+        false
+    else
+        true
+    fi
 }
 
-# dry run support
-cli::dry_run() {
+cli::loader::dry_run() {
     if [[ "${arg_dry_run:-}" == "true" ]]; then 
         # removes extra spaces which is typically what we want
         while read; do echo ${REPLY}; done
@@ -41,7 +65,7 @@ cli::dry_run() {
     fi
 }
 
-cli::escape_args_then_call_as() {
+cli::loader::escape_args_then_call_as() {
     local user=$1
     shift
 
@@ -53,16 +77,7 @@ cli::escape_args_then_call_as() {
     sudo su "${user}" -c "${args[*]}"
 }
 
-cli::declare_dirs() {
-    declare -g CLI_SOURCE_PATH="$1"
-    declare -g CLI_SOURCE_NAME="${CLI_SOURCE_PATH##*/}"
-    declare -g CLI_SOURCE_DIR="${CLI_SOURCE_PATH%/*}"
-    declare -g CLI_CACHE_DIR="${CLI_SOURCE_DIR}/.cli/${CLI_SOURCE_NAME}"
-    declare -g CLI_INITIALIZE_PATH="${CLI_CACHE_DIR}/initialize.sh"
-    declare -g CLI_IMPORTS_PATH="${CLI_CACHE_DIR}/imports.sh"
-}
-
-cli::cache() {
+cli::loader::cache::put() {
     local path="$1"
     local temp_path=$(mktemp "$1.XXXXXX")
     
@@ -73,138 +88,150 @@ cli::cache() {
     mv "$temp_path" "$path"
 }
 
-cli::cached() {
-
-    if [[ ! -f "$1"  ]] || [[ "$1" -ot "${CLI_SOURCE_PATH}" ]]; then
-        false
-    else
-        true
+cli::loader::cache::exports() {
+    if ! cli::loader::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
+        "$0" | cli::loader::cache::put "${CLI_LOADER_EXPORTS_PATH}"
     fi
 }
 
-cli::define_initialize() {
+cli::loader::cache::initialize() {
 
     # initialize hard coded
-    if declare -F initialize > /dev/null; then
+    if cli::loader::is_declared initialize; then
 
         # cache empty result
-        if [[ ! -f "${CLI_INITIALIZE_PATH}" ]]; then
-            : > "${CLI_INITIALIZE_PATH}"
+        if [[ ! -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
+            : > "${CLI_LOADER_INITIALIZE_PATH}"
         fi
 
-        return
-    fi
-
     # initialize not cached OR cache out of date 
-    if ! cli::cached "${CLI_INITIALIZE_PATH}"; then
+    elif ! cli::loader::cache::test "${CLI_LOADER_INITIALIZE_PATH}"; then
 
         # lazily generated (like JIT)
-        help \
+        "$0" '--help' \
             | cli dsl tokenize \
             | cli dsl parse \
             | cli dsl emit \
-            | cli::cache "${CLI_INITIALIZE_PATH}"
+            | cli::loader::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
     fi
-
-    source "${CLI_INITIALIZE_PATH}"
 }
 
-cli::source_imports() {
-
-    # imports not cached OR cache out of date
-    if ! cli::cached "${CLI_IMPORTS_PATH}"; then
-
-        while [[ -n ${CLI_IMPORTS[@]} ]]; do
-
-            # pipe the import into the cache
-            ${CLI_IMPORTS[0]}
-
-            # source the import to capture its imports
-            source /dev/stdin < <(${CLI_IMPORTS[0]}) 
-
-            # pop this import
-            CLI_IMPORTS=( "${CLI_IMPORTS[@]:1}" )
-
-        done | cli::cache "${CLI_IMPORTS_PATH}"
-    fi
-
-    source "${CLI_IMPORTS_PATH}"
+cli::import() {
+    CLI_LOADER_IMPORTS+=( "$*" )
 }
 
-cli::load() {
+cli::loader::resolve() {
+    if [[ "$1" == '.' ]]; then
+        shift
+        cli callsite '--base' "${CLI_LOADER_SOURCE_DIR}" '--' "$@"
+    else
+        $@ '---which'
+    fi
+}
 
-    # create cache dir
-    mkdir -p "${CLI_CACHE_DIR}"
+cli::loader::cache::bindings() {
+    local -A bindings=()
+    local import
+    local path
 
-    case "${1-}" in
-        '---imports')
-            for i in "${CLI_IMPORTS[@]}"; do
-                echo "$i"
-            done
-            exit
-        ;;
+    # echo ${CLI_LOADER_BINDINGS_PATH} > /dev/stderr
+    while [[ -n ${CLI_LOADER_IMPORTS[@]} ]]; do
+        import="${CLI_LOADER_IMPORTS[0]}"
 
-        # emit initialize generated from help
-        '---initialize-path')
-            if [[ -f "${CLI_INITIALIZE_PATH}" ]]; then
-                if [[ -s "${CLI_INITIALIZE_PATH}" ]]; then
-                    echo "${CLI_INITIALIZE_PATH}"
-                fi
-                exit
-            fi
-        ;;
-    esac 
+        # capture the mappting from import to path
+        path=$(cli::loader::resolve ${import})
+        bindings+=( [${import}]="${path}" )
 
-    cli::source_imports
+        # capture transitivie imports by executing 
+        # the source generated by the import
+        source /dev/stdin < <(${path} ---exports)
 
-    # dump help if '-h' or '--help' appear anywhere on the command line
-    for i in "$@"; do
-        if [[ "${i}" == '-h' ]] || [[ "${i}" == '--help' ]]; then 
-            help
-            exit
+        # pop this import
+        CLI_LOADER_IMPORTS=( "${CLI_LOADER_IMPORTS[@]:1}" )
+
+    # pipe the list of imports into a file
+    done 
+        
+    # serialize mapping of imports to paths
+    declare -p bindings
+}
+
+cli::loader::cache::imports() {
+    local import
+    local path
+    local cached=false
+    local -A bindings
+
+    # if source has been refreshed since the cli was executed, the cache is ok
+    if declare -p CLI_LOADER_IMPORTS_EXPIRATION_PATH >/dev/null 2>&1; then
+        if [[ "${CLI_LOADER_IMPORTS_EXPIRATION_PATH}" -ot \
+              "${CLI_LOADER_IMPORTS_SOURCE_PATH}" ]]; then
+              return
         fi
-    done
-    unset i
+    fi
 
-    case "${1-}" in
+    # check if the cache is stale
+    if cli::loader::cache::test "${CLI_LOADER_IMPORTS_SOURCE_PATH}"; then
+        cached=true
 
-        # run self test
-        '--self-test')
-            self_test
-            result=$?
-            if ! (( ${result} == 0 )); then
-                read line file < <(caller)
-                echo "Self-test failed: ${file}"
+        # deserialize bindings used to generate the import source
+        source "${CLI_LOADER_BINDINGS_PATH}"
+
+        for import in "${!bindings[@]}"; do
+            path=${bindings["$import"]}
+
+            # echo "${CLI_LOADER_IMPORTS_SOURCE_PATH}, $path, $import" > /dev/stderr
+
+            # if an import is newer than the cache, then the cache is stale OR
+            # if an import does not resolve to the cached path, then the cache is stale
+            # if [[ "${path}" -nt "${CLI_LOADER_BINDINGS_PATH}" ]] || \
+            #     [[ ! "$(${import} ---which)" == "${path}" ]]; then
+            if [[ "${path}" -nt "${CLI_LOADER_BINDINGS_PATH}" ]]; then
+           
+                # echo "${path}" -nt "${CLI_LOADER_BINDINGS_PATH}" > /dev/stderr
+                
+                cached=false
+                break
             fi
-            exit ${result}
-        ;;
+        done
+    fi
 
-    esac 
+    if ${cached}; then 
+        touch "${CLI_LOADER_IMPORTS_SOURCE_PATH}"
+        return
+    fi
 
-    cli::define_initialize
+    # read cached bindings between inports and paths
+    source /dev/stdin < <(cli::loader::cache::bindings)
 
-    case "${1-}" in
- 
-        # emit path after population by cli::define_initialize
-        '---initialize-path')
-            if [[ -s "${CLI_INITIALIZE_PATH}" ]]; then
-                echo "${CLI_INITIALIZE_PATH}"
-            fi
-            exit
-        ;;
-    esac 
+    for import in "${!bindings[@]}"; do
+        path="${bindings["${import}"]}"
 
-    unset CLI_SOURCE_PATH
-    unset CLI_SOURCE_NAME
-    unset CLI_SOURCE_DIR
-    unset CLI_CACHE_DIR
-    unset CLI_INITIALIZE_PATH
-    unset CLI_IMPORTS
+        # emit library
+        echo \#
+        echo \# ${import} '->' "${path}"
+        echo \#
+        ${path}
+        echo
+    done \
+        | cli::loader::cache::put "${CLI_LOADER_IMPORTS_SOURCE_PATH}"
 
-    cli::execute "$@"
+    # cache the bindings *after* updating the imports to prevent 
+    # a race between checking the cache and updating the cache
+    declare -p bindings > "${CLI_LOADER_BINDINGS_PATH}"
 }
 
-cli::execute() {
+cli::loader::source::imports() {
+    cli::loader::cache::imports
+    source "${CLI_LOADER_IMPORTS_SOURCE_PATH}"
+}
+
+cli::loader::source::initialize() {
+    cli::loader::cache::initialize
+    source "${CLI_LOADER_INITIALIZE_PATH}"
+}
+
+cli::loader::execute() {
 
     # declare well known variables
     : ${arg_run_as:=}
@@ -215,14 +242,107 @@ cli::execute() {
 
     # implement well known features
     if [[ -n "${arg_run_as}" ]] && [[ ! "${arg_run_as}" == "$(whoami)" ]]; then
-        cli::escape_args_then_call_as "${arg_run_as}" "$0" "${args[@]}"
+        cli::loader::escape_args_then_call_as "${arg_run_as}" "$0" "${args[@]}"
 
     else
         # clean up known arguments
         unset arg_run_as
         unset args
-        main
+
+        if cli::loader::is_declared main; then
+            main "${arg_[@]}"
+
+        elif cli::loader::is_declared export; then
+            export
+            
+        else
+            echo "Unexpected missing entry point 'main' or 'export'."
+            exit 1
+        fi
     fi
+}
+
+cli::loader::self_test() {
+    self_test
+    result=$?
+    if ! (( ${result} == 0 )); then
+        read line file < <(caller)
+        echo "Self-test failed: ${file}"
+    fi
+    exit ${result}
+}
+
+cli::loader::is_declared() {
+    if declare -F "$1" > /dev/null; then true; else false; fi
+}
+
+cli::load() {
+
+    # if there is a '.group' command and...
+    if [[ ! "${CLI_LOADER_SOURCE_NAME}" == '.group' ]] && \
+        # ...this command is not '.group', then...
+        [[ -f "${CLI_LOADER_GROUP_IMPORT_PATH}" ]]; then
+
+        # import '. .group'
+        CLI_LOADER_IMPORTS+=('. .group')
+    fi
+
+    # add implicit 'export' and 'initialize' imports
+    if cli::loader::is_declared export; then
+        CLI_LOADER_IMPORTS+=( \
+            'cli export' \
+            'cli initialize' \
+        )
+    fi
+
+    case "${1-}" in
+        '---which') 
+            echo "${CLI_LOADER_SOURCE_PATH}"
+            exit
+            ;;
+        '---print') 
+            cat "${CLI_LOADER_SOURCE_PATH}"
+            exit
+            ;;
+        '---imports')
+            cli::loader::cache::imports
+            cat "${CLI_LOADER_BINDINGS_PATH}"
+            exit
+            ;;
+        '---initialize')
+            cli::loader::source::imports
+            cli::loader::cache::initialize
+            cat "${CLI_LOADER_INITIALIZE_PATH}"
+            exit
+            ;;
+        '---exports')
+            cli::loader::cache::exports
+            cat "${CLI_LOADER_EXPORTS_PATH}"
+            exit
+            ;;
+    esac 
+
+    cli::loader::source::imports
+
+    for i in "$@"; do
+        case "${i}" in
+            '--') break ;;
+            '-h') ;& '--help')
+            help
+            exit
+        esac
+    done
+    unset i
+
+    case "${1-}" in
+        '--self-test')
+            cli::loader::self_test
+            exit
+        ;;
+    esac 
+
+    cli::loader::source::initialize
+    cli::loader::execute "$@"
 }
 
 main() {
@@ -257,18 +377,16 @@ main() {
     echo "self_test() { return; }"
     echo
 
-    echo "declare -a CLI_IMPORTS"
-
-    if [[ ${CLI_REFLECT:-} == 'true' ]]; then
-        # prevent JIT to prevent capturing libraries used during JIT
-        echo "initialize() { return; }"
-    fi
+    echo "declare -a CLI_LOADER_IMPORTS"
 
     declare -f cli::import
-    declare -f cli::dry_run
-    declare -f cli::escape_args_then_call_as
     declare -f cli::load
-    declare -f cli::execute
+
+    declare -f cli::loader::resolve
+    declare -f cli::loader::dry_run
+    declare -f cli::loader::escape_args_then_call_as
+    declare -f cli::loader::execute
+    declare -f cli::loader::self_test
 
     if ${arg_pack}; then
         cli::import() { 
@@ -276,7 +394,7 @@ main() {
             echo "${name// /::}::source"
         }
 
-        cli::define_initialize() {
+        cli::loader::cache::initialize() {
 
             # hard coded
             if declare -F initialize > /dev/null; then
@@ -284,7 +402,7 @@ main() {
             fi
 
             # generated (ala ngen)
-            ${FUNCNAME[2]}::define_initialize
+            ${FUNCNAME[2]}::cache::initialize
         }
 
         cli() {
@@ -295,15 +413,19 @@ main() {
 
         declare -f cli
     else
-        declare -f cli::reference
-        declare -f cli::define_initialize
-        declare -f cli::source_imports
-        declare -f cli::declare_dirs
-        declare -f cli::cached
-        declare -f cli::cache
+        declare -f cli::loader::is_declared
+        declare -f cli::loader::cache::load
+        declare -f cli::loader::cache::test
+        declare -f cli::loader::cache::put
+        declare -f cli::loader::cache::initialize
+        declare -f cli::loader::cache::imports
+        declare -f cli::loader::cache::exports
+        declare -f cli::loader::cache::bindings
+        declare -f cli::loader::source::imports
+        declare -f cli::loader::source::initialize
 
         echo
-        echo "cli::declare_dirs \"\${BASH_SOURCE[1]}\""
+        echo "cli::loader::cache::load \"\${BASH_SOURCE[1]}\""
   fi
 }
 
@@ -327,7 +449,16 @@ initialize() {
 
 set -e
 set -u 
-declare -a CLI_IMPORTS
-cli::declare_dirs ${BASH_SOURCE}
+declare -a CLI_LOADER_IMPORTS
+cli::loader::cache::load ${BASH_SOURCE}
+
+if (( $# == 0 )); then
+    if ! cli::loader::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
+        : ${arg_pack:=false}
+        main | cli::loader::cache::put "${CLI_LOADER_EXPORTS_PATH}"
+    fi
+    echo "${CLI_LOADER_EXPORTS_PATH}"
+    exit
+fi
 
 cli::load "$@"

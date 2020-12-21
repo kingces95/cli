@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+source $(cli loader)
+
+help() {
+    cat << EOF
+Command
+    cli callsite
+
+Summary
+    Echo a command line but with positional arguments transformed into a path
+    or function name.
+
+Description
+    Echo a command line but with positional arguments transformed into a path.
+    Positional arguments are any argument that does not start with a dash. Each
+    positional argument will have dashes replaced with underbars. An error is 
+    generated if any positional argument contains an underbar. If the base
+    path does not end with a delimiter, then one will be appended. 
+
+Arguments
+    --type              : Type of path. Allowed values: file, function.
+                          Default: file. If file, then delimiter is '/'
+                          else '::'.
+    --base              : Optional base path. Value is simply prepended
+                          to positional arguments.
+    --                  : Positional and named arguments that constitute the
+                          command line.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Construct a command line to invoke '/usr/bin/base64' help
+    (e.g. '/usr/bin/base64 -h')
+        cli callsite --base / -- usr bin base64 -h
+        cli callsite --base /usr -- bin base64 -h
+        cli callsite --base /usr/bin -- base64 -h
+
+    Construct a command line to invoke '/usr/bin/vm_stat'
+        cli callsite --base /usr/bin -- vm-stat
+EOF
+}
+
+declare CLI_CALL_ARG_GLOB="-*"
+declare CLI_CALL_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
+
+main() {   
+
+    # use filesystem to resolve command, and first argument is the 
+    # base directory where commands are under development
+    local delimiter=
+    local dir=
+    local path=
+
+    # shift path root
+    dir=${arg_base}
+    path="${dir}"
+
+    # pick a path dilimiter
+    delimiter='/'
+    if [[ "${arg_type}" == 'function' ]]; then
+        delimiter='::'
+    fi
+
+    # compose command path by consuming args upto first dash argument 
+    while (( $# > 0 )); do
+
+        # stop joining path segments if an argument is found (e.g. --foo)
+        if [[ "$1" == $CLI_CALL_ARG_GLOB ]]; then 
+            break
+        fi
+
+        # ensure uniformity of group names (e.g. foo-bar, not foo_bar)
+        if [[ ! "$1" == $CLI_CALL_PATH_SEGMENT_GLOB ]]; then
+            echo "Unexpected command name or group '$1' does not match '$CLI_CALL_PATH_SEGMENT_GLOB'."
+            exit 1
+        fi
+
+        # if path does not end in a delimiter, then add one (e.g. '::' or '/')
+        if [[ -n "${path}" && ! "${path}" =~ .*${delimiter}$ ]]; then
+            path="${path}${delimiter}"
+        fi
+
+        # convert command or group name into file or function name (e.g. foo-bar -> foo_bar)
+        path="${path}${1//-/_}"
+        shift
+    done
+
+    printf '%q' "${path}"
+    for i in "$@"; do
+        printf ' %q' "${i}"
+    done
+    echo
+}
+
+initialize() {
+    
+    # declarations
+    declare -g arg_help=""
+    declare -g arg_base=""
+    declare -g arg_type=""
+    declare -g arg_self_test=""
+    declare -g arg_help=""
+    declare -ga arg_=()
+    declare -gA arg__=()
+    
+    # defaults
+    arg_type="file"
+    arg_self_test=false
+    arg_help=false
+    
+    # assign variables from command line arguments
+    while (( $# > 0 )); do
+        case "$1" in
+            '--help') arg__[arg_help]="true"; arg_help=true ;;
+            '--base') arg__[arg_base]="${2:-}"; arg_base="${2:-}"; shift ;;
+            '--type') arg__[arg_type]="${2:-}"; arg_type="${2:-}"; shift ;;
+            '--self-test') arg__[arg_self_test]="true"; arg_self_test=true ;;
+            '-h') arg__[arg_help]="true"; arg_help=true ;;
+            '--') shift; arg_=( "$@" ); break ;;
+            *)
+                echo "Unexpected argument '$1'."
+                exit 1
+            ;;
+        esac
+        if (( $# > 0 )); then shift; fi
+    done
+    
+    # allowed values
+    case "${arg_type}" in
+        'file') ;;
+        'function') ;;
+        *)
+            echo "Unexpected value '${arg_type}' for argument '--type'."
+            exit 1
+        ;;
+    esac
+}
+
+cli::load "$@"

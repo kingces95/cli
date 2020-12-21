@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli initialize)
-source /dev/stdin < <(cli::import cli export)
+source $(cli loader)
 
 help() {
     cat << EOF
@@ -22,7 +20,7 @@ cli::emit::section() {
     echo
 }
 
-main() {
+export() {
     cli::export::import cli_emit
     cli::export cli emit
 }

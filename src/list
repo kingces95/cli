@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+source $(cli loader)
+
+help() {
+    cat << EOF
+Command
+    cli list
+
+Summary
+    List the command in a group.
+
+Description
+    Given a path to a directory, list the executable files and sub-directories
+    on separate lines preceeded by a 'c' (for command) or 'g' (for group). 
+    Results are sorted by the name of the directory or file. Files or directories 
+    that start with dot are included. Output is sorted by commands, then groups,
+    then by name.
+
+Arguments
+    --dir -d            : The directory. Default is the current directory.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    List commands in '/usr/bin'
+        cli list --dir usr/bin
+EOF
+}
+
+main() (
+
+    # include dot files
+    local glob='* .[^.]*'
+
+    cd "${arg_dir}"
+
+    # print '<type> <name>'
+    for entry in ${glob}; do
+        if [[ "${entry}" == '.cli' ]]; then continue; fi
+        if [[ ! -f "${entry}" && ! -d "${entry}" ]]; then continue; fi
+        if [[ ! -x "${entry}" ]]; then continue; fi
+
+        # print type
+        if [[ -f "${entry}" ]]; then
+            echo -n 'c' # command
+        elif [[ -d "${entry}" ]]; then 
+            echo -n 'g' # group
+        else 
+            continue
+        fi
+
+        # print name
+        echo " ${entry//_/-}"
+    done | sort
+)
+
+cli::load "$@"

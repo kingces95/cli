@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli emit .group)
+source $(cli loader)
+cli::import cli emit .group
 
 help() {
     cat << EOF
@@ -15,13 +15,13 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Exmpales
-    Emit this command as a subproc 'cli::emit::subproc'
-        cli emit subproc --cli "cli emit subproc"
+    Emit 'cli initialize' command as a subproc 'cli::initialize'
+        cli emit subproc --cli "cli initialize"
 EOF
 }
 
 main() (
-    ${arg_cli} '---emit' \
+    ${arg_cli} '---print' \
         | emit::file \
         | emit::subproc "$(cli::emit::library_name ${arg_cli})"; \
 )

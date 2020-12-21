@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source $(cli loader)
 cli::import cli initialize
 cli::import cli dsl .group
 
@@ -105,24 +105,29 @@ main() {
                 in_argument_copy=false
                 yield ${CLI_DSL_TOKEN_NAME} "${word#--}"
 
+            # "--"
+            elif [[ "${word}" == ${CLI_DSL_LITERAL_DASHDASH} ]]; then
+                in_argument_copy=false
+                yield ${CLI_DSL_TOKEN_DASHDASH}
+
             # e.g. "-h"
             elif [[ "${word}" == ${CLI_DSL_ARG_ALIAS_GLOB} ]]; then
                 yield ${CLI_DSL_TOKEN_ALIAS} "${word#-}"
 
-            # e.g. "[Required]"
+            # "[Required]"
             elif [[ "${word}" == "${CLI_DSL_LITERAL_REQUIRED}" ]]; then
                 yield ${CLI_DSL_TOKEN_REQUIRED}
 
-            # e.g. "[Flag]"
+            # "[Flag]"
             elif [[ "${word}" == "${CLI_DSL_LITERAL_FLAG}" ]]; then
                 yield ${CLI_DSL_TOKEN_FLAG}
 
-            # e.g. "Default:"
+            # "Default:"
             elif [[ "${word}" == "${CLI_DSL_LITERAL_DEFAULT}" ]]; then
                 in_argument_copy=false
                 yield ${CLI_DSL_TOKEN_DEFAULT}
 
-            # e.g. "values:"
+            # "values:"
             elif [[ "${word}" == "${CLI_DSL_LITERAL_VALUES}" ]]; then
 
                 if [[ "${last_word}" == "${CLI_DSL_LITERAL_ALLOWED}" ]]; then

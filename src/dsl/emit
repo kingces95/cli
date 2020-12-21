@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-cli::import cli initialize
+source $(cli loader)
 cli::import cli dsl .group
+cli::import cli initialize
 cli::import cli_emit
 
 help() {
@@ -24,6 +24,7 @@ main() {
     local -A defaults # eg +=( ['arg_foo']='bar' )
     local -A allowed_values # eg +=( [--foo]='a b c' )
     local -a required # eg +=( '--foo' )
+    local any_args=false
 
     local name
     local arg_name
@@ -33,8 +34,12 @@ main() {
     # productions are sorted
     while read key production production_name identifier; do
 
+        # anyargs
+        if (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
+            any_args=true
+
         # declaration
-        if (( production == CLI_DSL_PRODUCTION_NAME )); then
+        elif (( production == CLI_DSL_PRODUCTION_NAME )); then
             name="${identifier}"
             arg_name="arg_${name//-/_}"
             switch_name="--${name}"
@@ -68,50 +73,60 @@ main() {
 
     # code generation
     {
-        emit::comment 'declarations'
-        for i in "${names[@]}"; do
-            emit::declare_global "${i}" 
-        done
-        emit::new_line
+        {
+            for i in "${names[@]}"; do
+                emit::declare_global "${i}" 
+            done 
+            if ${any_args}; then
+                emit::declare_global_array 'arg_' 
+            fi
+            emit::declare_global_map 'arg__'
+        } \
+            | emit::header 'declarations'
 
-        emit::comment 'defaults'
-        for i in "${!defaults[@]}"; do
-            emit::assign_string "${i}" "${defaults[$i]}" 
-        done
-        for i in "${!flags[@]}"; do
-            emit::assign "${i}" 'false'
-        done
-        emit::new_line
+        {
+            for i in "${!defaults[@]}"; do
+                emit::assign_string "${i}" "${defaults[$i]}" 
+            done
+            for i in "${!flags[@]}"; do
+                emit::assign "${i}" 'false'
+            done
+        } | emit::header 'defaults'
 
-        emit::comment 'assign variables from command line arguments'
         { 
             {
                 for i in "${!names[@]}"; do
                     arg_name="${names[$i]}"
                     if [[ "${flags[$arg_name]+true}" == 'true' ]]; then
-                        emit::assign "${arg_name}" 'true' \
-                            | emit::case_inline "${i}"
+                        emit::map_set 'arg__' "${arg_name}" 'true'
+                        emit::assign "${arg_name}" 'true'
                     else
-                        { emit::assign_string "${arg_name}" "\${2:-}"; emit::shift; } \
-                            | emit::inline \
-                            | emit::case_inline "${i}"
-                    fi
+                        emit::map_set 'arg__' "${arg_name}" "\${2:-}"
+                        emit::assign_string "${arg_name}" "\${2:-}"
+                        emit::shift
+                    fi \
+                        | emit::inline \
+                        | emit::case_inline "${i}"
+
                 done
+                if ${any_args}; then
+                    { emit::shift; echo 'arg_=( "$@" )'; emit::break; } \
+                        | emit::inline \
+                        | emit::case_inline '--'
+                fi
                 emit::error "Unexpected argument '\$1'." \
                     | emit::case_default
             } | emit::case_statement "\$1"
             emit::shift | emit::if_inline "(( \$# > 0 ))"
-        } | emit::while "(( \$# > 0 ))"
-        emit::new_line
+        } \
+            | emit::while "(( \$# > 0 ))" \
+            | emit::header 'assign variables from command line arguments'
 
-        emit::comment 'required'
         for i in "${required[@]}"; do
             emit::error "Missing required argument '${i}'." |
                 emit::if_empty ${names[$i]}
-        done
-        emit::new_line
+        done | emit::header 'required'
 
-        emit::comment 'allowed values'
         for i in "${!allowed_values[@]}"; do
             {
                 for j in ${allowed_values[$i]}; do
@@ -120,7 +135,7 @@ main() {
                 emit::error "Unexpected value '\${${names[$i]}}' for argument '${i}'." \
                     | emit::case_default
             } | emit::case_statement "\${${names[$i]}}"
-        done
+        done | emit::header 'allowed values'
     } | emit::function ${INITIALIZE}
 }
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-cli::import cli initialize
-cli::import cli export
+source $(cli loader)
 cli::import cli_util
 
 help() {
@@ -26,8 +24,9 @@ readonly CLI_DSL_LITERAL_ALLOWED='Allowed'
 readonly CLI_DSL_LITERAL_VALUES='values:'
 readonly CLI_DSL_LITERAL_REQUIRED='[Required]'
 readonly CLI_DSL_LITERAL_FLAG='[Flag]'
+readonly CLI_DSL_LITERAL_DASHDASH='--'
 
-main() {
+export() {
 
     readonly CLI_DSL_TOKEN=(
         'DEFAULT'
@@ -42,6 +41,7 @@ main() {
         'REQUIRED'
         'EOF' 
         'ERROR' 
+        'DASHDASH' 
     ) && util::declare_enums CLI_DSL_TOKEN
 
     readonly CLI_DSL_PRODUCTION=(
@@ -54,6 +54,7 @@ main() {
         'ALLOWED_VALUE'
         'ALLOWED_END'
         'ERROR'
+        'ANYARGS'
     ) && util::declare_enums CLI_DSL_PRODUCTION
 
     cli::export cli dsl

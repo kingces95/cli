@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source $(cli loader)
 cli::import cli dsl .group
 
 help() {
@@ -102,7 +102,12 @@ main() {
         read_token
 
         while (( token != CLI_DSL_TOKEN_EOF )); do
-            ARGUMENT
+            if (( token == CLI_DSL_TOKEN_DASHDASH )); then
+                yield ${CLI_DSL_PRODUCTION_ANYARGS}
+                read_token
+            else
+                ARGUMENT
+            fi
         done
     }
 

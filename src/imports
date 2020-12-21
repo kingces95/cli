@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source $(cli loader)
 
 help() {
 cat << EOF
@@ -14,19 +14,17 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Examples
-    Emit the unique sorted imports of 'cli dsl emit'
-        cli imports -c "cli dsl emit" | sort -u
-
-    Emit the unique sorted imports of 'cli dsl' group
-        cli find --cli "cli dsl" --type c \\
-            | while read; do cli imports --cli "\${REPLY}"; done \\
-            | sort -u
+    Emit the unique sorted imports of 'cli dsl'
+        cli imports -c "cli dsl"
 EOF
 }
 
 main() {
-    # echo "imports ${arg_cli}" > /dev/stderr
-    CLI_REFLECT='true' ${arg_cli} '-h' 2>&1 >/dev/null
+    cli find --cli "${arg_cli}" --type c \
+        | while read; do
+            ${REPLY} '---imports' &
+        done \
+    | sort -u
 }
 
 cli::load "$@"

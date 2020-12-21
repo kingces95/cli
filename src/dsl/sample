@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source $(cli loader)
 
 help() {
     cat << EOF
@@ -13,6 +13,7 @@ Arguments
                                     values: orange, banana. Stuff. Allowed ish.
     --header         [Required] : Header.
     --display-args       [Flag] : Display args.
+    --                          : Arbitrary arguments.
 
 Global Arguments
     --help -h            [Flag] : Show this message and exit.

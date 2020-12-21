@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli_emit)
-source /dev/stdin < <(cli::import cli emit section .group)
+source $(cli loader)
+cli::import cli emit section .group
 
 help() {
     cat << EOF
@@ -17,6 +16,11 @@ Arguments
 Global Arguments
     --help -h           [Flag] : Show this message and exit.
     --self-test         [Flag] : Runs a self test.
+
+Examples
+    Emit a predicate that test if a path is a group.
+        cli find --cli cli --type g \
+            | cli emit section initializers
 EOF
 }
 
@@ -34,16 +38,16 @@ parallel_cat() {
 }
 
 main() {
-    time {
-        while read; do
-            echo "cli emit define-initialize --cli \"${REPLY}\""
-        done
-    } \
-    | parallel_cat \
-    | cli::emit::section 'Initializers'
+    # time {
+    #     while read; do
+    #         echo "cli emit define-initialize --cli \"${REPLY}\""
+    #     done
+    # } \
+    # | parallel_cat \
+    # | cli::emit::section 'Initializers'
 
-    # time while read; do cli emit define-initialize --cli "${REPLY}"; done \
-    #     | cli::emit::section 'Initializers'
+    time while read; do cli emit define-initialize --cli "${REPLY}"; done \
+        | cli::emit::section 'Initializers'
 }
 
 self_test() (

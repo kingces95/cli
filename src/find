@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
+source $(cli loader)
 
 help() {
 cat << EOF
@@ -7,7 +7,7 @@ Command
     cli find : find commands and groups of a cli.
 
 Arguments
-    --cli -c                : Name of cli.
+    --cli -c     [Required] : Name of cli.
     --traversal             : Specify the type of traversal. Allowed values:
                               pre, post. Default: pre.
 

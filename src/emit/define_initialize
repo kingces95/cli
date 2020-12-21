@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source /dev/stdin < <(cli loader)
-source /dev/stdin < <(cli::import cli emit .group)
+source $(cli loader)
+cli::import cli emit .group
 
 help() {
     cat << EOF
@@ -19,20 +19,20 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Exmaples
-    cli emit define-initialize --name "cli find"
+    Emit 'cli::find::define_initialize'
+        cli find | cli emit define-initialize
 EOF
 }
 
 main() (
-    echo "define-initialize --test ${arg_cli}" > /dev/stderr
-    if ${arg_cli} '---test-initialize'; then
-        return
-    fi
+    ${arg_cli} '---initialize' | {
+        # if there is no generated initialize function, then emit nothing
+        if ! read; then return; fi
 
-    echo "define-initialize --emit ${arg_cli}" > /dev/stderr
-    ${arg_cli} '---emit-initialize' \
-        | emit::file \
-        | emit::function "$(cli::emit::library_name ${arg_cli} 'define_initialize')"
+        cat <(echo ${REPLY}) - \
+            | emit::file \
+            | emit::function "$(cli::emit::library_name ${arg_cli} 'define_initialize')"
+    }
 )
 
 cli::load "$@"
