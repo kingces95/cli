@@ -5,7 +5,10 @@ cli::import cli emit reflection .group
 help() {
     cat << EOF
 Command
-    cli emit contains : Emit predicate 'is_command' for a cli.
+    ${CLI_PATH}
+    
+Summary
+    Emit predicate 'is_command' for a cli.
 
 Arguments
     --name -n    [Required] : Name of the function. 
@@ -18,7 +21,7 @@ Global Arguments
 Examples
     Emit a predicate that test if a path is a command.
         cli find --cli cli --type c \
-            | cli emit reflection is-command
+            | ${CLI_PATH}
 EOF
 }
 

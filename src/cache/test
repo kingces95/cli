@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    cli cache test
+    ${CLI_PATH}
 
 Summary
     Test if a file exists and is older than another file.
@@ -41,17 +41,17 @@ self_test() {
     local source_path=$(mktemp "/tmp/source.XXXXXX")
     local cache_path=$(mktemp "/tmp/cache.XXXXXX")
 
-    if ! cli cache test --source "${source_path}" --cache "${cache_path}"; then
+    if ! ${CLI_PATH} --source "${source_path}" --cache "${cache_path}"; then
         assert::fail 'Fresh cache reported stale.'
     fi
 
     touch "$source_path"
-    if cli cache test --source "${source_path}" --cache "${cache_path}"; then
+    if ${CLI_PATH} --source "${source_path}" --cache "${cache_path}"; then
         assert::fail 'Stale cache reported fresh.'
     fi
 
     rm "${cache_path}"
-    if cli cache test --source "${source_path}" --cache "${cache_path}"; then
+    if ${CLI_PATH} --source "${source_path}" --cache "${cache_path}"; then
         assert::fail 'Missing cache reported fresh.'
     fi
 

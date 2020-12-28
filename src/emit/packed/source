@@ -5,7 +5,10 @@ cli::import cli emit .group
 help() {
     cat << EOF
 Command
-    cli emit source : emit a function containing a library's source
+    ${CLI_PATH}
+    
+Summary
+    Emit a function containing a library's source.
 
 Arguments
     --cli -c     [Required] : Name of the cli.

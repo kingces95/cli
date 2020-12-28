@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    cli cache put
+    ${CLI_PATH}
 
 Summary
     Read from stdin and write to a temp file that is moved to a cache path.

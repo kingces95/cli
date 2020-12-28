@@ -5,7 +5,7 @@ cli::import cli emit .group
 help() {
     cat << EOF
 Command
-    cli emit subproc
+    ${CLI_PATH}
 
 Arguments
     --cli -c     [Required] : Name of the cli.

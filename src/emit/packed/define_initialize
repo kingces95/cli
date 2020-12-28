@@ -5,7 +5,10 @@ cli::import cli emit .group
 help() {
     cat << EOF
 Command
-    cli emit define-initialize : Emit a function that defines 'initialize' for a cli.
+    ${CLI_PATH}
+    
+Summary
+    Emit a function that defines 'initialize' for a cli.
 
 Description
     Emit a function that defines initialize for a cli unless initialize is

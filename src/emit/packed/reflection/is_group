@@ -5,7 +5,10 @@ cli::import cli emit .group
 help() {
     cat << EOF
 Command
-    cli emit contains : Emit predicate 'is_group' for a cli.
+    ${CLI_PATH}
+    
+Summary
+    Emit predicate 'is_group' for a cli.
 
 Arguments
     --name -n    [Required] : Name of the function. 

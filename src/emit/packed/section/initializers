@@ -5,7 +5,7 @@ cli::import cli emit section .group
 help() {
     cat << EOF
 Command
-    cli emit section initializers
+    ${CLI_PATH}
 
 Summary
     
@@ -20,7 +20,7 @@ Global Arguments
 Examples
     Emit a predicate that test if a path is a group.
         cli find --cli cli --type g \
-            | cli emit section initializers
+            | ${CLI_PATH}
 EOF
 }
 

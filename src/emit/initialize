@@ -4,7 +4,7 @@ source $(cli loader)
 help() {
     cat << EOF
 Command
-    cli emit initialize
+    ${CLI_PATH}
 
 Summary
     Emit a minimum implementation of initialize.

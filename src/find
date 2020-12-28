@@ -4,7 +4,10 @@ source $(cli loader)
 help() {
 cat << EOF
 Command
-    cli find : find commands and groups of a cli.
+    ${CLI_PATH}
+    
+Summary
+    Find commands and groups of a cli.
 
 Arguments
     --cli -c     [Required] : Name of cli.
@@ -25,13 +28,13 @@ Global Arguments
 
 Examples
     List commands and groups of 'cli' in post-order
-        cli find --cli cli --ls --traversal post
+        ${CLI_PATH} --cli cli --ls --traversal post
 
     List groups of 'cli'
-        cli find --cli cli --type g
+        ${CLI_PATH} --cli cli --type g
 
     List emit commands of 'cli'
-        cli find --cli "cli emit" --type c
+        ${CLI_PATH} --cli "cli emit" --type c
 EOF
 }
 

@@ -5,9 +5,12 @@ cli::import cli emit reflection .group
 help() {
     cat << EOF
 Command
-    cli emit reflection list : emit function 'list' for a cli.
+    ${CLI_PATH} 
     
 Summary
+    Emit function 'list' for a cli.
+    
+Description
     Emit a function that lists commands and groups of a group 
     encoded as a library name.
 
@@ -19,7 +22,7 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Examples
-    cli emit reflection list --cli cli
+    ${CLI_PATH} --cli cli
 EOF
 }
 

@@ -5,7 +5,7 @@ cli::import cli_util
 help() {
     cat << EOF
 Command
-    cli dsl .group
+    ${CLI_PATH}
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.

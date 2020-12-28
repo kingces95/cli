@@ -133,6 +133,8 @@ main() {
 
         case "${1-}" in
             # optimization
+            '---type')
+                echo 'command' ;;
             '---which')
                 echo "${path}" ;; 
             *)
@@ -149,7 +151,13 @@ main() {
 
     # directory
     elif cli::shim::is_group "${path}"; then
-        cli::shim::list "${path}"
+     
+        case "${1-}" in
+            '---type')
+                echo 'group' ;;
+            *)
+                cli::shim::list "${path}" ;;
+        esac
 
     # fail
     else

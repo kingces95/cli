@@ -5,7 +5,7 @@ cli::import cli emit initialize
 help() {
     cat << EOF
 Command
-    cli emit export
+    ${CLI_PATH}
 
 Summary
     Emit functions for exporting functions, variables, and import statements.

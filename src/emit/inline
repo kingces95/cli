@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    cli emit inline
+    ${CLI_PATH}
 
 Summary
     Emit a function whose body is the main function of a source file.
@@ -20,7 +20,7 @@ Global Arguments
 
 Examples
     Return three for the three positional arguments 'a', 'b', and 'c'.
-        cli emit inline --path /dev/stdin --name say_hi \
+        ${CLI_PATH} --path /dev/stdin --name say_hi \
             <<< "source \$(cli loader); main() { echo 'hi'; }; cli::load"
 EOF
 }

@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    cli path join
+    ${CLI_PATH}
 
 Summary
     Join segments into an absolute path.
@@ -28,16 +28,16 @@ Global Arguments
 
 Examples
     Join segments 'foo' 'bar' into '/foo/bar'
-        cli path -- foo bar
+        ${CLI_PATH} -- foo bar
 
     Join segments '.foo-bar' into '/.foo_bar'
-        cli path -- .foo-bar
+        ${CLI_PATH} -- .foo-bar
 
     Join segments 'foo' 'bar' into '::foo::bar'
-        cli path --delimiter :: -- foo bar
+        ${CLI_PATH} --delimiter :: -- foo bar
 
     Join base 'usr' with segments 'foo' 'bar' into '/usr/foo/bar'
-        cli path --base usr -- foo bar
+        ${CLI_PATH} --base usr -- foo bar
 
 EOF
 }
@@ -76,27 +76,27 @@ main() {
 }
 
 self_test() {
-    cli path join -- foo bar \
+    ${CLI_PATH} -- foo bar \
         | assert::pipe_eq \
             '/foo/bar'
             
-    cli path join -- .foo-bar \
+    ${CLI_PATH} -- .foo-bar \
         | assert::pipe_eq \
             '/.foo_bar'
             
-    cli path join --delimiter :: -- foo bar \
+    ${CLI_PATH} --delimiter :: -- foo bar \
         | assert::pipe_eq \
             '::foo::bar'
             
-    cli path join --base /usr -- foo bar \
+    ${CLI_PATH} --base /usr -- foo bar \
         | assert::pipe_eq \
             '/usr/foo/bar'
 
-    if cli path join --base usr -- foo bar 2> /dev/null; then
+    if ${CLI_PATH} --base usr -- foo bar 2> /dev/null; then
         assert::fail 'Failed to reject relative base path.'
     fi
 
-    if cli path join -- foo_bar 2> /dev/null; then
+    if ${CLI_PATH} -- foo_bar 2> /dev/null; then
         assert::fail 'Failed to reject join containing underbar.'
     fi 
 }

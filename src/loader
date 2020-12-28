@@ -86,34 +86,6 @@ cli::loader::cache::test() {
         ::cli::cache::test::inline
 }
 
-cli::loader::cache::exports() {
-    if ! cli::loader::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
-        "$0" | cli::loader::cache::put "${CLI_LOADER_EXPORTS_PATH}"
-    fi
-}
-
-cli::loader::cache::initialize() {
-
-    # initialize hard coded
-    if cli::loader::is_declared initialize; then
-
-        # cache empty result
-        if [[ ! -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
-            : > "${CLI_LOADER_INITIALIZE_PATH}"
-        fi
-
-    # initialize not cached OR cache out of date 
-    elif ! cli::loader::cache::test "${CLI_LOADER_INITIALIZE_PATH}"; then
-
-        # lazily generated (like JIT)
-        "$0" '--help' \
-            | cli dsl tokenize \
-            | cli dsl parse \
-            | cli dsl emit \
-            | cli::loader::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
-    fi
-}
-
 cli::loader::cache::test::bindings() {
     local cached=true
     local path=
@@ -203,6 +175,36 @@ cli::loader::cache::imports() {
     declare -p bindings > "${CLI_LOADER_BINDINGS_PATH}"
 }
 
+cli::loader::cache::exports() {
+    if ! cli::loader::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
+        "$0" | cli::loader::cache::put "${CLI_LOADER_EXPORTS_PATH}"
+    fi
+}
+
+cli::loader::cache::initialize() {
+
+    # test initialize cache 
+    if ! cli::loader::cache::test "${CLI_LOADER_INITIALIZE_PATH}"; then
+   
+        # initialize hard coded
+        if cli::loader::is_declared initialize; then
+
+            # cache empty result
+            if [[ ! -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
+                : > "${CLI_LOADER_INITIALIZE_PATH}"
+            fi
+
+        # initialize lazily generated (like JIT)
+        else
+            "$0" '--help' \
+                | cli dsl tokenize \
+                | cli dsl parse \
+                | cli dsl emit \
+                | cli::loader::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
+        fi
+    fi
+}
+
 cli::loader::source::imports() {
     cli::loader::cache::imports
     source "${CLI_LOADER_IMPORTS_SOURCE_PATH}"
@@ -255,15 +257,28 @@ cli::loader::self_test() {
 }
 
 cli::load() {
+    # declare CLI_PATH, CLI_NAME, CLI_DIR
+    : ${CLI_PATH:=${BASH_SOURCE[1]##*/}}
+    local path=( ${CLI_PATH} )
+    local length=${#path[@]}
+    declare -x CLI_NAME="${path[@]: -1:1}"
+    declare -x CLI_DIR="${path[@]:0:$(( length - 1 ))}"
+    unset path length
 
-     if cli::loader::is_declared export; then
+    # implicit imports
+    if cli::loader::is_declared export; then
         CLI_LOADER_IMPORTS+=( \
             'cli emit export' \
             'cli emit initialize' \
         )
     fi
 
+    # well-known options
     case "${1-}" in
+        '---type')
+            echo 'command'
+            exit
+            ;;
         '---inline')
             cli emit inline \
                 --name "$(cli path join --delimiter '::' -- ${CLI_PATH})::inline" \

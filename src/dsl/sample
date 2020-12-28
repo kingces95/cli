@@ -4,7 +4,10 @@ source $(cli loader)
 help() {
     cat << EOF
 Command
-    cmd dls sample : Sample command to test Domain Specific Language.
+    ${CLI_PATH} 
+
+Summary    
+    Sample command to test Domain Specific Language.
 
 Arguments
     --run-as                    : Run as the specified user.

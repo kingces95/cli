@@ -4,7 +4,7 @@ source $(cli loader)
 help() {
     cat << EOF
 Command
-    cli self-test
+    ${CLI_PATH}
 
 Summary
     Run a self test for every command. 

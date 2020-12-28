@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    cli path split
+    ${CLI_PATH}
 
 Summary
     Split a path into segments.
@@ -20,7 +20,7 @@ Description
 Arguments
     --path       [Required] : The path to split. Must start with base.
     --delimiter  [Required] : Default: /. Allowed values: /, ::.
-    --base       [Required] : Optional base path. Value is simply removed from
+    --base                  : Optional base path. Value is simply removed from
                               the start before splitting. Default is the delimiter.
 
 Global Arguments
@@ -29,16 +29,16 @@ Global Arguments
 
 Examples
     Split path '/foo/bar' into 'foo' 'bar' 
-        cli path split --path /foo/bar
+        ${CLI_PATH} --path /foo/bar
 
     Split path '/.foo_bar' into '.foo-bar'
-        cli path split --path .foo_bar
+        ${CLI_PATH} --path .foo_bar
 
     Split path '::foo::bar' into 'foo' 'bar' 
-        cli path split --delimiter :: --path ::foo::bar
+        ${CLI_PATH} --delimiter :: --path ::foo::bar
 
     Split path '/usr/foo/bar' with base 'usr' into 'foo' 'bar' 
-        cli path split --base usr --path /usr/foo/bar
+        ${CLI_PATH} --base usr --path /usr/foo/bar
 EOF
 }
 
@@ -73,31 +73,31 @@ main() {
 }
 
 self_test() {
-    cli path split --path /foo/bar \
+    ${CLI_PATH} --path /foo/bar \
         | assert::pipe_eq \
             'foo bar'
             
-    cli path split --path /.foo_bar \
+    ${CLI_PATH} --path /.foo_bar \
         | assert::pipe_eq \
             '.foo-bar'
             
-    cli path split --delimiter :: --path ::foo::bar \
+    ${CLI_PATH} --delimiter :: --path ::foo::bar \
         | assert::pipe_eq \
             'foo bar'
             
-    cli path split --base /usr --path /usr/foo/bar \
+    ${CLI_PATH} --base /usr --path /usr/foo/bar \
         | assert::pipe_eq \
             'foo bar'
 
-    if cli path split --base usr --path /usr/foo/bar 2> /dev/null; then
+    if ${CLI_PATH} --base usr --path /usr/foo/bar 2> /dev/null; then
         assert::fail 'Failed to reject relative base path.'
     fi
 
-    if cli path split --base /usr --path /foo 2> /dev/null; then
+    if ${CLI_PATH} --base /usr --path /foo 2> /dev/null; then
         assert::fail 'Failed to reject path not starting with base.'
     fi
 
-    if cli path split --path /foo-bar 2> /dev/null ; then
+    if ${CLI_PATH} --path /foo-bar 2> /dev/null ; then
         assert::fail 'Failed to reject path containing dash.'
     fi 
 }

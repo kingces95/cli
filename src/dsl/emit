@@ -7,7 +7,7 @@ cli::import cli_emit
 help() {
     cat << EOF
 Command
-    cli dsl emit
+    ${CLI_PATH}
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.

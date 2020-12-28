@@ -5,7 +5,7 @@ cli::import cli_emit
 help() {
     cat << EOF
 Command
-    cli pack
+    ${CLI_PATH}
 
 Summary
     Package a group of commands into a into a single file.
