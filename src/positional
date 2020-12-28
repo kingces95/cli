@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    cli positional
+
+Summary
+    Echo the number of positional arguments before the first option.
+
+Description
+    Echo the number of positional arguments before the frist option or 
+    the end of the list of agruments. The first option is identified as
+    the first argument to start with a dash.
+
+Arguments
+    --                  : Positional and optional command line arguments.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Return three for the three positional arguments 'a', 'b', and 'c'.
+        cli positional -- a b c --key value
+            3
+
+    Return 1 when there is a single positional argument.
+        cli positional -- a 
+            1
+
+    Return zero when there are no arguments.
+        cli positional
+            0
+EOF
+}
+
+# supports inlining
+
+main() {   
+    declare CLI_CALL_ARG_GLOB="-*"
+
+    declare i=0
+    while (( $# > 0 )); do 
+
+        if [[ "$1" == $CLI_CALL_ARG_GLOB ]]; then 
+            echo ${i}
+            exit
+        fi
+
+        i=$(( i + 1 ))
+        shift
+    done
+
+    echo ${i}
+}
+
+self_test() {
+    cli positional -- a b c --key value \
+        | assert::pipe_eq \
+            '3'
+
+    cli positional -- a \
+        | assert::pipe_eq \
+            '1'
+
+    cli positional \
+        | assert::pipe_eq \
+            '0'
+}
+
+cli::load "$@"

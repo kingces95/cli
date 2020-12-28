@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli initialize
+cli::import cli emit initialize
 
 help() {
     cat << EOF
 Command
-    cli export
+    cli emit export
 
 Summary
     Emit functions for exporting functions, variables, and import statements.

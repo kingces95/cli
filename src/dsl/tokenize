@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli initialize
-cli::import cli dsl .group
+cli::import_group
+cli::import cli emit initialize
 
 help() {
     cat << EOF

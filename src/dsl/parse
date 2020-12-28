@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli dsl .group
+cli::import_group
 
 help() {
     cat << EOF

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    cli cache test
+
+Summary
+    Test if a file exists and is older than another file.
+
+Description
+    The loader caches results, like generation of the initialize function
+    from a source file's help, and uses this function to test if the cache
+    is stale. For example, if the cache of the initialize function exists
+    and is older than the source file, then the cache is fresh, otherwise
+    the cache is stale. Returns success if the cache is fresh, otherwise
+    returns a failure code if the cache is stale or the arguments are bad.
+
+Arguments
+    --cache       [Required] : Path to the cache.
+    --source      [Required] : Path to the source file.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+EOF
+}
+
+main() {
+    if [[ ! -f "${arg_cache}" ]] \
+        || [[ "${arg_cache}" -ot "${arg_source}" ]]; then
+        false
+    else
+        true
+    fi
+}
+
+self_test() {
+    local source_path=$(mktemp "/tmp/source.XXXXXX")
+    local cache_path=$(mktemp "/tmp/cache.XXXXXX")
+
+    if ! cli cache test --source "${source_path}" --cache "${cache_path}"; then
+        assert::fail 'Fresh cache reported stale.'
+    fi
+
+    touch "$source_path"
+    if cli cache test --source "${source_path}" --cache "${cache_path}"; then
+        assert::fail 'Stale cache reported fresh.'
+    fi
+
+    rm "${cache_path}"
+    if cli cache test --source "${source_path}" --cache "${cache_path}"; then
+        assert::fail 'Missing cache reported fresh.'
+    fi
+
+    rm "${source_path}"
+}
+
+cli::load "$@"

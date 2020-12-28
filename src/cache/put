@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    cli cache put
+
+Summary
+    Read from stdin and write to a temp file that is moved to a cache path.
+
+Description
+    The loader caches results, like generation of the initialize function
+    from a source file's help, and uses this function to atomically place
+    a cache file. The content is read from stdin, written to a temp file,
+    and then that temp file is moved to the cache path. 
+
+Arguments
+    --cache       [Required] : Path to the cache.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+EOF
+}
+
+main() {
+    local temp_path=$(mktemp "/tmp/cli.cache.put.XXXXXX")
+    cat >> "${temp_path}"
+    mv "${temp_path}" "${arg_cache}"
+}
+
+self_test() {
+    local cache_path=$(mktemp "/tmp/cache.XXXXXX")
+
+    echo 'content' \
+        | cli cache put --cache "${cache_path}"
+
+    cat "${cache_path}" \
+        | assert::pipe_eq \
+            'content'
+
+    rm "${cache_path}"
+}
+
+cli::load "$@"

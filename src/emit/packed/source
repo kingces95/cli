@@ -5,7 +5,7 @@ cli::import cli emit .group
 help() {
     cat << EOF
 Command
-    cli emit subproc
+    cli emit source : emit a function containing a library's source
 
 Arguments
     --cli -c     [Required] : Name of the cli.
@@ -14,16 +14,13 @@ Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
 
-Exmpales
-    Emit 'cli initialize' command as a subproc 'cli::initialize'
-        cli emit subproc --cli "cli initialize"
+Examples
 EOF
 }
 
 main() (
-    ${arg_cli} '---print' \
-        | emit::file \
-        | emit::subproc "$(cli::emit::library_name ${arg_cli})"; \
+    ${arg_cli} \
+        | emit::function "$(cli::emit::library_name "${arg_cli}" 'source')"
 )
 
 cli::load "$@"

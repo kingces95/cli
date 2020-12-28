@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    cli path split
+
+Summary
+    Split a path into segments.
+
+Description
+    Split a path into segments using a supplied delimiter (e.g. '/' or '::'
+    depending on whether the cli is unpacked or packed). Each segment may
+    contain alpha-numeric characters or underbar and may optionally start with
+    period. Each underbar is replaced with dash during the split. Paths must
+    be absolute.
+
+Arguments
+    --path       [Required] : The path to split. Must start with base.
+    --delimiter  [Required] : Default: /. Allowed values: /, ::.
+    --base       [Required] : Optional base path. Value is simply removed from
+                              the start before splitting. Default is the delimiter.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Split path '/foo/bar' into 'foo' 'bar' 
+        cli path split --path /foo/bar
+
+    Split path '/.foo_bar' into '.foo-bar'
+        cli path split --path .foo_bar
+
+    Split path '::foo::bar' into 'foo' 'bar' 
+        cli path split --delimiter :: --path ::foo::bar
+
+    Split path '/usr/foo/bar' with base 'usr' into 'foo' 'bar' 
+        cli path split --base usr --path /usr/foo/bar
+EOF
+}
+
+main() {   
+    local GLOB="?([.])[a-zA-Z0-9]*([a-zA-Z0-9_])"
+
+    : ${arg_base:=$arg_delimiter}
+
+    if [[ ! "${arg_base}" == ${arg_delimiter}* ]]; then
+        echo "Unexpected relative base path '${arg_base}'. Base path must be absolute." >&2
+        exit 1
+    fi
+
+    if [[ ! "${arg_path}" == ${arg_base}* ]]; then
+        echo "Unexpected path '${arg_path}'. Path must begin with base '${arg_base}'." >&2
+        exit 1
+    fi
+
+    declare path="${arg_path}"
+    path="${path#"${arg_base}"}"        # remove base
+    path="${path//${arg_delimiter}/ }"  # replace '::' or '/' with space
+
+    for i in ${path}; do
+        if [[ ! "${i}" == $GLOB ]]; then
+            echo "Unexpected path segment '${i}' does not match '${GLOB}'." >&2
+            exit 1
+        fi
+    done
+
+    path="${path//_/-}"                 # replace '_' with '-'
+    echo ${path}
+}
+
+self_test() {
+    cli path split --path /foo/bar \
+        | assert::pipe_eq \
+            'foo bar'
+            
+    cli path split --path /.foo_bar \
+        | assert::pipe_eq \
+            '.foo-bar'
+            
+    cli path split --delimiter :: --path ::foo::bar \
+        | assert::pipe_eq \
+            'foo bar'
+            
+    cli path split --base /usr --path /usr/foo/bar \
+        | assert::pipe_eq \
+            'foo bar'
+
+    if cli path split --base usr --path /usr/foo/bar 2> /dev/null; then
+        assert::fail 'Failed to reject relative base path.'
+    fi
+
+    if cli path split --base /usr --path /foo 2> /dev/null; then
+        assert::fail 'Failed to reject path not starting with base.'
+    fi
+
+    if cli path split --path /foo-bar 2> /dev/null ; then
+        assert::fail 'Failed to reject path containing dash.'
+    fi 
+}
+
+cli::load "$@"

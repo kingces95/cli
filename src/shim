@@ -40,30 +40,6 @@ Examples
 EOF
 }
 
-cli::shim::help() {
-    cat << EOF
-Command
-    $1
-
-Summary
-    List available commands and groups.
-    
-Description
-    Operations on a group of commands include listing sub-groups,
-    commands, and both.
-
-Arguments
-    --list -l               : List commands and groups.
-    --commands -c           : List commands.
-    --groups -g             : List command groups.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-EOF
-}
-
-# support [Params], unify paths + function names + library_name, support relative paths
-
 # copied from 'loader'
 set +m
 set -e
@@ -73,16 +49,84 @@ shopt -s globstar
 shopt -s extglob
 shopt -s nullglob
 
-cli::shim::main() { 
-    local CLI_SHIM_ARG_GLOB="-*"
-    local CLI_SHIM_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
+# inline 'cli path join' and 'cli positional'
+declare CLI_SHIM_SOURCE_PATH="${BASH_SOURCE}"
+declare CLI_SHIM_SOURCE_NAME="${CLI_SHIM_SOURCE_PATH##*/}"
+declare CLI_SHIM_SOURCE_DIR="${CLI_SHIM_SOURCE_PATH%/*}"
+declare CLI_SHIM_CACHE_DIR="${CLI_SHIM_SOURCE_DIR}/.cli/${CLI_SHIM_SOURCE_NAME}"
+declare CLI_SHIM_CACHE_INLINE_PATH="${CLI_SHIM_CACHE_DIR}/inline.sh"
 
-    local path=
-    local callsite=
+# test cache
+if [[ ! -f "${CLI_SHIM_CACHE_INLINE_PATH}" ]] \
+    || [[ "${CLI_SHIM_CACHE_INLINE_PATH}" -ot "${CLI_SHIM_SOURCE_PATH}" ]]; then
 
-    callsite=$(cli::shim::callsite "$@")
-    eval "set ${callsite}"
-    path=$1; shift
+    declare CLI_SHIM_CACHE_INLINE_TEMP_PATH=$(mktemp "/tmp/cache.XXXXXX")
+
+    # ::cli::inline::inline
+    cat "${BASH_SOURCE%/*}/emit/inline" \
+        | {
+            while true; do
+                read -r
+                if [[ "${REPLY}" == 'main() {' ]]; then
+                    echo "::cli::inline::inline() {"
+                    while true; do 
+                        read -r
+                        echo "${REPLY}"
+                        if [[ ${REPLY} == '}' ]]; then
+                            exit
+                        fi
+                    done
+                fi
+            done
+        } \
+        | source /dev/stdin
+
+    # constants
+    inline() {
+        arg_name="::cli::$1::inline" \
+        arg_path="${CLI_SHIM_SOURCE_DIR}/$2" \
+            ::cli::inline::inline \
+            >> "${CLI_SHIM_CACHE_INLINE_TEMP_PATH}"
+    }
+
+    # cli/path/join -> ::cli::path::join::inline
+    inline "path::join" "path/join"
+
+    # cli/positional -> ::cli::positional::inline
+    inline "positional" "positional"
+
+    # create cache dir            
+    if [[ ! -d "${CLI_SHIM_CACHE_DIR}" ]]; then
+        mkdir -p "${CLI_SHIM_CACHE_DIR}"
+    fi
+
+    # put cache file
+    mv "${CLI_SHIM_CACHE_INLINE_TEMP_PATH}" "${CLI_SHIM_CACHE_INLINE_PATH}"
+fi
+
+# source inlined functions
+source "${CLI_SHIM_CACHE_INLINE_PATH}"
+
+cli::shim::is_command() { test -f "$1" && test -x "$1"; }
+cli::shim::is_group() { test -d "$1" && test -x "$1"; }
+cli::shim::list() { cli list --dir "$1"; }
+
+cli::shim::cache::start_time() {
+    if ! declare -p CLI_LOADER_IMPORTS_EXPIRATION_PATH >/dev/null 2>&1; then
+        declare -xg CLI_LOADER_IMPORTS_EXPIRATION_PATH="$(mktemp "/tmp/cli.XXXXXX")"
+        cli::shim::on_exit() { 
+            rm "${CLI_LOADER_IMPORTS_EXPIRATION_PATH}"
+        }
+        trap cli::shim::on_exit EXIT
+    fi
+}
+
+main() {
+    local positional_arg_count=$(::cli::positional::inline "$@")
+    local positional_args=( "${@:1:${positional_arg_count}}" )
+    local optional_args=( "${@:$(( positional_arg_count + 1 ))}" )
+    local cli_path=( "${arg_name}" "${positional_args[@]}" )
+    local path=$(arg_delimiter='/' ::cli::path::join::inline "${positional_args[@]}")
 
     # file
     if cli::shim::is_command "${path}"; then
@@ -92,11 +136,13 @@ cli::shim::main() {
             '---which')
                 echo "${path}" ;; 
             *)
-                if ! declare -p CLI_LOADER_IMPORTS_EXPIRATION_PATH >/dev/null 2>&1; then
-                    declare -xg CLI_LOADER_IMPORTS_EXPIRATION_PATH="$(mktemp "/tmp/cli.XXXXXX")"
-                    trap cli::shim::on_exit EXIT
-                fi
-                "${path}" "$@"
+                cli::shim::cache::start_time
+                
+                declare -x CLI_PATH="${cli_path[@]}"
+                declare -x CLI_NAME="${cli_path[@]: -1:1}"
+                declare -x CLI_DIR="${cli_path[@]:0:$(( positional_arg_count ))}"
+
+                "${path}" "${optional_args[@]}"
                 ;;
 
         esac
@@ -107,109 +153,17 @@ cli::shim::main() {
 
     # fail
     else
-        cli::shim::command_not_found "${path#${dir}}"
+        echo "Command \"${path}\" not found."
+        exit 1
     fi
 }
-
-# copied from callsite
-cli::shim::callsite() {
-    declare CLI_CALL_ARG_GLOB="-*"
-    declare CLI_CALL_PATH_SEGMENT_GLOB="?([.])+([a-zA-Z0-9-])"
-
-    # use filesystem to resolve command, and first argument is the 
-    # base directory where commands are under development
-    local delimiter=
-    local dir=
-    local path=
-
-    # shift path root
-    dir=${arg_base}
-    path="${dir}"
-
-    # pick a path dilimiter
-    delimiter='/'
-    if [[ "${arg_type}" == 'function' ]]; then
-        delimiter='::'
-    fi
-
-    # compose command path by consuming args upto first dash argument 
-    while (( $# > 0 )); do
-
-        # stop joining path segments if an argument is found (e.g. --foo)
-        if [[ "$1" == $CLI_CALL_ARG_GLOB ]]; then 
-            break
-        fi
-
-        # ensure uniformity of group names (e.g. foo-bar, not foo_bar)
-        if [[ ! "$1" == $CLI_CALL_PATH_SEGMENT_GLOB ]]; then
-            echo "Unexpected command name or group '$1' does not match '$CLI_CALL_PATH_SEGMENT_GLOB'."
-            exit 1
-        fi
-
-        # if path does not end in a delimiter, then add one (e.g. '::' or '/')
-        if [[ -n "${path}" && ! "${path}" =~ .*${delimiter}$ ]]; then
-            path="${path}${delimiter}"
-        fi
-
-        # convert command or group name into file or function name (e.g. foo-bar -> foo_bar)
-        path="${path}${1//-/_}"
-        shift
-    done
-
-    printf '%q' "${path}"
-    for i in "$@"; do
-        printf ' %q' "${i}"
-    done
-    echo
-}
-
-cli::shim::on_exit() {
-    rm "${CLI_LOADER_IMPORTS_EXPIRATION_PATH}"
-}
-
-cli::shim::is_command() {
-    local path="$1"
-    test -f "${path}" && test -x "${path}"
-}
-
-cli::shim::is_group() {
-    local path="$1"
-    test -d "${path}" && test -x "${path}"
-}
-
-cli::shim::list() (
-    cli list --dir "$1"
-)
-
-cli::shim::split() {
-    set "${1//${delimiter}/ }"  # replace '::' or '/' with space
-    set "${1//_/-}"             # replace '_' with '-'
-    echo $1
-}
-
-cli::shim::command_not_found() {
-    echo "Command '$(cli::shim::split $1)' not found."
-    exit 1
-}
-
-main() {
-    declare -f cli::shim::main
-    declare -f cli::shim::split
-    declare -f cli::shim::command_not_found
-
-    # these functions generated during packing
-    # declare -f cli::shim::is_command
-    # declare -f cli::shim::is_group
-    # declare -f cli::shim::list
-    # declare -g cli::shim::callsite
-}
-
 
 initialize() {
     
     # declarations
     declare -g arg_help=""
     declare -g arg_base=""
+    declare -g arg_name=""
     declare -g arg_type=""
     declare -g arg_self_test=""
     declare -g arg_help=""
@@ -225,6 +179,7 @@ initialize() {
     while (( $# > 0 )); do
         case "$1" in
             '--help') arg__[arg_help]="true"; arg_help=true ;;
+            '--name') arg__[arg_name]="${2:-}"; arg_name="${2:-}"; shift ;;
             '--base') arg__[arg_base]="${2:-}"; arg_base="${2:-}"; shift ;;
             '--type') arg__[arg_type]="${2:-}"; arg_type="${2:-}"; shift ;;
             '--self-test') arg__[arg_self_test]="true"; arg_self_test=true ;;
@@ -249,62 +204,19 @@ initialize() {
     esac
 }
 
-# echo "$@" > /dev/stderr
+# emulate loader
 case ${1-} in
-    '') main ;;
-    '-h') ;& '--help') help ;;
-    '--self-test') ;;
     '---print') cat ${BASH_SOURCE} ;;
     '---which') echo ${BASH_SOURCE} ;;
     '---exports') main ;;
     '---initialize') ;;
     '---imports') ;;
-    # -*) cli::shim::unexpected_argument "$1" ;;
     *) 
         initialize "$@"
-        if (( ${#arg_[0]} > 0)); then set "${arg_[@]}"; fi
-        cli::shim::main "$@" 
+
+        if ${arg_help}; then help; exit; fi
+        if ${arg_self_test}; then exit; fi
+
+        main "${arg_[@]}" 
     ;;
 esac
-
-# trash
-cli::shim::callsite::hide() (
-    local this_path="${BASH_SOURCE}"
-    local this_dir="${this_path%/*}"
-
-    # resolve well-known callsites (prevents inifinite recursion)
-    local loader="${this_dir}/loader"
-    if [[ "${arg_base}/$@" -ef "${loader}" ]]; then
-        echo "${loader}"
-        return
-    fi
-
-    set -- '--base' "${arg_base}" '--' "$@"
-
-    source "${this_dir}/callsite"
-)
-cli::shim::callsite::hide() {
-    local this_path="${BASH_SOURCE}"
-    local this_dir="${this_path%/*}"
-
-    # resolve well-known callsites (prevents inifinite recursion)
-    local loader="${this_dir}/loader"
-    if [[ "${arg_base}/$@" -ef "${loader}" ]]; then
-        echo "${loader}"
-        return
-    fi
-
-    local shim="${this_dir}/shim"
-    if [[ "${arg_base}/$1" -ef "${shim}" ]]; then
-        shift
-        echo "${shim} $@"
-        return
-    fi
-
-    # echo ${callsite} '--base' "${arg_base}" '--' "$@" > /dev/stderr
-    # ${callsite} '--base' "${arg_base}" '--' "$@" > /dev/stderr
-    # echo '---' > /dev/stderr
-
-    local callsite="${this_dir}/callsite"
-    ${callsite} '--base' "${arg_base}" '--' "$@"
-}

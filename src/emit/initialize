@@ -4,7 +4,7 @@ source $(cli loader)
 help() {
     cat << EOF
 Command
-    cli initialize
+    cli emit initialize
 
 Summary
     Emit a minimum implementation of initialize.
@@ -19,7 +19,7 @@ Global Arguments
 EOF
 }
 
-cli::initialize() {
+initialize() {
     : ${arg_help:=false}
     : ${arg_self_test:=false}
 
@@ -34,12 +34,7 @@ cli::initialize() {
     done
 }
 
-initialize() {
-    cli::initialize "$@"
-}
-
 main() {
-    declare -f cli::initialize
     declare -f initialize
 }
 

@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    cli emit inline
+
+Summary
+    Emit a function whose body is the main function of a source file.
+
+Arguments
+    --path   [Required] : The path to the source file.
+    --name   [Required] : The name of the inline function.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Return three for the three positional arguments 'a', 'b', and 'c'.
+        cli emit inline --path /dev/stdin --name say_hi \
+            <<< "source \$(cli loader); main() { echo 'hi'; }; cli::load"
+EOF
+}
+
+main() {
+    : ${arg_path?'Unexpected lack of source file to inline.'}
+    : ${arg_name?'Unexpected lack of inline function name.'}
+
+    (
+        # disable loader
+        cli() { echo '/dev/null'; }
+        cli::import() { return; }
+        cli::load() { return; }
+
+        # source file
+        source "${arg_path}"
+
+        # echo and rename main function
+        declare -f main | { 
+            read
+            echo "${arg_name} ()"
+            cat
+        }
+    )
+}
+
+self_test() {
+    cli emit inline --path /dev/stdin --name say_hi \
+        <<< "source \$(cli loader); main() { echo 'hi'; }; cli::load" \
+        | assert::pipe_eq_exact \
+            "say_hi ()" \
+            "{ " \
+            "    echo 'hi'" \
+            "}"
+}
+
+cli::load "$@"
