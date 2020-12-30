@@ -72,7 +72,7 @@ cli::import() {
 }
 
 cli::import_group() {
-    cli::import ${CLI_DIR} .group
+    cli::import ${CLI_GROUP} .group
 }
 
 cli::loader::cache::put() {
@@ -257,12 +257,13 @@ cli::loader::self_test() {
 }
 
 cli::load() {
-    # declare CLI_PATH, CLI_NAME, CLI_DIR
+    # declare CLI_PATH, CLI_NAME, CLI_GROUP
     : ${CLI_PATH:=${BASH_SOURCE[1]##*/}}
     local path=( ${CLI_PATH} )
     local length=${#path[@]}
     declare -x CLI_NAME="${path[@]: -1:1}"
-    declare -x CLI_DIR="${path[@]:0:$(( length - 1 ))}"
+    declare -x CLI_GROUP="${path[@]:0:$(( length - 1 ))}"
+    declare -x CLI_PARENT_GROUP="${path[@]:0:$(( length - 2 ))}"
     unset path length
 
     # implicit imports
@@ -280,8 +281,9 @@ cli::load() {
             exit
             ;;
         '---inline')
+            local name=${2-$(cli path join --delimiter '::' -- ${CLI_PATH})::inline}
             cli emit inline \
-                --name "$(cli path join --delimiter '::' -- ${CLI_PATH})::inline" \
+                --name "${name}" \
                 --path "${CLI_LOADER_SOURCE_PATH}"
             exit
             ;;
@@ -294,9 +296,7 @@ cli::load() {
             exit
             ;;
         '---imports')
-            cli::loader::cache::imports
-            source "${CLI_LOADER_BINDINGS_PATH}"
-            for i in "${!bindings[@]}"; do echo "${i} -> ${bindings[$i]}"; done
+            for i in "${CLI_LOADER_IMPORTS[@]}"; do echo "${i}"; done
             exit
             ;;
         '---initialize')

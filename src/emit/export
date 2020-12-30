@@ -49,6 +49,14 @@ cli::export::import() {
     echo "cli::import $@"
 }
 
+cli::export::import_group() {
+    echo "cli::import ${CLI_GROUP} .group"
+}
+
+cli::export::import_parent_group() {
+    echo "cli::import ${CLI_PARENT_GROUP} .group"
+}
+
 cli::export() {
     cli::export::variables "$@"
     cli::export::functions "$@"
@@ -57,6 +65,8 @@ cli::export() {
 main() {
     declare -f cli::export
     declare -f cli::export::import
+    declare -f cli::export::import_group
+    declare -f cli::export::import_parent_group
     declare -f cli::export::variables
     declare -f cli::export::functions
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli emit reflection .group
+cli::import_group
 
 help() {
     cat << EOF

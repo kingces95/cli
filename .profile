@@ -1,3 +1,6 @@
+set +m
+shopt -s lastpipe
+
 REPO_DIR=$(cd $(dirname ${BASH_SOURCE}); pwd)
 GIT_DIR=$(cd "${REPO_DIR}/.."; pwd)
 

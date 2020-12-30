@@ -128,6 +128,8 @@ main() {
     local cli_path=( "${arg_name}" "${positional_args[@]}" )
     local path=$(arg_delimiter='/' ::cli::path::join::inline "${positional_args[@]}")
 
+    shift ${positional_arg_count}
+
     # file
     if cli::shim::is_command "${path}"; then
 
@@ -141,8 +143,6 @@ main() {
                 cli::shim::cache::start_time
                 
                 declare -x CLI_PATH="${cli_path[@]}"
-                declare -x CLI_NAME="${cli_path[@]: -1:1}"
-                declare -x CLI_DIR="${cli_path[@]:0:$(( positional_arg_count ))}"
 
                 "${path}" "${optional_args[@]}"
                 ;;

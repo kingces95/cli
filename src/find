@@ -15,12 +15,12 @@ Arguments
                               pre, post. Default: pre.
 
 Primary Arguments
-    --type                  : True if type of entry is of the specified type.
+    --type -t               : True if type of entry is of the specified type.
                               Allowed values: 'c', 'g', ''.
+    --name -n               : True if the last component of the path name being
+                              examined matches the pattern.
     --ls             [Flag] : True. Prints out the type (either 'c' or 'g') 
                               followed by the entry.
-    --name                  : True if the last component of the path name being
-                              examined matches the pattern.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.

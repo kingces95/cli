@@ -19,7 +19,7 @@ cli::emit::reflection::contains() {
 
 export() {
     cli::export::import cli_emit
-    cli::export::import cli emit .group
+    cli::export::import_parent_group
     cli::export cli emit reflection
 }
 
