@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Summary
     Echo the number of positional arguments before the first option.
@@ -24,15 +24,15 @@ Global Arguments
 
 Examples
     Return three for the three positional arguments 'a', 'b', and 'c'.
-        ${CLI_PATH} -- a b c --key value
+        ${CLI_COMMAND} -- a b c --key value
             3
 
     Return 1 when there is a single positional argument.
-        ${CLI_PATH} -- a 
+        ${CLI_COMMAND} -- a 
             1
 
     Return zero when there are no arguments.
-        ${CLI_PATH}
+        ${CLI_COMMAND}
             0
 EOF
 }

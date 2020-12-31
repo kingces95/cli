@@ -5,7 +5,7 @@ cli::import_group
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Summary
     
@@ -20,7 +20,7 @@ Global Arguments
 Examples
     Emit a predicate that test if a path is a group.
         cli find --cli cli --type g \
-            | ${CLI_PATH}
+            | ${CLI_COMMAND}
 EOF
 }
 

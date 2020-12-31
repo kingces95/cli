@@ -5,7 +5,7 @@ cli::import cli_assert
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Summary
     Emit a function whose body is the main function of a command.
@@ -22,7 +22,7 @@ Global Arguments
 
 Examples
     Print the main function renmaed to 'say_hi'.
-        ${CLI_PATH} --name say_hi \\
+        ${CLI_COMMAND} --name say_hi \\
             <<< "source \\\$(cli loader); main() { echo 'hi'; }; cli::load"
 EOF
 }
@@ -51,7 +51,7 @@ main() {
 }
 
 self_test() {
-    ${CLI_PATH} --name say_hi \
+    ${CLI_COMMAND} --name say_hi \
         <<< "source \$(cli loader); main() { echo 'hi'; }; cli::load" \
         | assert::pipe_eq_exact \
             "say_hi ()" \

@@ -5,7 +5,7 @@ cli::import_group
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
     
 Summary
     Emit a function containing a library's source.

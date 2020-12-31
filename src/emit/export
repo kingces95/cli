@@ -5,7 +5,7 @@ cli::import cli emit initialize
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Summary
     Emit functions for exporting functions, variables, and import statements.
@@ -50,11 +50,17 @@ cli::export::import() {
 }
 
 cli::export::import_group() {
-    echo "cli::import ${CLI_GROUP} .group"
+    local segments=( ${CLI_COMMAND} )
+    local length=${#segments[@]}
+    local group="${segments[@]:0:$(( length - 1 ))}"
+    echo "cli::import ${group} .group"
 }
 
 cli::export::import_parent_group() {
-    echo "cli::import ${CLI_PARENT_GROUP} .group"
+    local segments=( ${CLI_COMMAND} )
+    local length=${#segments[@]}
+    local parent_group="${path[@]:0:$(( length - 2 ))}"
+    echo "cli::import ${parent_group} .group"
 }
 
 cli::export() {

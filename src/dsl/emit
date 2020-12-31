@@ -7,7 +7,7 @@ cli::import cli_emit
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.

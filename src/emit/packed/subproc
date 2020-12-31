@@ -5,7 +5,7 @@ cli::import_group
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Arguments
     --cli -c     [Required] : Name of the cli.

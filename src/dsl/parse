@@ -5,7 +5,7 @@ cli::import_group
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Description
     Read command help tokens from stdin and emit productions to stdout 

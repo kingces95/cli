@@ -17,12 +17,20 @@ Global Arguments
 EOF
 }
 
+declare BASH_DIR="${BASH_SOURCE%/*}"
+declare BASH_NAME="${BASH_SOURCE##*/}"
+declare CACHE_DIR="${BASH_DIR}/.cli/${BASH_NAME}"
+declare EXPORTS_PATH="${CACHE_DIR}/exports.sh"
+if [[ -f "${EXPORTS_PATH}" ]] \
+    && [[ "${EXPORTS_PATH}" -nt "${BASH_SOURCE}" ]]; then
+    echo "${EXPORTS_PATH}"
+    exit
+fi
+
 set -e
 set -u 
 set -o pipefail
 shopt -s lastpipe
-
-declare CLI_LOADER_DIR="${BASH_SOURCE%/*}"
 
 cli::loader::is_declared() {
     if declare -F "$1" > /dev/null; then true; else false; fi
@@ -52,12 +60,9 @@ cli::loader::dry_run() {
 }
 
 cli::loader::cache::load() {
-    declare -g CLI_LOADER_SOURCE_PATH="$1"
-    declare -g CLI_LOADER_SOURCE_NAME="${CLI_LOADER_SOURCE_PATH##*/}"
-    declare -g CLI_LOADER_SOURCE_DIR="${CLI_LOADER_SOURCE_PATH%/*}"
-    
-    declare -g CLI_LOADER_CACHE_DIR="${CLI_LOADER_SOURCE_DIR}/.cli/${CLI_LOADER_SOURCE_NAME}"
-
+    declare -g CLI_LOADER_COMMAND_PATH="$1"
+    declare -g CLI_LOADER_CACHE_DIR="$(arg_path="${CLI_LOADER_COMMAND_PATH}" \
+        ::cli::cache::path::inline)"
     declare -g CLI_LOADER_INITIALIZE_PATH="${CLI_LOADER_CACHE_DIR}/initialize.sh"
     declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
 }
@@ -67,7 +72,10 @@ cli::import() {
 }
 
 cli::import_group() {
-    cli::import ${CLI_GROUP} .group
+    local segments=( ${CLI_COMMAND} )
+    local length=${#segments[@]}
+    local group="${segments[@]:0:$(( length - 1 ))}"
+    cli::import ${group} .group
 }
 
 cli::cache::put() {
@@ -77,7 +85,7 @@ cli::cache::put() {
 
 cli::cache::test() {
     arg_cache="$1" \
-    arg_source="${CLI_LOADER_SOURCE_PATH}" \
+    arg_source="${CLI_LOADER_COMMAND_PATH}" \
         ::cli::cache::test::inline
 }
 
@@ -85,8 +93,8 @@ cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
         if cli::loader::is_declared 'inline'; then
             cli emit inline \
-                --name "$(cli path join --delimiter '::' -- ${CLI_PATH})::inline" \
-                --path "${CLI_LOADER_SOURCE_PATH}" \
+                --name "$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
+                --path "${CLI_LOADER_COMMAND_PATH}" \
                 --function 'inline'
         else
             "$0" 
@@ -114,8 +122,8 @@ cli::loader::cache::initialize() {
 }
 
 cli::loader::load::imports() {
-    local command_path=
-    local cache_path=
+    local import_path=
+    local exports_path=
     local -a import=()
     local -A imported=()
     local -A base_path=()
@@ -142,13 +150,13 @@ cli::loader::load::imports() {
             # TODO
         fi
 
-        # if import codegen cache stale
-        command_path=$(arg_delimiter='/' arg_base=${base_path[${import}]} \
+        import_path=$(arg_delimiter='/' arg_base=${base_path[${import}]} \
             ::cli::path::join::inline "${import[@]:1}")
-        cache_path="$(arg_path=${command_path} \
+        exports_path="$(arg_path=${import_path} \
             ::cli::cache::path::inline)/exports.sh"
 
-        if ! arg_cache="${cache_path}" arg_source="${command_path}" \
+        # if import codegen cache stale
+        if ! arg_cache="${exports_path}" arg_source="${import_path}" \
             ::cli::cache::test::inline; then
 
             # refresh import codegen cache
@@ -156,7 +164,7 @@ cli::loader::load::imports() {
         fi
             
         # source codegen
-        source "${cache_path}"
+        source "${exports_path}"
     done
 }
 
@@ -226,9 +234,9 @@ cli::load() {
             '---type')
                 echo 'command' ;;
             '---which') 
-                echo "${CLI_LOADER_SOURCE_PATH}" ;;
+                echo "${CLI_LOADER_COMMAND_PATH}" ;;
             '---print') 
-                cat "${CLI_LOADER_SOURCE_PATH}" ;;
+                cat "${CLI_LOADER_COMMAND_PATH}" ;;
             '---imports')
                 for i in "${CLI_LOADER_IMPORTS[@]}"; do echo "${i}"; done ;;
             '---initialize')
@@ -302,22 +310,19 @@ main() {
     echo
 
     echo "declare -a CLI_LOADER_IMPORTS=()"
-    echo ": \${CLI_PATH:=\${BASH_SOURCE[1]##*/}}"
-    echo "declare path=( \${CLI_PATH} )"
-    echo "declare length=\${#path[@]}"
-    echo "declare CLI_NAME=\"\${path[@]: -1:1}\""
-    echo "declare CLI_GROUP=\"\${path[@]:0:\$(( length - 1 ))}\""
-    echo "declare CLI_PARENT_GROUP=\"\${path[@]:0:\$(( length - 2 ))}\""
-    echo "unset path length"
+    echo ": \${CLI_COMMAND:=\${BASH_SOURCE[1]##*/}}"
+    echo
 
     declare -f cli::import
     declare -f cli::import_group
     declare -f cli::load
+    echo
 
     declare -f cli::loader::dry_run
     declare -f cli::loader::escape_args_then_call_as
     declare -f cli::loader::execute
     declare -f cli::loader::self_test
+    echo
 
     if ${arg_pack}; then
         cli::import() { 
@@ -349,9 +354,11 @@ main() {
         declare -f ::cli::cache::test::inline
         declare -f ::cli::cache::path::inline
         declare -f ::cli::path::join::inline
+        echo
 
         declare -f cli::cache::test
         declare -f cli::cache::put
+        echo
 
         declare -f cli::loader::is_declared
         declare -f cli::loader::cache::load
@@ -359,7 +366,10 @@ main() {
         declare -f cli::loader::cache::exports
         declare -f cli::loader::load::imports
         declare -f cli::loader::load::initialize
+        echo
 
+        # ${bash_source[0]} is '.cli/exports.sh' which is called by
+        # ${bash_source[1]} which is the command itself 
         echo
         echo "cli::loader::cache::load \"\${BASH_SOURCE[1]}\""
   fi
@@ -383,8 +393,7 @@ initialize() {
     done
 }
 
-declare -a CLI_LOADER_IMPORTS
-cli::loader::cache::load ${BASH_SOURCE}
+declare -a CLI_LOADER_IMPORTS=()
 
 cat "${BASH_SOURCE%/*}/emit/inline" \
     | {
@@ -406,7 +415,7 @@ cat "${BASH_SOURCE%/*}/emit/inline" \
         
 inline() {
     arg_name="::cli::$1::inline" \
-    arg_path="${CLI_LOADER_DIR}/$2" \
+    arg_path="${BASH_DIR}/$2" \
         ::cli::inline::inline \
         | source /dev/stdin
 }
@@ -416,11 +425,11 @@ inline 'cache::test' 'cache/test'
 inline 'cache::path' 'cache/path'
 inline 'path::join' 'path/join'
 
+cli::loader::cache::load ${BASH_SOURCE}
+
 if (( $# == 0 )); then
-    if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
-        : ${arg_pack:=false}
-        main | cli::cache::put "${CLI_LOADER_EXPORTS_PATH}"
-    fi
+    : ${arg_pack:=false}
+    main | cli::cache::put "${CLI_LOADER_EXPORTS_PATH}"
     echo "${CLI_LOADER_EXPORTS_PATH}"
     exit
 fi

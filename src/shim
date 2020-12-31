@@ -142,7 +142,7 @@ main() {
             *)
                 cli::shim::cache::start_time
                 
-                declare -x CLI_PATH="${cli_path[@]}"
+                declare -x CLI_COMMAND="${cli_path[@]}"
 
                 "${path}" "${optional_args[@]}"
                 ;;

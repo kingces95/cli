@@ -6,7 +6,7 @@ cli::import cli emit initialize
 help() {
     cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
 
 Description
     Read command help from stdin and emit tokens to stdout one per 

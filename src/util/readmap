@@ -4,7 +4,7 @@ source $(cli loader)
 help() {
 cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
     
 Summary
     Read stdin into an associative array.
@@ -24,7 +24,7 @@ Global Arguments
 
 Examples
     Source readmap and load 'key' 'value' into 'map'.
-        ${CLI_PATH} ---inline | source /dev/stdin; \\
+        ${CLI_COMMAND} ---inline | source /dev/stdin; \\
         declare -A map; \\
         arg_name=map ::cli::util::readmap < <(echo key; echo value)
 EOF

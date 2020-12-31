@@ -5,7 +5,7 @@ cli::import_group
 help() {
     cat << EOF
 Command
-    ${CLI_PATH} 
+    ${CLI_COMMAND} 
     
 Summary
     Emit function 'list' for a cli.
@@ -22,7 +22,7 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Examples
-    ${CLI_PATH} --cli cli
+    ${CLI_COMMAND} --cli cli
 EOF
 }
 

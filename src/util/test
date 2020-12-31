@@ -5,7 +5,7 @@ cli::import cli util is-declared
 help() {
 cat << EOF
 Command
-    ${CLI_PATH}
+    ${CLI_COMMAND}
     
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
