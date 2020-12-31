@@ -217,42 +217,34 @@ cli::load() {
     fi
 
     # well-known options
-    case "${1-}" in
-        '---type')
-            echo 'command'
-            exit
-            ;;
-        '---inline')
-            local name=${2-$(cli path join --delimiter '::' -- ${CLI_PATH})::inline}
-            cli emit inline \
-                --name "${name}" \
-                --path "${CLI_LOADER_SOURCE_PATH}"
-            exit
-            ;;
-        '---which') 
-            echo "${CLI_LOADER_SOURCE_PATH}"
-            exit
-            ;;
-        '---print') 
-            cat "${CLI_LOADER_SOURCE_PATH}"
-            exit
-            ;;
-        '---imports')
-            for i in "${CLI_LOADER_IMPORTS[@]}"; do echo "${i}"; done
-            exit
-            ;;
-        '---initialize')
-            cli::loader::load::imports
-            cli::loader::cache::initialize
-            echo "${CLI_LOADER_INITIALIZE_PATH}"
-            exit
-            ;;
-        '---exports')
-            cli::loader::cache::exports
-            echo "${CLI_LOADER_EXPORTS_PATH}"
-            exit
-            ;;
-    esac 
+    if [[ "${1-}" == ---* ]]; then
+        case "$1" in
+            '---type')
+                echo 'command' ;;
+            '---which') 
+                echo "${CLI_LOADER_SOURCE_PATH}" ;;
+            '---print') 
+                cat "${CLI_LOADER_SOURCE_PATH}" ;;
+            '---imports')
+                for i in "${CLI_LOADER_IMPORTS[@]}"; do echo "${i}"; done ;;
+            '---initialize')
+                cli::loader::load::imports
+                cli::loader::cache::initialize
+                echo "${CLI_LOADER_INITIALIZE_PATH}"
+                ;;
+            '---exports')
+                cli::loader::cache::exports
+                echo "${CLI_LOADER_EXPORTS_PATH}"
+                ;;
+            '---inline')
+                local name=${2-$(cli path join --delimiter '::' -- ${CLI_PATH})::inline}
+                cli emit inline \
+                    --name "${name}" \
+                    --path "${CLI_LOADER_SOURCE_PATH}"
+                ;;
+        esac 
+        exit
+    fi
 
     cli::loader::load::imports
 
