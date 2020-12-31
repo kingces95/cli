@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    ${CLI_PATH}
+
+Summary
+    Print cache directory for an unpacked command.
+
+Arguments
+    --path    [Required] : Path to the command.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Print cache directory for '${CLI_PATH}'
+        ${CLI_PATH} --path \$(${CLI_PATH} ---which)
+EOF
+}
+
+main() {
+    local name="${arg_path##*/}"
+    local dir="${arg_path%/*}"
+    echo "${dir}/.cli/${name}"
+}
+
+self_test() {
+    ${CLI_PATH} --path '/base/command' \
+    | assert::pipe_eq \
+        '/base/.cli/command'
+
+}
+
+cli::load "$@"

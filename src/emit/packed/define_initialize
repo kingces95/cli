@@ -28,14 +28,16 @@ EOF
 }
 
 main() (
-    ${arg_cli} '---initialize' | {
-        # if there is no generated initialize function, then emit nothing
-        if ! read; then return; fi
+    ${arg_cli} '---initialize' \
+        | read; cat "${REPLY}" \
+        | { \
+            # if there is no generated initialize function, then emit nothing
+            if ! read; then return; fi
 
-        cat <(echo ${REPLY}) - \
-            | emit::file \
-            | emit::function "$(cli::emit::library_name ${arg_cli} 'define_initialize')"
-    }
+            cat <(echo ${REPLY}) - \
+                | emit::file \
+                | emit::function "$(cli::emit::library_name ${arg_cli} 'define_initialize')"
+        }
 )
 
 cli::load "$@"

@@ -7,7 +7,7 @@ Command
     ${CLI_PATH}
     
 Summary
-    Find set of transitive imports for a set of root libraries.
+    Find transitive imports for a list of imports.
 
 Arguments
     --cli -c                : CLI path to a command or group.
@@ -46,8 +46,7 @@ cli::imports::recurse() {
 
         ( 
             local -a CLI_LOADER_IMPORTS=()
-            ${import} ---exports \
-                | source /dev/stdin
+            source $(${import} '---exports')
 
             if (( ${#CLI_LOADER_IMPORTS[*]} > 0 )); then
                 printf '%s\n' "${CLI_LOADER_IMPORTS[@]}"

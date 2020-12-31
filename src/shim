@@ -155,6 +155,8 @@ main() {
         case "${1-}" in
             '---type')
                 echo 'group' ;;
+            '---which')
+                echo "${path}" ;; 
             *)
                 cli::shim::list "${path}" ;;
         esac
@@ -216,8 +218,8 @@ initialize() {
 case ${1-} in
     '---print') cat ${BASH_SOURCE} ;;
     '---which') echo ${BASH_SOURCE} ;;
-    '---exports') main ;;
-    '---initialize') ;;
+    '---exports') echo 'nyi' ;;
+    '---initialize') echo '/dev/null' ;;
     '---imports') ;;
     *) 
         initialize "$@"
