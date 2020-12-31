@@ -57,9 +57,6 @@ cli::loader::cache::load() {
     declare -g CLI_LOADER_SOURCE_DIR="${CLI_LOADER_SOURCE_PATH%/*}"
     
     declare -g CLI_LOADER_CACHE_DIR="${CLI_LOADER_SOURCE_DIR}/.cli/${CLI_LOADER_SOURCE_NAME}"
-    if [[ ! -d "${CLI_LOADER_CACHE_DIR}" ]]; then
-        mkdir -p "${CLI_LOADER_CACHE_DIR}"
-    fi
 
     declare -g CLI_LOADER_INITIALIZE_PATH="${CLI_LOADER_CACHE_DIR}/initialize.sh"
     declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
@@ -99,25 +96,20 @@ cli::loader::cache::exports() {
 
 cli::loader::cache::initialize() {
 
+    # initialize hard coded
+    if cli::loader::is_declared initialize; then
+        return
+    fi
+
     # test initialize cache 
     if ! cli::cache::test "${CLI_LOADER_INITIALIZE_PATH}"; then
    
-        # initialize hard coded
-        if cli::loader::is_declared initialize; then
-
-            # cache empty result
-            if [[ ! -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
-                : > "${CLI_LOADER_INITIALIZE_PATH}"
-            fi
-
         # initialize lazily generated (like JIT)
-        else
-            "$0" '--help' \
-                | cli dsl tokenize \
-                | cli dsl parse \
-                | cli dsl emit \
-                | cli::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
-        fi
+        "$0" '--help' \
+            | cli dsl tokenize \
+            | cli dsl parse \
+            | cli dsl emit \
+            | cli::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
     fi
 }
 
@@ -170,7 +162,9 @@ cli::loader::load::imports() {
 
 cli::loader::load::initialize() {
     cli::loader::cache::initialize
-    source "${CLI_LOADER_INITIALIZE_PATH}"
+    if [[ -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
+        source "${CLI_LOADER_INITIALIZE_PATH}"
+    fi
 }
 
 cli::loader::execute() {
@@ -240,7 +234,9 @@ cli::load() {
             '---initialize')
                 cli::loader::load::imports
                 cli::loader::cache::initialize
-                echo "${CLI_LOADER_INITIALIZE_PATH}"
+                if [[ -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
+                    echo "${CLI_LOADER_INITIALIZE_PATH}"
+                fi
                 ;;
             '---exports')
                 cli::loader::cache::exports
