@@ -11,8 +11,9 @@ Summary
     Emit a function whose body is the main function of a source file.
 
 Arguments
-    --path   [Required] : The path to the source file.
+    --path              : The path to the source file. Default: /dev/stdin.
     --name   [Required] : The name of the inline function.
+    --function          : The name of the function to inline. Default: main.
 
 Global Arguments
     --help -h    [Flag] : Show this message and exit.
@@ -20,14 +21,15 @@ Global Arguments
 
 Examples
     Return three for the three positional arguments 'a', 'b', and 'c'.
-        ${CLI_PATH} --path /dev/stdin --name say_hi \
-            <<< "source \$(cli loader); main() { echo 'hi'; }; cli::load"
+        ${CLI_PATH} --name say_hi \\
+            <<< "source \\\$(cli loader); main() { echo 'hi'; }; cli::load"
 EOF
 }
 
 main() {
-    : ${arg_path?'Unexpected lack of source file to inline.'}
+    : ${arg_path?'/dev/stdin'}
     : ${arg_name?'Unexpected lack of inline function name.'}
+    : ${arg_function:='main'}
 
     (
         # disable loader
@@ -39,7 +41,7 @@ main() {
         source "${arg_path}"
 
         # echo and rename main function
-        declare -f main | { 
+        declare -f ${arg_function} | { 
             read
             echo "${arg_name} ()"
             cat
@@ -48,7 +50,7 @@ main() {
 }
 
 self_test() {
-    cli emit inline --path /dev/stdin --name say_hi \
+    ${CLI_PATH} --name say_hi \
         <<< "source \$(cli loader); main() { echo 'hi'; }; cli::load" \
         | assert::pipe_eq_exact \
             "say_hi ()" \

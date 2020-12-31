@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli util is-declared
+
+help() {
+cat << EOF
+Command
+    ${CLI_PATH}
+    
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+main() {
+    declare -f ::cli::util::is_declared::inline
+}
+
+cli::load "$@"

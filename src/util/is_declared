@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+source $(cli loader)
+
+help() {
+    cat << EOF
+Command
+    ${CLI_PATH}
+    
+Summary
+    Test if a set of functions is declared.
+
+Arguments
+    --                      : Name of functions.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Source readmap and load 'key' 'value' into 'map'.
+        ${CLI_PATH} ---inline | source /dev/stdin; \\
+        declare -A map; \\
+        arg_name=map ::cli::util::readmap < <(echo key; echo value)
+EOF
+}
+
+inline() {
+    if declare -F "$@" > /dev/null; then 
+        true
+    else 
+        false
+    fi
+}
+
+cli::load "$@"

@@ -24,13 +24,13 @@ Global Arguments
 
 Examples
     Source readmap and load 'key' 'value' into 'map'.
-        ${CLI_PATH} ---inline readmap | source /dev/stdin; \\
+        ${CLI_PATH} ---inline | source /dev/stdin; \\
         declare -A map; \\
-        arg_name=map readmap < <(echo key; echo value)
+        arg_name=map ::cli::util::readmap < <(echo key; echo value)
 EOF
 }
 
-main() {
+inline() {
     declare -n ref=${arg_name}
 
     while read -r key; do

@@ -86,7 +86,14 @@ cli::cache::test() {
 
 cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
-        "$0" | cli::cache::put "${CLI_LOADER_EXPORTS_PATH}"
+        if cli::loader::is_declared 'inline'; then
+            cli emit inline \
+                --name "$(cli path join --delimiter '::' -- ${CLI_PATH})::inline" \
+                --path "${CLI_LOADER_SOURCE_PATH}" \
+                --function 'inline'
+        else
+            "$0" 
+        fi | cli::cache::put "${CLI_LOADER_EXPORTS_PATH}"
     fi
 }
 
@@ -187,6 +194,9 @@ cli::loader::execute() {
         if cli::loader::is_declared main; then
             main "${arg_[@]}"
 
+        elif cli::loader::is_declared inline; then
+            inline "${arg_[@]}"
+
         elif cli::loader::is_declared export; then
             export
             
@@ -235,12 +245,6 @@ cli::load() {
             '---exports')
                 cli::loader::cache::exports
                 echo "${CLI_LOADER_EXPORTS_PATH}"
-                ;;
-            '---inline')
-                local name=${2-$(cli path join --delimiter '::' -- ${CLI_PATH})::inline}
-                cli emit inline \
-                    --name "${name}" \
-                    --path "${CLI_LOADER_SOURCE_PATH}"
                 ;;
         esac 
         exit
