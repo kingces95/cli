@@ -49,18 +49,16 @@ shopt -s globstar
 shopt -s extglob
 shopt -s nullglob
 
-# inline 'cli path join' and 'cli positional'
-declare CLI_SHIM_SOURCE_PATH="${BASH_SOURCE}"
-declare CLI_SHIM_SOURCE_NAME="${CLI_SHIM_SOURCE_PATH##*/}"
-declare CLI_SHIM_SOURCE_DIR="${CLI_SHIM_SOURCE_PATH%/*}"
-declare CLI_SHIM_CACHE_DIR="${CLI_SHIM_SOURCE_DIR}/.cli/${CLI_SHIM_SOURCE_NAME}"
-declare CLI_SHIM_CACHE_INLINE_PATH="${CLI_SHIM_CACHE_DIR}/inline.sh"
+declare BASH_DIR="${BASH_SOURCE%/*}"
+declare BASH_NAME="${BASH_SOURCE##*/}"
+declare CACHE_DIR="${BASH_DIR}/.cli/${BASH_NAME}"
+declare INLINE_PATH="${CACHE_DIR}/inline.sh"
 
-# test cache
-if [[ ! -f "${CLI_SHIM_CACHE_INLINE_PATH}" ]] \
-    || [[ "${CLI_SHIM_CACHE_INLINE_PATH}" -ot "${CLI_SHIM_SOURCE_PATH}" ]]; then
+# inline functions
+if [[ ! -f "${INLINE_PATH}" ]] \
+    || [[ "${INLINE_PATH}" -ot "${BASH_SOURCE}" ]]; then
 
-    declare CLI_SHIM_CACHE_INLINE_TEMP_PATH=$(mktemp "/tmp/cache.XXXXXX")
+    declare TEMP_PATH=$(mktemp "/tmp/cache.XXXXXX")
 
     # ::cli::inline::inline
     cat "${BASH_SOURCE%/*}/emit/inline" \
@@ -81,12 +79,11 @@ if [[ ! -f "${CLI_SHIM_CACHE_INLINE_PATH}" ]] \
         } \
         | source /dev/stdin
 
-    # constants
     inline() {
         arg_name="::cli::$1::inline" \
-        arg_path="${CLI_SHIM_SOURCE_DIR}/$2" \
+        arg_path="${BASH_DIR}/$2" \
             ::cli::inline::inline \
-            >> "${CLI_SHIM_CACHE_INLINE_TEMP_PATH}"
+            >> "${TEMP_PATH}"
     }
 
     # cli/path/join -> ::cli::path::join::inline
@@ -96,16 +93,14 @@ if [[ ! -f "${CLI_SHIM_CACHE_INLINE_PATH}" ]] \
     inline "positional" "positional"
 
     # create cache dir            
-    if [[ ! -d "${CLI_SHIM_CACHE_DIR}" ]]; then
-        mkdir -p "${CLI_SHIM_CACHE_DIR}"
-    fi
+    mkdir -p "${CACHE_DIR}"
 
-    # put cache file
-    mv "${CLI_SHIM_CACHE_INLINE_TEMP_PATH}" "${CLI_SHIM_CACHE_INLINE_PATH}"
+    # move temp inline.sh to cache dir
+    mv "${TEMP_PATH}" "${INLINE_PATH}"
 fi
 
 # source inlined functions
-source "${CLI_SHIM_CACHE_INLINE_PATH}"
+source "${INLINE_PATH}"
 
 cli::shim::is_command() { test -f "$1" && test -x "$1"; }
 cli::shim::is_group() { test -d "$1" && test -x "$1"; }
@@ -141,9 +136,7 @@ main() {
                 echo "${path}" ;; 
             *)
                 cli::shim::cache::start_time
-                
                 declare -x CLI_COMMAND="${cli_path[@]}"
-
                 "${path}" "${optional_args[@]}"
                 ;;
 

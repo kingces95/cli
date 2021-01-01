@@ -91,11 +91,15 @@ cli::cache::test() {
 
 cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
+
+        # declarative; e.g. inline
         if cli::loader::is_declared 'inline'; then
             cli emit inline \
                 --name "$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
                 --path "${CLI_LOADER_COMMAND_PATH}" \
                 --function 'inline'
+        
+        # procedural; e.g library
         else
             "$0" 
         fi | cli::cache::put "${CLI_LOADER_EXPORTS_PATH}"

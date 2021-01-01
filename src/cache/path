@@ -23,7 +23,7 @@ Examples
 EOF
 }
 
-main() {
+inline() {
     local name="${arg_path##*/}"
     local dir="${arg_path%/*}"
     echo "${dir}/.cli/${name}"

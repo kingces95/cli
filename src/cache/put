@@ -25,7 +25,7 @@ Global Arguments
 EOF
 }
 
-main() {
+inline() {
     local temp_path=$(mktemp "/tmp/cli.cache.put.XXXXXX")
     cat > "${temp_path}"
     

@@ -42,7 +42,7 @@ Examples
 EOF
 }
 
-main() {
+inline() {
     local GLOB="?([.])[a-zA-Z0-9]*([a-zA-Z0-9-])"
   
     : ${arg_base:=$arg_delimiter}

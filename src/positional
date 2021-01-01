@@ -39,7 +39,7 @@ EOF
 
 # supports inlining
 
-main() {   
+inline() {   
     declare CLI_CALL_ARG_GLOB="-*"
 
     declare i=0
