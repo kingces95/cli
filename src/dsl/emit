@@ -19,6 +19,7 @@ EOF
 INITIALIZE=initialize
 
 main() {    
+    local -a declarations # eg +=( 'arg_foo' )
     local -A names # eg +=( ['--foo']='arg_foo' ) and maybe +=( ['-f']='arg_foo' )
     local -A flags # eg +=( ['arg_bar']='true' )
     local -A defaults # eg +=( ['arg_foo']='bar' )
@@ -43,6 +44,7 @@ main() {
             name="${identifier}"
             arg_name="arg_${name//-/_}"
             switch_name="--${name}"
+            declarations+=( "${arg_name}" )
             names+=( [${switch_name}]="${arg_name}" )
 
         # alias
@@ -74,7 +76,7 @@ main() {
     # code generation
     {
         {
-            for i in "${names[@]}"; do
+            for i in "${declarations[@]}"; do
                 emit::declare_global "${i}" 
             done 
             if ${any_args}; then
