@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Serialize variables, arrays, and assoicative.
+
+Description
+    A variable is serialized as a single line with fields '${VARIABLE_TYPE}',
+    followed by the name of the variable followed by the value.
+    
+    An array is serialized as a line per element with fields '${ARRAY_TYPE}',
+    followed by the name of the array followed by the element.
+    
+    An associative array is serialized as two lines per key value pair
+    with the first line having fields '${MAP_TYPE}', followed by the name of the 
+    assoicative array, followed by the name of key, and the second line
+    containing the value.
+
+    Deserialization will assign values, add elements to arrays, and set
+    keys to value for associative arrays. If the variables are not
+    already declared then local declarations are made though this is
+    not useful except for testing. Useful work will inline this command,
+    declare varaibles, and then call the inline function to deserialize 
+    into the declared variables.
+
+    Associative arrays do not support values with leading whitespace.
+
+Arguments
+    --deserialize -d [Flag] : Deserialize the input stream.
+    --source -s      [Flag] : Source the input stream. Only valid with '-d'.
+    --global -g      [Flag] : Declare undefined deserialized variables globally. 
+    --emit -e        [Flag] : Emit bash source instead of a file.
+    --                      : Name of variables to serialize.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Serialize the array BASH_SOURCE, the variable BASHPID, 
+    and the assoiciatve array BASH_CMDS:
+        cli util serialize -- BASH_SOURCE BASHPID BASH_CMDS
+EOF
+}
+
+declare ARRAY_TYPE='a'
+declare MAP_TYPE='A'
+declare VARIABLE_TYPE='-'
+
+inline() {
+    : ${arg_emit:=false}
+    : ${arg_source:=false}
+    : ${arg_deserialize:=false}
+    : ${arg_global:=false}
+
+    local ARRAY_TYPE='a'
+    local MAP_TYPE='A'
+    local VARIABLE_TYPE='-'
+
+    local declare_flags=
+    if ${arg_global}; then
+        declare_flags='-g'
+    fi
+
+    # deserialize
+    if ${arg_deserialize}; then
+
+        # source; let bash deserialize it
+        if ${arg_source}; then
+            source /dev/stdin
+
+        # custom deserialization; do unix-y text line by line deserialization
+        else
+            while read; do
+
+                read name type value <<< "${REPLY}"
+                : ${name:?"Unexpected missing name while deserializing line \"${REPLY}\"."}
+                : ${type:?"Unexpected missing type while deserializing line \"${REPLY}\"."}
+
+                local -n ref="${name}"
+
+                # if unset, declare variable
+                if [[ ! -R ref[@] ]]; then
+                    case "${type}" in
+                        ${VARIABLE_TYPE}) declare ${declare_flags} ${name} ;;
+                        ${ARRAY_TYPE}) declare -a ${declare_flags} ${name} ;;
+                        ${MAP_TYPE}) declare -A ${declare_flags} ${name} ;;
+                        *) cli::fail "Unexpected unknown deserializtion type '${type}'."
+                    esac
+                fi
+
+                # set variable
+                case "${type}" in
+                    ${VARIABLE_TYPE}) ref="${value}" ;;
+                    ${ARRAY_TYPE}) ref+=( "${value}" ) ;;
+                    ${MAP_TYPE})
+                        read name type key value <<< "${REPLY}" 
+                        ref+=( [${key}]="${value}" )
+                        ;;
+                    *) cli::fail "Unexpected unknown deserializtion type '${type}'."
+                esac
+            done
+        fi
+    fi
+
+    # serialize
+    while (( $# > 0 )); do
+        local name="$1"
+        local -n ref="${name}"
+        if [[ -R ref[@] ]]; then
+            shift
+            continue
+        fi
+
+        if ${arg_emit}; then
+            declare -p $1
+
+        else
+            declare -p $1 | read _ declare_flags _
+
+            case "${declare_flags}" in
+                *a*) 
+                    for value in "${ref[@]}"; do 
+                        printf "%-30s %-3s %s\n" \
+                            "${name}" "${ARRAY_TYPE}" "${value}"
+                    done 
+                    ;;
+                *A*) 
+                    for key in "${!ref[@]}"; do 
+                        printf "%-30s %-3s %-15q %s\n" \
+                            "${name}" "${MAP_TYPE}" "${key}" "${ref[${key}]}"
+                    done | sort
+                    ;;
+                *) 
+                    printf "%-30s %-3s %s\n" \
+                        "${name}" "${VARIABLE_TYPE}" "${ref}" 
+                    ;;
+            esac
+        fi
+        shift
+    done
+}
+
+self_test() {
+    cat << EOF \
+    | ${CLI_COMMAND} -d -- my_array my_variable my_empty my_map \
+    | assert::pipe_eq_exact \
+        'my_array                       a   z' \
+        'my_array                       a   y' \
+        'my_array                       a   ' \
+        'my_variable                    -   foo' \
+        'my_empty                       -   ' \
+        'my_map                         A   k1              ' \
+        'my_map                         A   k\ 0            v 0'
+    my_array    a z
+    my_array    a y
+    my_array    a
+    my_variable - foo
+    my_empty    -
+    my_map      A k1 
+    my_map      A k\ 0    v 0
+EOF
+}
+
+cli::load "$@"

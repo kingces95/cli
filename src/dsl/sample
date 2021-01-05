@@ -12,7 +12,7 @@ Summary
 Arguments
     --run-as                    : Run as the specified user.
                                     --ignore-me -i.
-    --fruit                     : Run elevated. Default: banana. Allowed
+    --fruit -f                  : Run elevated. Default: banana. Allowed
                                     values: orange, banana. Stuff. Allowed ish.
     --header         [Required] : Header.
     --display-args       [Flag] : Display args.

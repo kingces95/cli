@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+source $(cli loader)
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+declare CLI_NAME_REGEX="^[a-z][a-z0-9-]*$"
+declare CLI_FLAGS_REGEX="^[a-zA-Z]+$"
+declare CLI_BASH_NAME_REGEX="^[a-z][a-z0-9_]*$"
+
+export() {
+    {
+        declare -p CLI_NAME_REGEX
+        declare -p CLI_FLAGS_REGEX
+        declare -p CLI_BASH_NAME_REGEX
+    } | sed 's/^declare/declare -g/'
+}
+
+cli::load "$@"

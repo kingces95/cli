@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_group
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Summary
+    Converts a stream of bash names to cli names.
+
+Description
+    Converts a stream of bash names to cli names. Fails if any of the
+    bash names do not match regex ${CLI_BASH_NAME_REGEX}.
+
+Global Arguments
+    --help -h    [Flag] : Show this message and exit.
+    --self-test  [Flag] : Runs a self test over all commands.
+
+Examples
+    Convert 'foo_bar' 'baz-moo' to 'foo_bar' 'baz-moo'
+        ${CLI_COMMAND} <<< $'foo_bar\nbaz_moo'
+
+EOF
+}
+
+inline() {
+    local args=( "$@" )
+    while (( $# > 0 )); do
+        if [[ ! "$1" =~ ${CLI_BASH_NAME_REGEX} ]]; then
+            cli::fail "Unexpected bash name \"$1\"" \
+                "found in \"${args[@]}\"" \
+                "does not match regex ${CLI_NAME_REGEX}."
+        fi
+        echo "${1/_/-}"
+        shift
+    done
+}
+
+main() {
+    mapfile -t
+    inline "${MAPFILE[@]}"
+}
+
+self_test() {
+    ${CLI_COMMAND} <<< $'foo_bar\nbaz_moo' \
+    | assert::pipe_eq \
+        "foo-bar" \
+        "baz-moo"
+
+    assert::fails "${CLI_COMMAND} <<< $'foo-bar'"
+}
+
+cli::load "$@"

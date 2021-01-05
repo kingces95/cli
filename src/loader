@@ -65,6 +65,12 @@ cli::loader::cache::load() {
         ::cli::cache::path::inline)"
     declare -g CLI_LOADER_INITIALIZE_PATH="${CLI_LOADER_CACHE_DIR}/initialize.sh"
     declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
+    declare -g CLI_LOADER_METADATA_PATH="${CLI_LOADER_CACHE_DIR}/metadata.sh"
+}
+
+cli::fail() {
+    echo "$@" >&2
+    exit 1
 }
 
 cli::import() {
@@ -122,6 +128,12 @@ cli::loader::cache::initialize() {
             | cli dsl parse \
             | cli dsl emit \
             | cli::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
+
+        "$0" '--help' \
+            | cli dsl tokenize \
+            | cli dsl parse \
+            | cli dsl meta \
+            | cli::cache::put "${CLI_LOADER_METADATA_PATH}"
     fi
 }
 
@@ -207,8 +219,7 @@ cli::loader::execute() {
             export
             
         else
-            echo "Unexpected missing entry point 'main' or 'export'."
-            exit 1
+            cli::fail "Unexpected missing entry point 'main' or 'export'."
         fi
     fi
 }
@@ -224,6 +235,11 @@ cli::loader::self_test() {
 }
 
 cli::load() {
+    declare -Ag CLI_META_DEFAULTS=()
+    declare -Ag CLI_META_ALIASES=()
+    declare -ag CLI_META_REQUIRED=()
+    declare -Ag CLI_META_ALLOWED_VALUES=()
+
     # implicit imports
     if cli::loader::is_declared export; then
         CLI_LOADER_IMPORTS+=( \
@@ -243,12 +259,34 @@ cli::load() {
                 cat "${CLI_LOADER_COMMAND_PATH}" ;;
             '---imports')
                 for i in "${CLI_LOADER_IMPORTS[@]}"; do echo "${i}"; done ;;
+            '---dependencies')
+                cli imports -c "${CLI_COMMAND}" ;;
             '---initialize')
                 cli::loader::load::imports
                 cli::loader::cache::initialize
                 if [[ -f "${CLI_LOADER_INITIALIZE_PATH}" ]]; then
                     echo "${CLI_LOADER_INITIALIZE_PATH}"
                 fi
+                ;;
+            '---metadata')
+                cli::loader::load::imports
+                cli::loader::cache::initialize
+                if [[ -f "${CLI_LOADER_METADATA_PATH}" ]]; then
+                    echo "${CLI_LOADER_METADATA_PATH}"
+                fi
+                ;;
+            '---dasm')
+                "$0" '---metadata' \
+                    | read; cat "${REPLY}" \
+                    | cli util serialize -d -s -- \
+                        CLI_META_DEFAULTS \
+                        CLI_META_REQUIRED \
+                        CLI_META_ALIASES \
+                        CLI_META_ALLOWED_VALUES \
+                        CLI_META_POSITIONAL
+                ;;
+            '---emit')
+                "$0" '---exports' | read; cat "${REPLY}"
                 ;;
             '---exports')
                 cli::loader::cache::exports
@@ -317,6 +355,7 @@ main() {
     echo ": \${CLI_COMMAND:=\${BASH_SOURCE[1]##*/}}"
     echo
 
+    declare -f cli::fail
     declare -f cli::import
     declare -f cli::import_group
     declare -f cli::load
@@ -390,7 +429,7 @@ initialize() {
             '--self-test') arg_self_test=true ;;
             # emit the version used in packed clis
             '---pack') arg_pack=true ;; 
-            *) echo "Unexpected argument '$1'."; exit 1 ;;
+            *) cli::fail "Unexpected argument '$1'." ;;
         esac
 
         shift
@@ -428,6 +467,7 @@ inline 'cache::put' 'cache/put'
 inline 'cache::test' 'cache/test'
 inline 'cache::path' 'cache/path'
 inline 'path::join' 'path/join'
+inline 'parse' 'parse'
 
 cli::loader::cache::load ${BASH_SOURCE}
 

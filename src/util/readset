@@ -24,11 +24,11 @@ Global Arguments
     --self-test      [Flag] : Runs a self test.
 
 Examples
-    Source readmap and load 'key' 'value' into 'map'.
+    Source readset and load 'a' 'b' into 'set'.
         ${CLI_COMMAND} ---emit | source /dev/stdin; \\
-        declare -A map; \\
-        arg_name=map ::cli::util::readmap::inline < <(echo key; echo value); \\
-        declare -p map
+        declare -A letters; \\
+        arg_name=letters ::cli::util::readset::inline < <(printf '%s\n' 'a' 'b' ); \\
+        declare -p letters
 EOF
 }
 
@@ -39,11 +39,9 @@ inline() {
 
     while read -r key; do
         if [[ -z ${key} ]]; then
-            cli::fail 'Unexpected empty key.'
-        elif ! read -r value; then
-            value=
+            continue
         fi
-        ref+=( [$key]="$value" )
+        ref+=( [$key]=true )
     done
 }
 
@@ -55,19 +53,19 @@ main() {
 
 self_test() {
     cat /dev/null \
-    | ${CLI_COMMAND} --name map \
+    | ${CLI_COMMAND} --name set \
     | assert::pipe_eq \
-        'declare -A map'
+        'declare -A set'
 
-    printf '%s\n' k v \
-    | ${CLI_COMMAND} --name map \
+    printf '%s\n' a \
+    | ${CLI_COMMAND} --name set \
     | assert::pipe_eq \
-        'declare -A map=([k]="v" )'
+        'declare -A set=([a]="true" )'
 
-    printf '%s\n' k0 v0 k1 v1 \
-    | ${CLI_COMMAND} --name map \
+    printf '%s\n' a b \
+    | ${CLI_COMMAND} --name set \
     | assert::pipe_eq \
-        'declare -A map=([k0]="v0" [k1]="v1" )'
+        'declare -A set=([b]="true" [a]="true" )'
 }
 
 cli::load "$@"

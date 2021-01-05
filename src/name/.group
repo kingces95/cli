@@ -5,12 +5,6 @@ help() {
     cat << EOF
 Command
     ${CLI_COMMAND}
-    
-Summary
-    Test if a set of functions is declared.
-
-Arguments
-    --                      : Name of functions.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -18,12 +12,8 @@ Global Arguments
 EOF
 }
 
-inline() {
-    if declare -F "$@" > /dev/null; then 
-        true
-    else 
-        false
-    fi
+export() {
+    cli::export::import_parent_group
 }
 
 cli::load "$@"

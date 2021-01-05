@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_group
+cli::import cli emit initialize
+cli::import cli util serialize
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+main() {    
+    local -A CLI_META_DEFAULTS=() # eg +=( ['foo']='bar' )
+    local -a CLI_META_REQUIRED=() # eg +=( '--foo' )
+    local -A CLI_META_ALLOWED_VALUES=() # eg +=( [--foo]='a b c' )
+    local -A CLI_META_ALIASES=()
+    local CLI_META_POSITIONAL=false
+
+    local name
+    local -a allowed_value_list
+
+    # productions are sorted
+    while read key production production_name identifier; do
+
+        # anyargs
+        if (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
+            CLI_META_POSITIONAL=true
+
+        # declaration
+        elif (( production == CLI_DSL_PRODUCTION_NAME )); then
+            name="${identifier}"
+            CLI_META_DEFAULTS+=( [$name]= )
+
+        # alias
+        elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
+            CLI_META_ALIASES+=( [${identifier}]="${name}" )
+
+        # CLI_META_DEFAULTS
+        elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
+            CLI_META_DEFAULTS+=( [${name}]="${identifier}" )
+
+        # CLI_META_REQUIRED
+        elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
+            CLI_META_REQUIRED+=( ${name} )
+
+        # flag
+        elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
+            CLI_META_DEFAULTS+=( [${name}]='false' )
+            CLI_META_ALLOWED_VALUES+=( [${name}]='true false' )
+
+        # allowed
+        elif (( production == CLI_DSL_PRODUCTION_ALLOWED )); then
+            allowed_value_list=()
+        elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
+            allowed_value_list+=( "${identifier}" )
+        elif (( production == CLI_DSL_PRODUCTION_ALLOWED_END )); then
+            CLI_META_ALLOWED_VALUES+=( [${name}]="${allowed_value_list[@]}" )
+        fi
+    done
+
+    arg_emit=true ::cli::util::serialize::inline \
+        CLI_META_DEFAULTS \
+        CLI_META_REQUIRED \
+        CLI_META_ALIASES \
+        CLI_META_ALLOWED_VALUES \
+        CLI_META_POSITIONAL
+}
+
+self_test() (
+    source /dev/stdin < <(cli_assert)
+
+    cd "$(dirname ${BASH_SOURCE})"
+
+    "./sample" -h \
+        | "./tokenize" \
+        | "./parse" \
+        | "./emit" \
+        | source /dev/stdin
+
+    expected() {
+        # declarations
+        declare -g arg_help=""
+        declare -g arg_self_test=""
+        declare -g arg_fruit=""
+        declare -g arg_display_args=""
+        declare -g arg_header=""
+        declare -g arg_help=""
+        declare -g arg_run_as=""
+        
+        # CLI_META_DEFAULTS
+        arg_fruit="banana"
+        arg_self_test=false
+        arg_help=false
+        arg_display_args=false
+        
+        # assign variables from command line arguments
+        while (( $# > 0 )); do
+            case "$1" in
+                '--help') arg_help=true ;;
+                '--self-test') arg_self_test=true ;;
+                '--fruit') arg_fruit="${2:-}"; shift ;;
+                '--display-args') arg_display_args=true ;;
+                '--header') arg_header="${2:-}"; shift ;;
+                '-h') arg_help=true ;;
+                '--run-as') arg_run_as="${2:-}"; shift ;;
+                *)
+                    echo "Unexpected argument '$1'."
+                    exit 1
+                ;;
+            esac
+            if (( $# > 0 )); then shift; fi
+        done
+        
+        # CLI_META_REQUIRED
+        if [[ -z "${arg_header}" ]]; then
+            echo "Missing CLI_META_REQUIRED argument '--header'."
+            exit 1
+        fi
+        
+        # allowed values
+        case "${arg_fruit}" in
+            'orange') ;;
+            'banana') ;;
+            *)
+                echo "Unexpected value '${arg_fruit}' for argument '--fruit'."
+                exit 1
+            ;;
+        esac
+    }
+
+    diff <(declare -f expected) <(declare -f initialize) \
+        | assert::pipe_eq \
+            '1c1' \
+            '< expected ()' \
+            '---' \
+            '> initialize ()' 
+)
+
+cli::load "$@"
