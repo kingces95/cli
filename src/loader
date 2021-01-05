@@ -119,8 +119,8 @@ cli::loader::cache::exports() {
         if cli::loader::is_declared 'inline'; then
             cli emit inline \
                 --name "$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
-                --path "${CLI_LOADER_COMMAND_PATH}" \
-                --function 'inline'
+                --function 'inline' \
+                < "${CLI_LOADER_COMMAND_PATH}"
         
         # procedural; e.g library
         else
@@ -146,11 +146,11 @@ cli::loader::cache::initialize() {
             | cli dsl emit \
             | cli::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
 
-        "$0" '--help' \
-            | cli dsl tokenize \
-            | cli dsl parse \
-            | cli dsl meta \
-            | cli::cache::put "${CLI_LOADER_METADATA_PATH}"
+        # "$0" '--help' \
+        #     | cli dsl tokenize \
+        #     | cli dsl parse \
+        #     | cli dsl meta \
+        #     | cli::cache::put "${CLI_LOADER_METADATA_PATH}"
     fi
 }
 
@@ -481,8 +481,7 @@ cat "${BASH_SOURCE%/*}/emit/inline" \
         
 inline() {
     arg_name="::cli::$1::inline" \
-    arg_path="${BASH_DIR}/$2" \
-        ::cli::inline::inline \
+        ::cli::inline::inline < "${BASH_DIR}/$2" \
         | source /dev/stdin
 }
 

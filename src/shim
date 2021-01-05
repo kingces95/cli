@@ -81,8 +81,7 @@ if [[ ! -f "${INLINE_PATH}" ]] \
 
     inline() {
         arg_name="::cli::$1::inline" \
-        arg_path="${BASH_DIR}/$2" \
-            ::cli::inline::inline \
+            ::cli::inline::inline < "${BASH_DIR}/$2" \
             >> "${TEMP_PATH}"
     }
 

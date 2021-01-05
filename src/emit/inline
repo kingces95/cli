@@ -10,10 +10,12 @@ Command
 Summary
     Emit a function whose body is the main function of a command.
 
+Description
+    Emit a function whose body is the main function of a command.
+    The source file containing the fuction to be inlined is read from stdin.
+
 Arguments
     --name   [Required] : The name of the inline function.
-    --path              : The path to the source file containing the fuction
-                          to be inlined. Default: /dev/stdin.
     --function          : The name of the function to inline. Default: inline.
 
 Global Arguments
@@ -28,7 +30,6 @@ EOF
 }
 
 main() {
-    : ${arg_path?'/dev/stdin'}
     : ${arg_name?'Unexpected lack of inline function name.'}
     : ${arg_function:='inline'}
 
@@ -39,7 +40,7 @@ main() {
         cli::load() { return; }
 
         # source file
-        source "${arg_path}"
+        source '/dev/stdin'
 
         # echo and rename main function
         declare -f ${arg_function} | { 

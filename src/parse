@@ -57,7 +57,8 @@ Arguments
     --command -c            : Array to store command name. Default: command.
     --named -n              : Associative array to store named arguments. Default: named.
     --positional -p         : Array to store positional arguments. Default: positional.
-    --no-metadata -x [Flag] : Skip reading stdin for metadata.
+    --no-metadata -x [Flag] : Skip reading stdin for metadata. This will also prevent
+                              processing named and positional arguments. 
     --                      : Command line arguments.
 
 Global Arguments
@@ -75,8 +76,9 @@ inline() {
     local DASH_ARG_REGEX="^-([^-].*)$"
     local DASH_DASH_ARG_REGEX="^--([^-].*)$"
 
-    local -a _path=()
-    local -n ref_path=${arg_command:-_path}
+    cli::returns::array
+
+    local -n ref_path=${arg_command:-RESULT}
 
     local -A _named=()
     local -n ref_named=${arg_named:-_named}

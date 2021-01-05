@@ -49,19 +49,26 @@ Examples
 EOF
 }
 
-declare ARRAY_TYPE='a'
-declare MAP_TYPE='A'
-declare VARIABLE_TYPE='-'
+# CLI_UTIL_SERIALIZE_* will emit as part of the inline function
+declare CLI_UTIL_SERIALIZE_ARRAY_TYPE='a'
+declare CLI_UTIL_SERIALIZE_MAP_TYPE='A'
+declare CLI_UTIL_SERIALIZE_VARIABLE_TYPE='-'
+
+# alias for ease of use in help
+declare ARRAY_TYPE=${CLI_UTIL_SERIALIZE_ARRAY_TYPE}
+declare MAP_TYPE=${CLI_UTIL_SERIALIZE_MAP_TYPE}
+declare VARIABLE_TYPE=${CLI_UTIL_SERIALIZE_VARIABLE_TYPE}
 
 inline() {
+    # alias for ease of use
+    local ARRAY_TYPE=${CLI_UTIL_SERIALIZE_ARRAY_TYPE}
+    local MAP_TYPE=${CLI_UTIL_SERIALIZE_MAP_TYPE}
+    local VARIABLE_TYPE=${CLI_UTIL_SERIALIZE_VARIABLE_TYPE}
+
     : ${arg_emit:=false}
     : ${arg_source:=false}
     : ${arg_deserialize:=false}
     : ${arg_global:=false}
-
-    local ARRAY_TYPE='a'
-    local MAP_TYPE='A'
-    local VARIABLE_TYPE='-'
 
     local declare_flags=
     if ${arg_global}; then
@@ -77,7 +84,7 @@ inline() {
 
         # custom deserialization; do unix-y text line by line deserialization
         else
-            while read; do
+            while read -r; do
 
                 read name type value <<< "${REPLY}"
                 : ${name:?"Unexpected missing name while deserializing line \"${REPLY}\"."}
