@@ -10,4 +10,9 @@ Attributes
     version 0.1.0
     licence MIT
     description Command Line Tool loader.
+
+Environment Variables
+    CLI_COMMAND=
+
+    CLI_META_
 ```

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import cli_assert
 
 help() {
     cat << EOF
@@ -19,11 +20,25 @@ EOF
 }
 
 inline() {
-    if declare -F "$@" > /dev/null; then 
-        true
-    else 
-        false
-    fi
+    declare -F "$@" > /dev/null
+}
+
+self_test() {
+    set +e
+
+    ${CLI_COMMAND} -- inline self_test
+    assert::ok 'self_test'
+
+    ${CLI_COMMAND} -- not_declared
+    assert::failed 'not_declared'
+
+    ${CLI_COMMAND} ---emit | source /dev/stdin
+    ::cli::util::is_declared::inline inline self_test
+    assert::ok 'inline self_test'
+
+    ${CLI_COMMAND} ---emit | source /dev/stdin
+    ::cli::util::is_declared::inline not_declared
+    assert::failed 'inline not_declared'
 }
 
 cli::load "$@"

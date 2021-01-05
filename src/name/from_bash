@@ -27,6 +27,8 @@ EOF
 }
 
 inline() {
+    cli::returns::array
+
     local args=( "$@" )
     while (( $# > 0 )); do
         if [[ ! "$1" =~ ${CLI_BASH_NAME_REGEX} ]]; then
@@ -34,7 +36,7 @@ inline() {
                 "found in \"${args[@]}\"" \
                 "does not match regex ${CLI_NAME_REGEX}."
         fi
-        echo "${1/_/-}"
+        RESULT+=( "${1/_/-}" )
         shift
     done
 }
@@ -42,6 +44,7 @@ inline() {
 main() {
     mapfile -t
     inline "${MAPFILE[@]}"
+    IFS=$'\n'; echo "${RESULT[*]}"; unset IFS
 }
 
 self_test() {

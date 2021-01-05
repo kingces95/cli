@@ -17,7 +17,7 @@ Description
     'name'. As such, this function can only be used inline. 
 
 Arguments
-    --name -n    [Required] : Name of associative shell variable.
+    --name -n    [Required] : Name of associative shell variable. Default: RESULT.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -25,14 +25,16 @@ Global Arguments
 
 Examples
     Source readmap and load 'key' 'value' into 'map'.
-        ${CLI_COMMAND} ---emit | source /dev/stdin; \\
-        declare -A map; \\
-        arg_name=map ::cli::util::readmap::inline < <(echo key; echo value); \\
-        declare -p map
+        printf '%s\n' k0 v0 k1 v1 \\
+            | ${CLI_COMMAND}
 EOF
 }
 
 inline() {
+    cli::returns::associative_array
+
+    : ${arg_name:=RESULT}
+
     local key
     local value
     declare -n ref=${arg_name}
@@ -60,14 +62,19 @@ self_test() {
         'declare -A map'
 
     printf '%s\n' k v \
-    | ${CLI_COMMAND} --name map \
+    | ${CLI_COMMAND} \
     | assert::pipe_eq \
-        'declare -A map=([k]="v" )'
+        'declare -A RESULT=([k]="v" )'
 
     printf '%s\n' k0 v0 k1 v1 \
-    | ${CLI_COMMAND} --name map \
+    | ${CLI_COMMAND} \
     | assert::pipe_eq \
-        'declare -A map=([k0]="v0" [k1]="v1" )'
+        'declare -A RESULT=([k0]="v0" [k1]="v1" )'
+
+    ${CLI_COMMAND} ---emit | source /dev/stdin
+    ::cli::util::readmap::inline <<< $'key\nvalue'
+    assert::pipe_eq < <(declare -p RESULT) \
+        'declare -A RESULT=([key]="value" )'
 }
 
 cli::load "$@"

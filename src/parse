@@ -33,6 +33,7 @@ Description
         CLI_META_DEFAULT_VALUE
         CLI_META_ALIASES
         CLI_META_ALLOWED_VALUES 
+        CLI_META_POSITIONAL
 
     The serialization format is defined by 'cli util serialize'.
 
@@ -49,6 +50,8 @@ Description
     strings stored in the associative array CLI_META_ALLOWED_VALUES. For example, 
     ( [color]='red yellow green' ). Allowed values must consist of alpha numeric
     characters, dash, or underbar.
+
+    Positional arguments are accepted if CLI_META_POSITIONAL is true.
 
 Arguments
     --command -c            : Array to store command name. Default: command.
@@ -100,6 +103,9 @@ inline() {
 
         # --
         if [[ "$1" == ${DASH_DASH} ]]; then
+            if [[ -n ${CLI_META_POSITIONAL+set} ]] && ! ${CLI_META_POSITIONAL}; then
+                cli::fail "Unexpected positional argument(s) \"$@\"."
+            fi
             break
         fi
 
@@ -297,13 +303,15 @@ self_test() {
     local -a CLI_META_REQUIRED=( 'color' )
     local -A CLI_META_ALIASES=( [c]='color' )
     local -A CLI_META_ALLOWED_VALUES=( [color]='black white' )
+    local CLI_META_POSITIONAL=false
 
     meta() {
         ::cli::util::serialize::inline \
             CLI_META_REQUIRED \
             CLI_META_DEFAULTS \
             CLI_META_ALIASES \
-            CLI_META_ALLOWED_VALUES
+            CLI_META_ALLOWED_VALUES \
+            CLI_META_POSITIONAL
     }
 
     # default value (e.g. black)
@@ -325,6 +333,7 @@ self_test() {
     local -a CLI_META_REQUIRED=()
     local -A CLI_META_ALIASES=( [h]='help' )
     local -A CLI_META_ALLOWED_VALUES=( [help]='true false' )
+    local CLI_META_POSITIONAL=false
 
     # add flag (e.g. help is 'false')
     meta | ${CLI_COMMAND} \
@@ -348,6 +357,7 @@ self_test() {
     local -a CLI_META_REQUIRED=( 'name' )
     local -A CLI_META_ALIASES=()
     local -A CLI_META_ALLOWED_VALUES=()
+    local CLI_META_POSITIONAL=false
 
     # provide required named argument (e.g. '--name Bob')
     meta | ${CLI_COMMAND} -- --name Bob \
@@ -355,7 +365,28 @@ self_test() {
         'named A name Bob'
 
     # missing required named argument (e.g. missing '--name')
-    meta | assert::fails "${CLI_COMMAND} -m -"
+    meta | assert::fails "${CLI_COMMAND}"
+
+    local -A CLI_META_DEFAULTS=()
+    local -a CLI_META_REQUIRED=()
+    local -A CLI_META_ALIASES=()
+    local -A CLI_META_ALLOWED_VALUES=()
+    local CLI_META_POSITIONAL=true
+
+    # positional argument (e.g. '-- a0 a1')
+    meta | ${CLI_COMMAND} -- -- a0 a1 \
+        | assert::pipe_records_eq \
+        'positional a a0' \
+        'positional a a1'
+
+    local -A CLI_META_DEFAULTS=()
+    local -a CLI_META_REQUIRED=()
+    local -A CLI_META_ALIASES=()
+    local -A CLI_META_ALLOWED_VALUES=()
+    local CLI_META_POSITIONAL=false
+
+    # positional arguments disallowed (e.g. '--')
+    meta | assert::fails "${CLI_COMMAND} -- --"
 }
 
 cli::load "$@"
