@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Deserialize to bash variables, arrays, and assoicative.
+
+Description
+    A variable is deserialized from a single line, consisting of a type 
+    discriminator, followed by a value (or key name then value).
+
+    The descriminators for string, array, and asociative array are
+    
+        ${VARIABLE_TYPE}
+        ${ARRAY_TYPE}
+        ${MAP_TYPE}
+
+Arguments
+    --source -s      [Flag] : Source the input stream.
+
+Debug Arguments
+    --array -a              : Name of array to declare.
+    --map -m                : Name of an associative array to declare.
+    --variable -v           : Name of a variable to declare.
+    --                      : Variables to dump.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Serialize the array BASH_SOURCE, the variable BASHPID, 
+    and the assoiciatve array BASH_CMDS:
+        cli util serialize -- BASH_SOURCE BASHPID BASH_CMDS
+EOF
+}
+
+# alias for ease of use in help
+declare VARIABLE_TYPE='-'
+declare ARRAY_TYPE='a'
+declare MAP_TYPE='A'
+
+inline() {
+    local arg_=( "${@}" )
+
+    : ${arg_source:=false}
+
+    # source; let bash deserialize it
+    if ${arg_source}; then
+        source /dev/stdin
+
+    # custom deserialization; do unix-y text line by line deserialization
+    else
+        while read -r name type REPLY; do
+
+            # verify stream
+            : ${name:?"Unexpected missing name while deserializing line \"${REPLY}\"."}
+            : ${type:?"Unexpected missing type while deserializing line \"${REPLY}\"."}
+
+            # declare variable
+            local -n ref="${name}"
+            if ! declare -p "${name}" >& /dev/null; then
+                cli::fail "Unexpected variable \"${name}\" found while deserializing."
+            fi
+
+            # deserialize value
+            eval "set ${REPLY}"
+
+            # set variable
+            case "${type}" in
+                '-') ref="$1" ;;
+                'a') ref+=( "$1" ) ;;
+                'A') ref+=( ["$1"]="$2" ) ;;
+                *) cli::fail "Unexpected unknown deserializtion type '${type}'."
+            esac
+        done
+    fi
+}
+
+main() {
+    if [[ -n ${arg_array} ]]; then local -a "${arg_array}"; fi
+    if [[ -n ${arg_map} ]]; then local -A "${arg_map}"; fi
+    if [[ -n ${arg_array} ]]; then local "${arg_variable}"; fi
+
+    inline
+
+    for (( i=0; i<"${#arg_[@]}"; i++ )); do
+        declare -p "${arg_[i]}"
+        shift
+    done
+}
+
+self_test() {
+
+    # serialize the examples embedded in 'cli util serialize'
+    cli util serialize -- my_string my_array my_map \
+    | ${CLI_COMMAND} -a my_array -m my_map -v my_string -- my_string my_array my_map \
+        | assert::pipe_eq_exact \
+        "declare -- my_string=\"Hello world!\"" \
+        "declare -a my_array=([0]=\"Hello world\" [1]=\$'\\ttabbed' [2]=\"  indented\" [3]=\"\")" \
+        "declare -A my_map=([\"my key\"]=\$'\\tmy tabbed value' )"
+
+    # fail to declare a variable found in stream (e.g. my_string)
+    cli util serialize -- my_string \
+    | assert::fails "${CLI_COMMAND}"
+}
+
+cli::load "$@"

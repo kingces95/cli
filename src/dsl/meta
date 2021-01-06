@@ -16,10 +16,11 @@ EOF
 }
 
 main() {    
-    local -A CLI_META_DEFAULTS=() # eg +=( ['foo']='bar' )
+    local -A CLI_META_DEFAULT=() # eg +=( ['foo']='bar' )
     local -a CLI_META_REQUIRED=() # eg +=( '--foo' )
     local -A CLI_META_ALLOWED_VALUES=() # eg +=( [--foo]='a b c' )
     local -A CLI_META_ALIASES=()
+    local -A CLI_META_IMPLICIT_VALUES=()
     local CLI_META_POSITIONAL=false
 
     local name
@@ -35,15 +36,15 @@ main() {
         # declaration
         elif (( production == CLI_DSL_PRODUCTION_NAME )); then
             name="${identifier}"
-            CLI_META_DEFAULTS+=( [$name]= )
+            CLI_META_DEFAULT+=( [$name]= )
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
             CLI_META_ALIASES+=( [${identifier}]="${name}" )
 
-        # CLI_META_DEFAULTS
+        # CLI_META_DEFAULT
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
-            CLI_META_DEFAULTS+=( [${name}]="${identifier}" )
+            CLI_META_DEFAULT+=( [${name}]="${identifier}" )
 
         # CLI_META_REQUIRED
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
@@ -51,7 +52,8 @@ main() {
 
         # flag
         elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
-            CLI_META_DEFAULTS+=( [${name}]='false' )
+            CLI_META_DEFAULT+=( [${name}]='false' )
+            CLI_META_IMPLICIT_VALUES+=( [${name}]='true' )
             CLI_META_ALLOWED_VALUES+=( [${name}]='true false' )
 
         # allowed
@@ -65,10 +67,11 @@ main() {
     done
 
     arg_emit=true ::cli::util::serialize::inline \
-        CLI_META_DEFAULTS \
         CLI_META_REQUIRED \
+        CLI_META_DEFAULT \
         CLI_META_ALIASES \
         CLI_META_ALLOWED_VALUES \
+        CLI_META_IMPLICIT_VALUES \
         CLI_META_POSITIONAL
 }
 
@@ -93,7 +96,7 @@ self_test() (
         declare -g arg_help=""
         declare -g arg_run_as=""
         
-        # CLI_META_DEFAULTS
+        # CLI_META_DEFAULT
         arg_fruit="banana"
         arg_self_test=false
         arg_help=false

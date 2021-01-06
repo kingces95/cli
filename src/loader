@@ -146,11 +146,11 @@ cli::loader::cache::initialize() {
             | cli dsl emit \
             | cli::cache::put "${CLI_LOADER_INITIALIZE_PATH}"
 
-        # "$0" '--help' \
-        #     | cli dsl tokenize \
-        #     | cli dsl parse \
-        #     | cli dsl meta \
-        #     | cli::cache::put "${CLI_LOADER_METADATA_PATH}"
+        "$0" '--help' \
+            | cli dsl tokenize \
+            | cli dsl parse \
+            | cli dsl meta \
+            | cli::cache::put "${CLI_LOADER_METADATA_PATH}"
     fi
 }
 
@@ -295,11 +295,12 @@ cli::load() {
             '---dasm')
                 "$0" '---metadata' \
                     | read; cat "${REPLY}" \
-                    | cli util serialize -d -s -- \
-                        CLI_META_DEFAULTS \
+                    | cli util serialize -s -- \
+                        CLI_META_DEFAULT \
                         CLI_META_REQUIRED \
                         CLI_META_ALIASES \
                         CLI_META_ALLOWED_VALUES \
+                        CLI_META_IMPLICIT_VALUES \
                         CLI_META_POSITIONAL
                 ;;
             '---emit')
@@ -489,7 +490,7 @@ inline 'cache::put' 'cache/put'
 inline 'cache::test' 'cache/test'
 inline 'cache::path' 'cache/path'
 inline 'path::join' 'path/join'
-inline 'parse' 'parse'
+inline 'args::parse' 'args/parse'
 
 cli::loader::cache::load ${BASH_SOURCE}
 

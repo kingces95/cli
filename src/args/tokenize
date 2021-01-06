@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_group
+cli::import cli_assert
+cli::import cli util serialize
+cli::import cli util readset
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Tokenizes command line arguments.
+
+Description
+    Tokenizes command line arguments. Theoretically, a command line could be 
+    matched by a regular expression. This command effectively does that match
+    and returns the capture groups as the following serialized arrays: 
+
+        RESULT
+        positional
+
+    and associataive array:
+
+        options
+
+    The syntax is based off the Azure az tool with the additon that:
+    
+        1. multipule single character options can be included behind the 
+           same single dash with the last option optionally having a value.
+        2. arguments following '--' are positional arguments. 
+        
+    For example, 
+
+        bin cli --k0 v0 --flag -xyz v1 -- a0 a1' 
+        
+    has the following RESULT, named arguments, aliased and positional captures: 
+    
+        ( bin cli )
+        ( [k0]=v0 [flag]=true [x]=true [y]=true [z]=v1 )
+        ( a0 a1 )
+
+    Options behind a double dash must be composed of lowercase letters, numbers, 
+    or dash, and must start with a letter. 
+    
+    Options behind a single dash must be a lowercase letter.
+
+Arguments
+    --result -r             : Array to store command name. Default: RESULT.
+    --options -o            : Associative array to store options. Default: options.
+    --positional -p         : Array to store positional arguments. Default: positional.
+    --                      : Command line arguments.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Tokenize 'bin cli --k0 v0 --flag -xyz v1 -- a0 a1'.
+        ${CLI_COMMAND} -- bin cli --k0 v0 --flag -xyz v1 -- a0 a1
+EOF
+}
+
+inline() {
+    local DASH_DASH='--'
+    local DASH_ARG_REGEX="^-([^-].*)$"
+    local DASH_DASH_ARG_REGEX="^--([^-].*)$"
+
+    cli::returns::array
+    local -n ref_result=${arg_result:-RESULT}
+
+    local -A _options=()
+    local -n ref_options=${arg_options:-_options}
+
+    local -a _positional=()
+    local -n ref_positional=${arg_positional:-_positional}
+
+    # path
+    while (( $# > 0 )); do
+        if [[ ! "$1" =~ ${CLI_NAME_REGEX} ]]; then
+            break;
+        fi
+
+        ref_result+=( "$1" )
+        shift
+    done
+
+    local key
+    local value
+    local flags
+
+    # optional
+    while (( $# > 0 )); do
+
+        # --
+        if [[ "$1" == ${DASH_DASH} ]]; then
+            break
+        fi
+
+        # aliases
+        if [[ "$1" =~ ${DASH_ARG_REGEX} ]]; then
+            flags="${BASH_REMATCH[1]}"
+            shift
+
+            if [[ ! "${flags}" =~ ${CLI_FLAGS_REGEX} ]]; then
+                cli::fail "Unexpected argument \"-${flags}\" does not match regex ${CLI_FLAGS_REGEX}."
+            fi
+
+            for (( i=${#flags} - 1; i>=0; i-- )); do
+                key=${flags:${i}:1}
+
+                # substitute
+                set -- "${DASH_DASH}${key}" "$@"
+            done
+            continue
+        fi
+
+        # option 
+        if [[ "$1" =~ ${DASH_DASH_ARG_REGEX} ]]; then
+            key="${BASH_REMATCH[1]}"
+            shift
+
+            if [[ ! "${key}" =~ ${CLI_NAME_REGEX} ]]; then
+                cli::fail "Unexpected argument \"--${key}\" does not match regex ${CLI_NAME_REGEX}."
+            fi
+
+            if (( $# == 0 )) \
+                || [[ "$1" =~ ${DASH_ARG_REGEX} ]] \
+                || [[ "$1" =~ ${DASH_DASH_ARG_REGEX} ]] \
+                || [[ "$1" == ${DASH_DASH} ]]; then
+
+                # implicit value
+                value=""
+            else
+                # explicit value
+                value="$1"
+                shift
+            fi
+
+            # trap duplicates
+            if [[ -n ${ref_options[$key]+set} ]]; then
+                cli::fail "Unexpected duplicate argument \"--${key}\"."
+            fi
+
+            # publish
+            ref_options+=( [$key]=$value )
+            continue
+        fi
+
+        cli::fail "Unexpected argument \"$1\"."
+    done
+
+    # positional
+    if [[ "${1-}" == "${DASH_DASH}" ]]; then
+        shift
+        ref_positional+=( "$@" )
+    fi
+}
+
+main() {    
+    declare -a ${arg_result}
+    declare -A ${arg_options}
+    declare -a ${arg_positional}
+
+    inline "$@"
+
+    ::cli::util::serialize::inline \
+        ${arg_result} ${arg_options} ${arg_positional}
+}
+
+self_test() {
+    ${CLI_COMMAND} \
+    | assert::pipe_eq
+
+    # positional argument delimiter (e.g. --)
+    ${CLI_COMMAND} -- \
+    | assert::pipe_eq
+
+    # default variable names (e.g. command, named, positional)
+    ${CLI_COMMAND} -- c --k v -- a0 \
+    | assert::pipe_records_eq \
+        'RESULT a c' \
+        'options A k v' \
+        'positional a a0'
+
+    # rename (e.g. c, n, p)
+    ${CLI_COMMAND} -r r -o o -p p -- c --k v -- a0 \
+    | assert::pipe_records_eq \
+        'r a c' \
+        'o A k v' \
+        'p a a0'
+
+    # named argument default aliasing (e.g. '-k' -> '--k' )
+    ${CLI_COMMAND} -- -k v \
+    | assert::pipe_records_eq \
+        'options A k v' 
+
+    # named argument packed (e.g. '-mn' -> '--m --x' )
+    ${CLI_COMMAND} -- -mn \
+    | assert::pipe_records_eq \
+        "options A m ''" \
+        "options A n ''"
+
+    # named argument implicit value (e.g. '' )
+    ${CLI_COMMAND} -- --m -n \
+    | assert::pipe_records_eq \
+        "options A m ''" \
+        "options A n ''"
+
+    # command arguments
+    ${CLI_COMMAND} -- g0 g1 cmd \
+    | assert::pipe_records_eq \
+        'RESULT a g0' \
+        'RESULT a g1' \
+        'RESULT a cmd'
+
+    # positional arguments
+    ${CLI_COMMAND} -- -- a0 a1 \
+    | assert::pipe_records_eq \
+        'positional a a0' \
+        'positional a a1'
+
+    # bad names
+    assert::fails "${CLI_COMMAND} -- -!"
+    assert::fails "${CLI_COMMAND} -- --!"
+
+    # duplicate named arguments    
+    assert::fails "${CLI_COMMAND} -- -f -f"
+    assert::fails "${CLI_COMMAND} -- --f --f"
+    assert::fails "${CLI_COMMAND} -- --f -f"
+
+    # invalid option (e.g. missing dash before 'k1') 
+    assert::fails "${CLI_COMMAND} -- --k0 v0 k1"
+}
+
+cli::load "$@"
