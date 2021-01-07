@@ -26,14 +26,11 @@ EOF
 }
 
 inline() {
+    mkdir -p "${arg_cache%/*}"
+
+    # read content into temp file and then atomically update cache
     local temp_path=$(mktemp "/tmp/cli.cache.put.XXXXXX")
     cat > "${temp_path}"
-    
-    declare cache_dir="${arg_cache%/*}"
-    if [[ ! -d "${cache_dir}" ]]; then
-        mkdir -p "${cache_dir}"
-    fi
-
     mv "${temp_path}" "${arg_cache}"
 }
 

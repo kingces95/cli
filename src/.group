@@ -12,15 +12,17 @@ Global Arguments
 EOF
 }
 
-declare CLI_NAME_REGEX="^[a-z][a-z0-9-]*$"
-declare CLI_FLAGS_REGEX="^[a-zA-Z]+$"
-declare CLI_BASH_NAME_REGEX="^[a-z][a-z0-9_]*$"
+declare CLI_REGEX_NAME="^[a-z.][a-z0-9-]*$"
+declare CLI_REGEX_FLAGS="^[a-z]+$"
+declare CLI_REGEX_BASH_NAME="^[a-z_][a-z0-9_]*$"
+declare CLI_REGEX_UNIX_NAME="^[a-z.][a-z0-9_]*$"
 
 export() {
     {
-        declare -p CLI_NAME_REGEX
-        declare -p CLI_FLAGS_REGEX
-        declare -p CLI_BASH_NAME_REGEX
+        declare -p CLI_REGEX_NAME
+        declare -p CLI_REGEX_FLAGS
+        declare -p CLI_REGEX_BASH_NAME
+        declare -p CLI_REGEX_UNIX_NAME
     } | sed 's/^declare/declare -g/'
 }
 

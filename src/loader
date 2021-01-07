@@ -179,8 +179,11 @@ cli::loader::load::imports() {
 
             # resolve base path
             base_path[${import}]=$(${import} '---which')
+
             # if cli still not resolved, fail
-            # TODO
+            if [[ -z "${base_path[${import}]}" ]]; then
+                cli::fail "Failed to resolve import \"${import[@]}\"."
+            fi
         fi
 
         import_path=$(arg_delimiter='/' arg_base=${base_path[${import}]} \

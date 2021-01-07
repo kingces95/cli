@@ -9,10 +9,10 @@ Command
     ${CLI_COMMAND}
 
 Summary
-    Converts a stream of cli names to bash names.
+    Converts a stream of cli names to unix names.
 
 Description
-    Converts a stream of cli names to bash names. Fails if any of the
+    Converts a stream of cli names to unix names. Fails if any of the
     cli names do not match regex ${CLI_REGEX_NAME}.
 
 Arguments
@@ -23,7 +23,7 @@ Global Arguments
     --self-test  [Flag] : Runs a self test over all commands.
 
 Examples
-    Convert '.foo-bar' 'baz' to '_foo_bar' 'baz'
+    Convert '.foo-bar' 'baz' to '.foo-bar' 'baz'
         ${CLI_COMMAND} <<< $'.foo-bar\nbaz'
 
 EOF
@@ -40,7 +40,7 @@ inline() {
                 "found in \"${args[@]}\"" \
                 "does not match regex ${CLI_REGEX_NAME}."
         fi
-        ref_result+=( "${1//[-.]/_}" )
+        ref_result+=( "${1/-/_}" )
         shift
     done
 }
@@ -56,7 +56,7 @@ main() {
 self_test() {
     ${CLI_COMMAND} <<< $'.foo-bar\nbaz' \
     | assert::pipe_eq \
-        "_foo_bar" \
+        ".foo_bar" \
         "baz"
 
     assert::fails "${CLI_COMMAND} <<< $'foo_bar'"

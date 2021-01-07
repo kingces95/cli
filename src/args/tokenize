@@ -46,6 +46,9 @@ Description
     
     Options behind a single dash must be a lowercase letter.
 
+    If an internal flag (e.g. '---which') appears before the first option, then
+    parsing ends with success.
+
 Arguments
     --result -r             : Array to store command name. Default: RESULT.
     --options -o            : Associative array to store options. Default: options.
@@ -66,8 +69,9 @@ inline() {
     local DASH_DASH='--'
     local DASH_ARG_REGEX="^-([^-].*)$"
     local DASH_DASH_ARG_REGEX="^--([^-].*)$"
+    local DASH_DASH_DASH_ARG_REGEX="^---([^-].*)$"
 
-    cli::returns::array
+    local -a _result=()
     local -n ref_result=${arg_result:-RESULT}
 
     local -A _options=()
@@ -78,13 +82,18 @@ inline() {
 
     # path
     while (( $# > 0 )); do
-        if [[ ! "$1" =~ ${CLI_NAME_REGEX} ]]; then
+        if [[ ! "$1" =~ ${CLI_REGEX_NAME} ]]; then
             break;
         fi
 
         ref_result+=( "$1" )
         shift
     done
+
+    # terminate parsing if internal flag follows name (e.g. '---which')
+    if (( $# > 0 )) && [[ "$1" =~ ${DASH_DASH_DASH_ARG_REGEX} ]]; then
+        return
+    fi
 
     local key
     local value
@@ -103,8 +112,8 @@ inline() {
             flags="${BASH_REMATCH[1]}"
             shift
 
-            if [[ ! "${flags}" =~ ${CLI_FLAGS_REGEX} ]]; then
-                cli::fail "Unexpected argument \"-${flags}\" does not match regex ${CLI_FLAGS_REGEX}."
+            if [[ ! "${flags}" =~ ${CLI_REGEX_FLAGS} ]]; then
+                cli::fail "Unexpected argument \"-${flags}\" does not match regex ${CLI_REGEX_FLAGS}."
             fi
 
             for (( i=${#flags} - 1; i>=0; i-- )); do
@@ -121,8 +130,8 @@ inline() {
             key="${BASH_REMATCH[1]}"
             shift
 
-            if [[ ! "${key}" =~ ${CLI_NAME_REGEX} ]]; then
-                cli::fail "Unexpected argument \"--${key}\" does not match regex ${CLI_NAME_REGEX}."
+            if [[ ! "${key}" =~ ${CLI_REGEX_NAME} ]]; then
+                cli::fail "Unexpected argument \"--${key}\" does not match regex ${CLI_REGEX_NAME}."
             fi
 
             if (( $# == 0 )) \
@@ -148,7 +157,7 @@ inline() {
             continue
         fi
 
-        cli::fail "Unexpected argument \"$1\"."
+        cli::fail "Unexpected unlexable argument \"$1\"."
     done
 
     # positional

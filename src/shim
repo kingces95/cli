@@ -20,10 +20,10 @@ Global Arguments
 
 Examples
     Use the shim to print help for /usr/bin/base64
-        cli shim /usr/bin base64 -h
+        cli shim --name bin --base /usr/bin -- base64 --help
 
     Use the shim to encode 'Hello World' in base 64
-        echo Hello World | cli shim /usr/bin base64 -i -
+        echo Hello World | cli shim --name bin --base /usr/bin -- base64 -i -
 
     Print the shim that is included in packed files
         cli shim
@@ -49,18 +49,23 @@ shopt -s globstar
 shopt -s extglob
 shopt -s nullglob
 
+# To prevent duplicate code the shim harvests logic from other commands.
+# As everything depends on the shim, the shim must harvest and cache this 
+# code manually. The harvest and cache logic emulates functionality that
+# is later built upon using the shim. That emulation is maintained manually.
+
+# Build cache path (e.g. '/cli/src/.cli/shim/inline.sh')
+# This logic duplicated in 'cli cache path'. It's too hot to harvest.
 declare BASH_DIR="${BASH_SOURCE%/*}"
 declare BASH_NAME="${BASH_SOURCE##*/}"
-declare CACHE_DIR="${BASH_DIR}/.cli/${BASH_NAME}"
-declare INLINE_PATH="${CACHE_DIR}/inline.sh"
+declare CACHE_PATH="${BASH_DIR}/.cli/${BASH_NAME}/inline.sh"
 
-# inline functions
-if [[ ! -f "${INLINE_PATH}" ]] \
-    || [[ "${INLINE_PATH}" -ot "${BASH_SOURCE}" ]]; then
+# Refresh 'inline.sh' if the shim changes since it was last generated.
+# This logic duplicated in 'cli cache test'. It's too hot to harvest.
+if [[ ! -f "${CACHE_PATH}" ]] \
+    || [[ "${CACHE_PATH}" -ot "${BASH_SOURCE}" ]]; then
 
-    declare TEMP_PATH=$(mktemp "/tmp/cache.XXXXXX")
-
-    # ::cli::inline::inline
+    # harvest 'cli inline' as ::cli::inline::inline
     cat "${BASH_SOURCE%/*}/emit/inline" \
         | {
             while true; do
@@ -79,27 +84,28 @@ if [[ ! -f "${INLINE_PATH}" ]] \
         } \
         | source /dev/stdin
 
-    inline() {
-        arg_name="::cli::$1::inline" \
-            ::cli::inline::inline < "${BASH_DIR}/$2" \
-            >> "${TEMP_PATH}"
+    cli::shim::inline() {
+        arg_name="::cli::$1::inline" ::cli::inline::inline < "${BASH_DIR}/$2"
     }
 
-    # cli/path/join -> ::cli::path::join::inline
-    inline "path::join" "path/join"
+    # source 'cli cache put' as ::cli::cache::put::inline
+    cli::shim::inline "cache::put" "cache/put" | source /dev/stdin
 
-    # cli/positional -> ::cli::positional::inline
-    inline "positional" "positional"
-
-    # create cache dir            
-    mkdir -p "${CACHE_DIR}"
-
-    # move temp inline.sh to cache dir
-    mv "${TEMP_PATH}" "${INLINE_PATH}"
+    # refresh 'inline.sh'
+    cat \
+        <(cat ${BASH_DIR}/.group | grep ^declare) \
+        <(cli::shim::inline "path::join" "path/join") \
+        <(cli::shim::inline "args::tokenize" "args/tokenize") \
+        <(cli::shim::inline "name::to_unix" "name/to_unix") \
+        | arg_cache=${CACHE_PATH} ::cli::cache::put::inline
 fi
 
-# source inlined functions
-source "${INLINE_PATH}"
+cli::fail() {
+    echo "$@" >&2
+    exit 1
+}
+
+source "${CACHE_PATH}"
 
 cli::shim::is_command() { test -f "$1" && test -x "$1"; }
 cli::shim::is_group() { test -d "$1" && test -x "$1"; }
@@ -116,46 +122,55 @@ cli::shim::cache::start_time() {
 }
 
 main() {
-    local positional_arg_count=$(::cli::positional::inline "$@")
-    local positional_args=( "${@:1:${positional_arg_count}}" )
-    local optional_args=( "${@:$(( positional_arg_count + 1 ))}" )
-    local cli_path=( "${arg_name}" "${positional_args[@]}" )
-    local path=$(arg_delimiter='/' ::cli::path::join::inline "${positional_args[@]}")
+    # build cli path (e.g. cli dsl tokenize)
+    local -a cli_names=()
+    arg_result=cli_names \
+        ::cli::args::tokenize::inline "$@"
+    local -a cli_path=( "${arg_name}" "${cli_names[@]}" )
 
-    shift ${positional_arg_count}
+    # build bash path (e.g. /git/cli/src/dsl/tokenize)
+    local -a bash_names=()
+    arg_result=bash_names \
+        ::cli::name::to_unix::inline "${cli_names[@]}"
+
+    local join=( "${arg_base}" "${bash_names[@]}" )
+    local unix_path="$(IFS=/; echo "${join[*]}")"
+
+    # shift so remaining args are options and positional, if any
+    shift ${#cli_names[@]}
 
     # file
-    if cli::shim::is_command "${path}"; then
+    if cli::shim::is_command "${unix_path}"; then
 
         case "${1-}" in
             # optimization
             '---type')
                 echo 'command' ;;
             '---which')
-                echo "${path}" ;; 
+                echo "${unix_path}" ;; 
             *)
                 cli::shim::cache::start_time
                 declare -x CLI_COMMAND="${cli_path[@]}"
-                "${path}" "${optional_args[@]}"
+                "${unix_path}" "$@"
                 ;;
 
         esac
 
     # directory
-    elif cli::shim::is_group "${path}"; then
+    elif cli::shim::is_group "${unix_path}"; then
      
         case "${1-}" in
             '---type')
                 echo 'group' ;;
             '---which')
-                echo "${path}" ;; 
+                echo "${unix_path}" ;; 
             *)
-                cli::shim::list "${path}" ;;
+                cli::shim::list "${unix_path}" ;;
         esac
 
     # fail
     else
-        echo "Command \"${path}\" not found."
+        echo "Command \"${unix_path}\" not found."
         exit 1
     fi
 }
@@ -166,14 +181,12 @@ initialize() {
     declare -g arg_help=""
     declare -g arg_base=""
     declare -g arg_name=""
-    declare -g arg_type=""
     declare -g arg_self_test=""
     declare -g arg_help=""
     declare -ga arg_=()
     declare -gA arg__=()
     
     # defaults
-    arg_type="file"
     arg_self_test=false
     arg_help=false
     
@@ -183,7 +196,6 @@ initialize() {
             '--help') arg__[arg_help]="true"; arg_help=true ;;
             '--name') arg__[arg_name]="${2:-}"; arg_name="${2:-}"; shift ;;
             '--base') arg__[arg_base]="${2:-}"; arg_base="${2:-}"; shift ;;
-            '--type') arg__[arg_type]="${2:-}"; arg_type="${2:-}"; shift ;;
             '--self-test') arg__[arg_self_test]="true"; arg_self_test=true ;;
             '-h') arg__[arg_help]="true"; arg_help=true ;;
             '--') shift; arg_=( "$@" ); break ;;
@@ -194,16 +206,6 @@ initialize() {
         esac
         if (( $# > 0 )); then shift; fi
     done
-
-    # allowed values
-    case "${arg_type}" in
-        'file') ;;
-        'function') ;;
-        *)
-            echo "Unexpected value '${arg_type}' for argument '--type'."
-            exit 1
-        ;;
-    esac
 }
 
 # emulate loader

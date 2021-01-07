@@ -36,8 +36,9 @@ main() {
     (
         # disable loader
         cli() { echo '/dev/null'; }
-        cli::import() { return; }
         cli::load() { return; }
+        cli::import() { return; }
+        cli::import_group() { return; }
 
         # source file
         source '/dev/stdin'
