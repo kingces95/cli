@@ -8,11 +8,19 @@ Command
 Summary
     Bind to and invoke a command.
 
+Description
+    Bind to and invoke a command. The path to the command is constructed by
+    joining a base path with the first non-option arguments. Positional arguments
+    to this command are passed through to the target command.
+
+    The variable CLI_COMMAND is exported to the target command. Its value is
+    a space delimited list consisting of 'name' followed by the first non-option 
+    arguments to this command. CLI_COMMAND serves the same purpose as BASH_COMMAND.
+
 Arguments
-    --dry-run    [Flag] : Print the command that would be called.
-    --type              : Type of path. Allowed values: file, function.
-                          Default: file.
-    --                  : Positional and named arguments.
+    --name    : Name of the root group of the CLI.
+    --base    : The absolute path to the root directory of the unpacked commands.
+    --        : Options to pass to the bound command.
 
 Global Arguments
     --help -h    [Flag] : Show this message and exit.
@@ -60,80 +68,79 @@ declare BASH_DIR="${BASH_SOURCE%/*}"
 declare BASH_NAME="${BASH_SOURCE##*/}"
 declare CACHE_PATH="${BASH_DIR}/.cli/${BASH_NAME}/inline.sh"
 
-# Refresh 'inline.sh' if the shim changes since it was last generated.
-# This logic duplicated in 'cli cache test'. It's too hot to harvest.
-if [[ ! -f "${CACHE_PATH}" ]] \
-    || [[ "${CACHE_PATH}" -ot "${BASH_SOURCE}" ]]; then
+cli::shim::load() {
+    # Refresh cache if the shim changed since it was last generated.
+    # This logic duplicated in 'cli cache test'.
+    if [[ ! -f "${CACHE_PATH}" ]] \
+        || [[ "${CACHE_PATH}" -ot "${BASH_SOURCE}" ]]; then
+        cli::shim::refresh_cache
+    fi
 
-    # harvest 'cli inline' as ::cli::inline::inline
-    cat "${BASH_SOURCE%/*}/emit/inline" \
-        | {
-            while true; do
-                read -r
-                if [[ "${REPLY}" == 'main() {' ]]; then
-                    echo "::cli::inline::inline() {"
-                    while true; do 
-                        read -r
-                        echo "${REPLY}"
-                        if [[ ${REPLY} == '}' ]]; then
-                            exit
-                        fi
-                    done
-                fi
-            done
-        } \
+    source "${CACHE_PATH}"
+}
+
+cli::shim::refresh_cache() {
+
+    # source inline as ::cli::emit::inline::inline
+    cat "${BASH_DIR}/emit/inline" \
+        | "${BASH_DIR}/emit/inline" --name ::cli::emit::inline::inline \
         | source /dev/stdin
 
     cli::shim::inline() {
-        arg_name="::cli::$1::inline" ::cli::inline::inline < "${BASH_DIR}/$2"
+        arg_name="::cli::$1::inline" ::cli::emit::inline::inline \
+            < "${BASH_DIR}/$2"
     }
 
     # source 'cli cache put' as ::cli::cache::put::inline
-    cli::shim::inline "cache::put" "cache/put" | source /dev/stdin
+    cli::shim::inline "cache::put" "cache/put" \
+        | source /dev/stdin
 
     # refresh 'inline.sh'
     cat \
-        <(cat ${BASH_DIR}/.group | grep ^declare) \
-        <(cli::shim::inline "path::join" "path/join") \
+        <(cat ${BASH_DIR}/.group | grep ^declare | sed 's/^declare/declare -g/') \
         <(cli::shim::inline "args::tokenize" "args/tokenize") \
         <(cli::shim::inline "name::to_unix" "name/to_unix") \
         | arg_cache=${CACHE_PATH} ::cli::cache::put::inline
-fi
+}
 
 cli::fail() {
     echo "$@" >&2
     exit 1
 }
 
-source "${CACHE_PATH}"
-
 cli::shim::is_command() { test -f "$1" && test -x "$1"; }
 cli::shim::is_group() { test -d "$1" && test -x "$1"; }
 cli::shim::list() { cli list --dir "$1"; }
-
-cli::shim::cache::start_time() {
-    if ! declare -p CLI_LOADER_IMPORTS_EXPIRATION_PATH >/dev/null 2>&1; then
-        declare -xg CLI_LOADER_IMPORTS_EXPIRATION_PATH="$(mktemp "/tmp/cli.XXXXXX")"
-        cli::shim::on_exit() { 
-            rm "${CLI_LOADER_IMPORTS_EXPIRATION_PATH}"
-        }
-        trap cli::shim::on_exit EXIT
-    fi
+cli::shim::known_commands::loader() {
+    "${BASH_DIR}/loader"
+    exit
 }
 
 main() {
-    # build cli path (e.g. cli dsl tokenize)
+    # execute well known commands
+    if [[ "${arg_name}" == 'cli' ]]; then
+        if [[ "$@" == "loader" ]]; then
+            cli::shim::known_commands::loader
+        fi
+    fi
+
+    cli::shim::load
+
+    # pluck cli names from args (e.g. name to-unix)
     local -a cli_names=()
     arg_result=cli_names \
         ::cli::args::tokenize::inline "$@"
+
+    # add cli name to list of cli names (e.g. cli name to-unix)
     local -a cli_path=( "${arg_name}" "${cli_names[@]}" )
 
-    # build bash path (e.g. /git/cli/src/dsl/tokenize)
-    local -a bash_names=()
-    arg_result=bash_names \
+    # convert cli names to unix names (e.g. cli name to_unix)
+    local -a unix_names=()
+    arg_result=unix_names \
         ::cli::name::to_unix::inline "${cli_names[@]}"
 
-    local join=( "${arg_base}" "${bash_names[@]}" )
+    # build unix path (e.g. /git/cli/src/name/to_unix)
+    local join=( "${arg_base}" "${unix_names[@]}" )
     local unix_path="$(IFS=/; echo "${join[*]}")"
 
     # shift so remaining args are options and positional, if any
@@ -149,7 +156,6 @@ main() {
             '---which')
                 echo "${unix_path}" ;; 
             *)
-                cli::shim::cache::start_time
                 declare -x CLI_COMMAND="${cli_path[@]}"
                 "${unix_path}" "$@"
                 ;;

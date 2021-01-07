@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli emit initialize
 
 help() {
     cat << EOF
@@ -75,6 +74,21 @@ main() {
     declare -f cli::export::import_parent_group
     declare -f cli::export::variables
     declare -f cli::export::functions
+}
+
+initialize() {
+    : ${arg_help:=false}
+    : ${arg_self_test:=false}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '-h') ;& '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            *) echo "Unexpected argument '$1'."; exit 1 ;;
+        esac
+
+        shift
+    done
 }
 
 cli::load "$@"

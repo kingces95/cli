@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli_assert
+# cli::import cli_assert
 
 help() {
     cat << EOF
@@ -29,7 +29,7 @@ Examples
 EOF
 }
 
-main() {
+inline() {
     : ${arg_name?'Unexpected lack of inline function name.'}
     : ${arg_function:='inline'}
 
@@ -50,6 +50,25 @@ main() {
             cat
         }
     )
+}
+
+initialize() {
+    : ${arg_help:=false}
+    : ${arg_self_test:=false}
+    : ${arg_name:=}
+    : ${arg_function:='inline'}
+
+    while (( $# > 0 )); do
+        case $1 in
+            '--name') arg_name="${2:-}"; shift ;;
+            '--function') arg_function="${2:-}"; shift ;;
+            '-h') ;& '--help') arg_help=true ;;
+            '--self-test') arg_self_test=true ;;
+            *) echo "Unexpected argument '$1'."; exit 1 ;;
+        esac
+
+        shift
+    done
 }
 
 self_test() {

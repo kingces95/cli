@@ -313,6 +313,7 @@ cli::load() {
                 cli::loader::cache::exports
                 echo "${CLI_LOADER_EXPORTS_PATH}"
                 ;;
+            *) cli::fail "Unexpected internal option \"$1\"."
         esac 
         exit
     fi
@@ -469,7 +470,7 @@ cat "${BASH_SOURCE%/*}/emit/inline" \
     | {
         while true; do
             read -r
-            if [[ "${REPLY}" == 'main() {' ]]; then
+            if [[ "${REPLY}" == 'inline() {' ]]; then
                 echo "::cli::inline::inline() {"
                 while true; do 
                     read -r
