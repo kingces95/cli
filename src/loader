@@ -32,18 +32,6 @@ set -u
 set -o pipefail
 shopt -s lastpipe
 
-cli::loader::escape_args_then_call_as() {
-    local user=$1
-    shift
-
-    local -a args
-    for i in "$@"; do
-        args+=( $(printf %q "${i}") )
-    done
-
-    sudo su "${user}" -c "${args[*]}"
-}
-
 cli::loader::dry_run() {
     if [[ "${arg_dry_run:-}" == "true" ]]; then 
         # removes extra spaces which is typically what we want
@@ -201,7 +189,9 @@ cli::loader::execute() {
 
     # implement well known features
     if [[ -n "${arg_run_as}" ]] && [[ ! "${arg_run_as}" == "$(whoami)" ]]; then
-        cli::loader::escape_args_then_call_as "${arg_run_as}" "$0" "${args[@]}"
+        arg_user="${arg_run_as}" \
+        arg_command="$0" \
+            ::cli::reflection::run_as::inline "${args[@]}"
 
     else
         # clean up known arguments
@@ -363,9 +353,20 @@ main() {
     echo
 
     declare -f cli::loader::dry_run
-    declare -f cli::loader::escape_args_then_call_as
     declare -f cli::loader::execute
     declare -f cli::loader::self_test
+    echo
+
+    declare -f ::cli::cache::put::inline
+    declare -f ::cli::cache::test::inline
+    declare -f ::cli::cache::path::inline
+    declare -f ::cli::path::join::inline
+    declare -f ::cli::reflection::is_function_declared::inline
+    declare -f ::cli::reflection::run_as::inline
+    echo
+
+    declare -f cli::cache::test
+    declare -f cli::cache::put
     echo
 
     if ${arg_pack}; then
@@ -393,17 +394,6 @@ main() {
 
         declare -f cli
     else
-
-        declare -f ::cli::cache::put::inline
-        declare -f ::cli::cache::test::inline
-        declare -f ::cli::cache::path::inline
-        declare -f ::cli::path::join::inline
-        declare -f ::cli::reflection::is_function_declared::inline
-        echo
-
-        declare -f cli::cache::test
-        declare -f cli::cache::put
-        echo
 
         declare -f cli::loader::cache::load
         declare -f cli::loader::cache::initialize
@@ -469,6 +459,7 @@ inline 'cache::path' 'cache/path'
 inline 'path::join' 'path/join'
 inline 'args::parse' 'args/parse'
 inline 'reflection::is_function_declared' 'reflection/is_function_declared'
+inline 'reflection::run_as' 'reflection/run_as'
 
 cli::loader::cache::load ${BASH_SOURCE}
 
