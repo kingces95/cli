@@ -40,7 +40,7 @@ inline() {
                 "found in \"${args[@]}\"" \
                 "does not match regex ${CLI_REGEX_NAME}."
         fi
-        ref_result+=( "${1/-/_}" )
+        ref_result+=( "${1//-/_}" )
         shift
     done
 }
@@ -54,9 +54,9 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} <<< $'.foo-bar\nbaz' \
+    ${CLI_COMMAND} <<< $'.foo-bar-baz\nbaz' \
     | assert::pipe_eq \
-        ".foo_bar" \
+        ".foo_bar_baz" \
         "baz"
 
     assert::fails "${CLI_COMMAND} <<< $'foo_bar'"

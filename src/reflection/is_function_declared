@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return true if the function is declared, otherwise false.
+
+Arguments
+    --name -n    [Required] : The name of the function.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Test for the function 'inline'.
+        ${CLI_COMMAND} --name inline
+EOF
+}
+
+inline() {
+    : ${arg_name?"Unexpected missing name of function."}
+
+    if declare -F "${arg_name}" > /dev/null; then 
+        true
+    else 
+        false
+    fi
+}
+
+self_test() {
+    ${CLI_COMMAND} --name inline
+    assert::ok
+
+    ${CLI_COMMAND} --name missing
+    assert::failed
+}
+
+cli::load "$@"

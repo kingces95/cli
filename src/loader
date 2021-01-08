@@ -32,10 +32,6 @@ set -u
 set -o pipefail
 shopt -s lastpipe
 
-cli::loader::is_declared() {
-    if declare -F "$1" > /dev/null; then true; else false; fi
-}
-
 cli::loader::escape_args_then_call_as() {
     local user=$1
     shift
@@ -99,7 +95,7 @@ cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
 
         # declarative; e.g. inline
-        if cli::loader::is_declared 'inline'; then
+        if arg_name=inline ::cli::reflection::is_function_declared::inline; then
             cli emit inline \
                 --name "$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
                 --function 'inline' \
@@ -115,7 +111,7 @@ cli::loader::cache::exports() {
 cli::loader::cache::initialize() {
 
     # initialize hard coded
-    if cli::loader::is_declared initialize; then
+    if arg_name=initialize ::cli::reflection::is_function_declared::inline; then
         return
     fi
 
@@ -212,13 +208,13 @@ cli::loader::execute() {
         unset arg_run_as
         unset args
 
-        if cli::loader::is_declared main; then
+        if arg_name=main ::cli::reflection::is_function_declared::inline; then
             main "${arg_[@]}"
 
-        elif cli::loader::is_declared inline; then
+        elif arg_name=inline ::cli::reflection::is_function_declared::inline; then
             inline "${arg_[@]}"
 
-        elif cli::loader::is_declared export; then
+        elif arg_name=export ::cli::reflection::is_function_declared::inline; then
             export
             
         else
@@ -244,7 +240,7 @@ cli::load() {
     declare -Ag CLI_META_ALLOWED_VALUES=()
 
     # implicit imports
-    if cli::loader::is_declared export; then
+    if arg_name=export ::cli::reflection::is_function_declared::inline; then
         CLI_LOADER_IMPORTS+=( \
             'cli emit export' \
             'cli emit initialize' \
@@ -381,7 +377,7 @@ main() {
         cli::loader::cache::initialize() {
 
             # hard coded
-            if declare -F initialize > /dev/null; then
+            if arg_name=initialize ::cli::reflection::is_function_declared::inline; then
                 return
             fi
 
@@ -402,13 +398,13 @@ main() {
         declare -f ::cli::cache::test::inline
         declare -f ::cli::cache::path::inline
         declare -f ::cli::path::join::inline
+        declare -f ::cli::reflection::is_function_declared::inline
         echo
 
         declare -f cli::cache::test
         declare -f cli::cache::put
         echo
 
-        declare -f cli::loader::is_declared
         declare -f cli::loader::cache::load
         declare -f cli::loader::cache::initialize
         declare -f cli::loader::cache::exports
@@ -472,6 +468,7 @@ inline 'cache::test' 'cache/test'
 inline 'cache::path' 'cache/path'
 inline 'path::join' 'path/join'
 inline 'args::parse' 'args/parse'
+inline 'reflection::is_function_declared' 'reflection/is_function_declared'
 
 cli::loader::cache::load ${BASH_SOURCE}
 
