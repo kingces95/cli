@@ -8,73 +8,71 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Read stdin into an associative array.
+    Deserialize pairs of records from stdin into an associative array.
 
 Description
-    Reads an even number of lines from a file to populate an associative
-    array. Even lines are keys and odd lines are values. The associative
-    array must be declared before calling readmap and passed as argument
-    'name'. As such, this function can only be used inline. 
+    Deserialize an associatve array where keys and values encoded using
+    printf %q, a key is separated from its value by whitesapce, and the pairs
+    are separated from themselves a newline.
+
+    The deserialized associative array is emitted to stdout using declare -p.
 
 Arguments
-    --name -n    [Required] : Name of associative shell variable. Default: RESULT.
+    --name -n               : The name of the associative array. Default: RESULT.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
 
 Examples
-    Source readmap and load 'key' 'value' into 'map'.
-        printf '%s\n' k0 v0 k1 v1 \\
-            | ${CLI_COMMAND}
+    Create the set { 'a' 'b' 'c' }.
+        ${CLI_COMMAND} -emit <<< $'a\n\b\nc'
 EOF
 }
 
 inline() {
-    cli::returns::associative_array
+    : ${arg_name=RESULT}
+    : ${1?"Unexpected missing key."}
+    : ${2?"Unexpected missing value."}
 
-    : ${arg_name:=RESULT}
-
-    local key
-    local value
     declare -n ref=${arg_name}
 
-    while read -r key; do
-        if [[ -z ${key} ]]; then
-            cli::fail 'Unexpected empty key.'
-        elif ! read -r value; then
-            value=
-        fi
-        ref+=( [$key]="$value" )
-    done
+    # deserialize key and value
+    eval "set $1 $2"
+
+    ref+=( [$1]=$2 )
 }
 
 main() {
     declare -A ${arg_name}
-    inline "$@"
+    while read -r key value; do
+        inline "${key}" "${value}"
+    done
     declare -p ${arg_name}
 }
 
 self_test() {
-    cat /dev/null \
-    | ${CLI_COMMAND} --name map \
+    ${CLI_COMMAND} --name set < /dev/null \
     | assert::pipe_eq \
-        'declare -A map'
+        'declare -A set'
 
-    printf '%s\n' k v \
+    declare -A RESULT=( [a]=b [f]=g )
+    printf '%q %q\n' a b f g \
     | ${CLI_COMMAND} \
     | assert::pipe_eq \
-        'declare -A RESULT=([k]="v" )'
+        "$(declare -p RESULT)"
 
-    printf '%s\n' k0 v0 k1 v1 \
+    declare -A RESULT=( [$'\n']=$'\t' )
+    printf '%q %q\n' $'\n' $'\t' \
     | ${CLI_COMMAND} \
-    | assert::pipe_eq \
-        'declare -A RESULT=([k0]="v0" [k1]="v1" )'
+    | assert::pipe_eq_exact \
+        "$(declare -p RESULT)"
 
+    declare -A RESULT=()
     ${CLI_COMMAND} ---emit | source /dev/stdin
-    ::cli::util::readmap::inline <<< $'key\nvalue'
-    assert::pipe_eq < <(declare -p RESULT) \
-        'declare -A RESULT=([key]="value" )'
+    ::cli::util::readmap::inline "$'\n'" "$'\t'"
+    assert::pipe_eq_exact < <(declare -p RESULT) \
+        "declare -A RESULT=([\$'\n']=\$'\t' )"
 }
 
 cli::load "$@"

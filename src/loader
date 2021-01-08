@@ -73,23 +73,6 @@ cli::fail() {
     exit 1
 }
 
-cli::returns() {
-    unset RESULT
-    declare -g${1-} RESULT
-}
-
-cli::returns::string() {
-    cli::returns
-}
-
-cli::returns::array() {
-    cli::returns a
-}
-
-cli::returns::associative_array() {
-    cli::returns A
-}
-
 cli::import() {
     CLI_LOADER_IMPORTS+=( "$*" )
 }
@@ -375,12 +358,6 @@ main() {
 
     echo "declare -a CLI_LOADER_IMPORTS=()"
     echo ": \${CLI_COMMAND:=\${BASH_SOURCE[1]##*/}}"
-    echo
-
-    declare -f cli::returns
-    declare -f cli::returns::string
-    declare -f cli::returns::array
-    declare -f cli::returns::associative_array
     echo
 
     declare -f cli::fail

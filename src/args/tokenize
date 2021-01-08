@@ -3,7 +3,6 @@ source $(cli loader)
 cli::import_group
 cli::import cli_assert
 cli::import cli util serialize
-cli::import cli util readset
 
 help() {
     cat << EOF
