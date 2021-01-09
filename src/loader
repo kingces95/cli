@@ -32,17 +32,6 @@ set -u
 set -o pipefail
 shopt -s lastpipe
 
-cli::loader::dry_run() {
-    if [[ "${arg_dry_run:-}" == "true" ]]; then 
-        # removes extra spaces which is typically what we want
-        while read; do echo ${REPLY}; done
-    else
-        if [[ "${arg_debug:-}" == "true" ]]; then set -x; fi
-        source /dev/stdin
-        if [[ "${arg_debug:-}" == "true" ]]; then set +x; fi
-    fi
-}
-
 cli::loader::cache::load() {
     declare -g CLI_LOADER_COMMAND_PATH="$1"
     declare -g CLI_LOADER_CACHE_DIR="$(arg_path="${CLI_LOADER_COMMAND_PATH}" \
@@ -53,8 +42,8 @@ cli::loader::cache::load() {
 }
 
 cli::fail() {
-    echo "$@" >&2
-    exit 1
+    arg_message="$@"
+        ::cli::util::fail::inline
 }
 
 cli::import() {
@@ -352,7 +341,6 @@ main() {
     declare -f cli::load
     echo
 
-    declare -f cli::loader::dry_run
     declare -f cli::loader::execute
     declare -f cli::loader::self_test
     echo
@@ -363,6 +351,7 @@ main() {
     declare -f ::cli::path::join::inline
     declare -f ::cli::reflection::is_function_declared::inline
     declare -f ::cli::reflection::run_as::inline
+    declare -f ::cli::util::fail::inline
     echo
 
     declare -f cli::cache::test
@@ -460,6 +449,7 @@ inline 'path::join' 'path/join'
 inline 'args::parse' 'args/parse'
 inline 'reflection::is_function_declared' 'reflection/is_function_declared'
 inline 'reflection::run_as' 'reflection/run_as'
+inline 'util::fail' 'util/fail'
 
 cli::loader::cache::load ${BASH_SOURCE}
 

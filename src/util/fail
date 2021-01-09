@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Print a message to stderr and exit with a non-zero code.
+
+Arguments
+    --exit-code -e          : The exit code to return. Default: 1.
+    --message -m            : The error message message.
+                              Default: Unexpected general failure.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    : ${arg_exit_code=1}
+    : ${arg_message='Unexpected general failure.'}
+
+    echo "${arg_message}" >&2
+    exit ${arg_exit_code}
+}
+
+self_test() {
+    set +e
+    assert::fails "arg_message='failed' inline"
+}
+
+cli::load "$@"
