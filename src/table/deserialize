@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli reflection get-type
+cli::import cli write
+cli::import cli_assert
+cli::import cli table serialize
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Deserialize a table into a variable.
+
+Description
+    Deserialize a set of records read from stdin to a variable. 
+    
+    If the variable is declared as a string or integer, then the stream is 
+    assumed to contain a single record consisting of a single field. 
+    
+    If the variable is declared as an array, then the stream is assumed to
+    contain multipule records, each consisting of a single field.
+
+    If the variable is declared as an associative array, then the stream is
+    assumed to contain multipule records, each consisting of two fields,
+    a key and a value.
+
+    Variables ARRAY, MAP, INTEGER and STRING are embedded for debugging
+    deserialization of tables.
+
+Arguments
+    --name -n          [Required] : Name of variable to receive the table.
+    --multi-value -m       [Flag] : If set, a map may have many 'printf %q' escaped 
+                                    values and separted by white spaces. Flag has
+                                    no effect on other variable types.
+                                    
+
+Debug Arguments
+    --type -t               : Declare global variable.
+    --emit -e        [Flag] : Emit variable.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Example
+    Serialize and deserialize an array.
+        declare -p ARRAY \\
+            | cli table serialize --source --name ARRAY \\
+            | cli table deserialize --name ARRAY --emit
+EOF
+}
+
+declare -a ARRAY
+declare -A MAP
+declare -i INTEGER
+declare STRING
+
+inline() {
+    local -n ref="${arg_name}"
+    ::cli::reflection::get_type::inline ref \
+        | read type REPLY
+
+    case "${type}" in
+        'array')
+            while read; do
+                ref+=( "${REPLY}" )
+            done 
+            ;;
+        'map') 
+            if $arg_multi_value; then
+                while read key REPLY; do
+                    printf -v value '%q' "${REPLY}"
+                    if [[ -n "${ref[${key}]-}" ]]; then
+                        ref[${key}]+=' '
+                    fi
+                    ref[${key}]+="${value}"
+                done
+            else
+                while read key REPLY; do
+                    ref[${key}]="${REPLY}"
+                done
+            fi
+            ;;
+        *) 
+            read
+            ref="${REPLY}"
+    esac
+}
+
+main() {
+    inline
+
+    if $arg_emit; then
+        declare -p "${arg_name}"
+    fi
+}
+
+self_test() {
+    declare ARRAY=( 'Hello world' $'\ttabbed' $'  indented' '' )
+    declare -p ARRAY \
+        | cli table serialize --source --name ARRAY \
+        | ${CLI_COMMAND} --name ARRAY --emit \
+        | assert::pipe_eq_exact \
+            "declare -a ARRAY=([0]=\"Hello world\" [1]=$'\ttabbed' [2]=\"  indented\" [3]=\"\")"
+
+    declare STRING='Hello world!'
+    declare -p STRING \
+        | cli table serialize --source --name STRING \
+        | ${CLI_COMMAND} --name STRING --emit \
+        | assert::pipe_eq \
+            'declare -- STRING="Hello world!"'
+
+    declare -A MAP=( [my key]=$'\tmy tabbed value' )
+    declare -p MAP \
+        | cli table serialize --source --name MAP \
+        | ${CLI_COMMAND} --name MAP --emit \
+        | assert::pipe_eq_exact \
+            "declare -A MAP=([\"my key\"]=$'\tmy tabbed value' )"
+
+    declare -A MAP=( [key]='\$ \\ \ ' )
+    declare -p MAP \
+        | cli table serialize --multi-value --source --name MAP \
+        | ${CLI_COMMAND} --multi-value --name MAP --emit \
+        | assert::pipe_eq_exact \
+            'declare -A MAP=([key]="\\\$ \\  \\\\" )'
+}
+
+cli::load "$@"

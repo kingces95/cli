@@ -15,16 +15,29 @@ Summary
 Description
     Tokenizes command line arguments. Theoretically, a command line could be 
     matched by a regular expression. This command effectively does that match
-    and returns the capture groups as the following serialized arrays: 
+    and writes the follwing tables: 
 
-        RESULT
+        path
+        option
         positional
 
-    and associataive array:
+    For example, 'bin sequence --name even -v -- two four six' would produce 
+    the following files with the following content:
 
-        options
+        /path
+            bin
+            sequence
 
-    The syntax is based off the Azure az tool with the additon that:
+        /option
+            name even
+            v true
+
+        /argument
+            two
+            four
+            six
+
+    The command line syntax is based off the Azure az tool with the additon that:
     
         1. multipule single character options can be included behind the 
            same single dash with the last option optionally having a value.
@@ -32,13 +45,12 @@ Description
         
     For example, 
 
-        bin cli --k0 v0 --flag -xyz v1 -- a0 a1' 
+       '-gh v' 
         
-    has the following RESULT, named arguments, aliased and positional captures: 
+    would produce records: 
     
-        ( bin cli )
-        ( [k0]=v0 [flag]=true [x]=true [y]=true [z]=v1 )
-        ( a0 a1 )
+        option g true
+        option h v
 
     Options behind a double dash must be composed of lowercase letters, numbers, 
     or dash, and must start with a letter. 
@@ -175,6 +187,23 @@ main() {
 
     ::cli::util::serialize::inline \
         ${arg_result} ${arg_options} ${arg_positional}
+}
+
+record_associative_array() {
+    : ${arg_name?"Unexpected missing record name."}
+    while (( $# > 1 )); do
+        record "${arg_name}" "$1"
+        shift
+    done
+}
+
+record_array() {
+    local -n ref=${arg_name}
+
+    for element in ref; do
+        record "${arg_name}" "$1"
+        shift
+    done
 }
 
 self_test() {

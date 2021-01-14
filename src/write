@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Writes a record.
+
+Description
+    Tables consist of records which are lines containing fields separated by
+    whilespace found in IFS which have any whitespace contained within them
+    (plus backslash) escaped with a backslash. This function accepts a set
+    of arguments, and prints a record consisting of those arguments.
+
+    This operationn is the inverse of 'read' with default IFS; A record written
+    with 'write' can be read with 'read' using the default value of IFS. 
+    For example, for any MESSAGE declared as a string, integer, array, or map,
+    the following will write, and then read the value into REPLY. 
+
+        read < <(write "\${MESSAGE}")
+
+Arguments
+    --                      : The fields of the table record.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Write and read a record with fields 'x', space, tab, and backslash.
+        ${CLI_COMMAND} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY
+EOF
+}
+
+inline() {
+    while (( $# > 0 )); do
+        local field="$1"
+        field="${field//\\/\\\\}"
+        field="${field// /\\ }"
+        field="${field//$'\t'/\\$'\t'}"
+
+        echo -n "${field}"
+        if (( $# > 1 )); then
+            echo -n " "
+        fi
+
+        shift
+    done
+
+    echo
+}
+
+self_test() {
+    ${CLI_COMMAND} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY \
+    | assert::pipe_eq_exact \
+        "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")"
+
+    ${CLI_COMMAND} -- 'a b' | read -a ARRAY; declare -p ARRAY \
+    | assert::pipe_eq_exact \
+        "declare -a ARRAY=([0]=\"a b\")"
+}
+
+cli::load "$@"

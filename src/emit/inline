@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 source $(cli loader)
-# cli::import cli_assert
 
 help() {
     cat << EOF
@@ -34,16 +33,28 @@ inline() {
     : ${arg_function:='inline'}
 
     (
+        local -a imports=()
+
         # disable loader
         cli() { echo '/dev/null'; }
         cli::load() { return; }
         cli::import() { return; }
         cli::import_group() { return; }
 
+        # capture imports upon which the inlined function depends
+        cli::import_inline() {
+            imports+=( "$*" )
+        }
+
         # source file
         source '/dev/stdin'
 
-        # echo and rename main function
+        # emit dependencies
+        if (( ${#imports[@]} > 0 )); then
+            printf 'cli::import %s\n' "${imports[@]}"
+        fi
+
+        # emit and rename function
         declare -f ${arg_function} | { 
             read
             echo "${arg_name} ()"
