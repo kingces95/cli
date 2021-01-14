@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import_inline cli reflection get-type
-cli::import_inline cli write
+cli::import_inline cli bash get-type
+cli::import_inline cli bash write
 cli::import cli_assert
 
 help() {
@@ -52,12 +52,12 @@ inline() {
 
     local -a values
     local -n ref="${arg_name}"
-    ::cli::reflection::get_type::inline ref | read type REPLY
+    ::cli::bash::get_type::inline ref | read type REPLY
 
     case "${type}" in
         'array') 
             for value in "${ref[@]}"; do
-                ::cli::write::inline "${value}"
+                ::cli::bash::write::inline "${value}"
             done 
             ;;
         'map') 
@@ -65,17 +65,17 @@ inline() {
                 for key in "${!ref[@]}"; do
                     eval "values=( ${ref[${key}]} )"
                     for value in "${values[@]}"; do
-                        ::cli::write::inline "${key}" "${value}"
+                        ::cli::bash::write::inline "${key}" "${value}"
                     done
                 done
             else
                 for key in "${!ref[@]}"; do
-                    ::cli::write::inline "${key}" "${ref[${key}]}"
+                    ::cli::bash::write::inline "${key}" "${ref[${key}]}"
                 done
             fi | sort -k1 -k2
             ;;
         *) 
-            ::cli::write::inline "${ref}"
+            ::cli::bash::write::inline "${ref}"
     esac
 }
 
@@ -90,19 +90,19 @@ main() {
 self_test() {
     declare STRING='Hello world!'
     declare -p STRING \
-        | cli table serialize --source --name STRING \
+        | cli bash table write --source --name STRING \
         | assert::pipe_eq_exact \
             'Hello\ world!'
 
     declare -a ARRAY=( '$' $'\t' 'b c' )
     declare -p ARRAY \
-        | cli table serialize --source --name ARRAY \
+        | cli bash table write --source --name ARRAY \
         | assert::pipe_eq_exact \
             '$' $'\\\t' 'b\ c'
 
     declare -A MAP=( [z]='a b' [a]=z [my key]=$'\ttabbed' )
     declare -p MAP \
-        | cli table serialize --source --name MAP \
+        | cli bash table write --source --name MAP \
         | assert::pipe_eq_exact \
             'a z' \
             $'my\ key \\\ttabbed' \
@@ -110,7 +110,7 @@ self_test() {
 
     declare -A MAP=( [z]='a b' )
     declare -p MAP \
-        | cli table serialize --multi-value --source --name MAP \
+        | cli bash table write --multi-value --source --name MAP \
         | assert::pipe_eq_exact \
             'z a' \
             'z b'

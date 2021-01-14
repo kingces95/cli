@@ -93,7 +93,7 @@ cli::shim::import_inline() {
             <(cat ${BASH_DIR}/.group | grep ^declare | sed 's/^declare/declare -g/') \
             <(cli::shim::inline "args::tokenize" "args/tokenize") \
             <(cli::shim::inline "name::to_unix" "name/to_unix") \
-            <(cli::shim::inline "util::fail" "util/fail") \
+            <(cli::shim::inline "bash::fail" "bash/fail") \
             | arg_cache=${CACHE_PATH} ::cli::cache::put::inline
     fi
 
@@ -102,7 +102,7 @@ cli::shim::import_inline() {
 
 cli::fail() {
     cli_message="$@"
-        ::cli::util::fail::inline
+        ::cli::bash::fail::inline
 }
 
 cli::shim::is_command() { test -f "$1" && test -x "$1"; }

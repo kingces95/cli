@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli reflection get-type
-cli::import cli write
 cli::import cli_assert
-cli::import cli table serialize
+cli::import_inline cli bash get-type
 
 help() {
     cat << EOF
@@ -59,7 +57,7 @@ declare STRING
 
 inline() {
     local -n ref="${arg_name}"
-    ::cli::reflection::get_type::inline ref \
+    ::cli::bash::get_type::inline ref \
         | read type REPLY
 
     case "${type}" in
@@ -100,28 +98,28 @@ main() {
 self_test() {
     declare ARRAY=( 'Hello world' $'\ttabbed' $'  indented' '' )
     declare -p ARRAY \
-        | cli table serialize --source --name ARRAY \
+        | cli bash table write --source --name ARRAY \
         | ${CLI_COMMAND} --name ARRAY --emit \
         | assert::pipe_eq_exact \
             "declare -a ARRAY=([0]=\"Hello world\" [1]=$'\ttabbed' [2]=\"  indented\" [3]=\"\")"
 
     declare STRING='Hello world!'
     declare -p STRING \
-        | cli table serialize --source --name STRING \
+        | cli bash table write --source --name STRING \
         | ${CLI_COMMAND} --name STRING --emit \
         | assert::pipe_eq \
             'declare -- STRING="Hello world!"'
 
     declare -A MAP=( [my key]=$'\tmy tabbed value' )
     declare -p MAP \
-        | cli table serialize --source --name MAP \
+        | cli bash table write --source --name MAP \
         | ${CLI_COMMAND} --name MAP --emit \
         | assert::pipe_eq_exact \
             "declare -A MAP=([\"my key\"]=$'\tmy tabbed value' )"
 
     declare -A MAP=( [key]='\$ \\ \ ' )
     declare -p MAP \
-        | cli table serialize --multi-value --source --name MAP \
+        | cli bash table write --multi-value --source --name MAP \
         | ${CLI_COMMAND} --multi-value --name MAP --emit \
         | assert::pipe_eq_exact \
             'declare -A MAP=([key]="\\\$ \\  \\\\" )'

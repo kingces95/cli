@@ -61,6 +61,8 @@ cli::loader::import_inline() {
             | source /dev/stdin
     }
 
+    inline 'bash::fail' 'bash/fail'
+    inline 'bash::is_function_declared' 'bash/is_function_declared'
     inline 'cache::put' 'cache/put'
     inline 'cache::test' 'cache/test'
     inline 'cache::path' 'cache/path'
@@ -68,14 +70,12 @@ cli::loader::import_inline() {
     inline 'args::parse' 'args/parse'
     inline 'args::tokenize' 'args/tokenize'
     inline 'args::parse' 'args/parse'
-    inline 'reflection::is_function_declared' 'reflection/is_function_declared'
-    inline 'reflection::run_as' 'reflection/run_as'
-    inline 'util::fail' 'util/fail'
+    inline 'run_as' 'run_as'
 }
 
 cli::fail() {
     arg_message="$@"
-        ::cli::util::fail::inline
+        ::cli::bash::fail::inline
 }
 
 cli::import() {
@@ -112,7 +112,7 @@ cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
 
         # declarative; e.g. inline
-        if arg_name=inline ::cli::reflection::is_function_declared::inline; then
+        if arg_name=inline ::cli::bash::is_function_declared::inline; then
             cli emit inline \
                 --name "$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
                 --function 'inline' \
@@ -130,7 +130,7 @@ cli::loader::cache::exports() {
 cli::loader::cache::initialize() {
 
     # initialize hard coded
-    if arg_name=initialize ::cli::reflection::is_function_declared::inline; then
+    if arg_name=initialize ::cli::bash::is_function_declared::inline; then
         return
     fi
 
@@ -194,7 +194,7 @@ cli::loader::load::imports() {
         # if import codegen cache stale
         if ! arg_cache="${exports_path}" \
             arg_source="${import_path}" \
-            ::cli::cache::test::inline; then
+                ::cli::cache::test::inline; then
 
             # refresh import codegen cache
             ${import[@]} '---exports' > /dev/null
@@ -225,20 +225,20 @@ cli::loader::execute() {
     if [[ -n "${arg_run_as}" ]] && [[ ! "${arg_run_as}" == "$(whoami)" ]]; then
         arg_user="${arg_run_as}" \
         arg_command="$0" \
-            ::cli::reflection::run_as::inline "${args[@]}"
+            ::cli::run_as::inline "${args[@]}"
 
     else
         # clean up known arguments
         unset arg_run_as
         unset args
 
-        if arg_name=main ::cli::reflection::is_function_declared::inline; then
+        if arg_name=main ::cli::bash::is_function_declared::inline; then
             main "${arg_[@]}"
 
-        elif arg_name=inline ::cli::reflection::is_function_declared::inline; then
+        elif arg_name=inline ::cli::bash::is_function_declared::inline; then
             inline "${arg_[@]}"
 
-        elif arg_name=export ::cli::reflection::is_function_declared::inline; then
+        elif arg_name=export ::cli::bash::is_function_declared::inline; then
             export
             
         else
@@ -264,7 +264,7 @@ cli::load() {
     declare -Ag CLI_META_ALLOWED_VALUES=()
 
     # implicit imports
-    if arg_name=export ::cli::reflection::is_function_declared::inline; then
+    if arg_name=export ::cli::bash::is_function_declared::inline; then
         CLI_LOADER_IMPORTS+=( \
             'cli emit export' \
             'cli emit initialize' \
@@ -395,9 +395,9 @@ main() {
     declare -f ::cli::cache::path::inline
     declare -f ::cli::cache::put::inline
     declare -f ::cli::path::join::inline
-    declare -f ::cli::reflection::is_function_declared::inline
-    declare -f ::cli::reflection::run_as::inline
-    declare -f ::cli::util::fail::inline
+    declare -f ::cli::bash::is_function_declared::inline
+    declare -f ::cli::run_as::inline
+    declare -f ::cli::bash::fail::inline
     declare -f ::cli::args::tokenize::inline
     declare -f ::cli::args::parse::inline
     echo
@@ -414,7 +414,7 @@ main() {
         cli::loader::cache::initialize() {
 
             # hard coded
-            if arg_name=initialize ::cli::reflection::is_function_declared::inline; then
+            if arg_name=initialize ::cli::bash::is_function_declared::inline; then
                 return
             fi
 

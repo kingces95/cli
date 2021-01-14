@@ -13,6 +13,7 @@ Summary
 Arguments
     --command -c [Required] : The path to the command.
     --user -u    [Required] : The name of the user.
+    --                      : Arguments.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.

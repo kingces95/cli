@@ -2,8 +2,7 @@
 source $(cli loader)
 cli::import_group
 cli::import cli emit initialize
-cli::import cli util serialize
-cli::import cli table serialize
+cli::import cli bash table write
 
 help() {
     cat << EOF
@@ -74,31 +73,31 @@ main() {
     #     CLI_META_ALLOWED_VALUES \
     #     CLI_META_IMPLICIT_VALUES \
     #     CLI_META_POSITIONAL
- 
+
     echo 'default'
     arg_name=CLI_META_DEFAULT \
-        ::cli::table::serialize::inline | sed 's/^/    /'
+        ::cli::bash::table::write::inline | sed 's/^/    /'
  
     echo 'positional'
     arg_name=CLI_META_POSITIONAL \
-        ::cli::table::serialize::inline | sed 's/^/    /'
+        ::cli::bash::table::write::inline | sed 's/^/    /'
 
     echo 'required'
     arg_name=CLI_META_REQUIRED \
-        ::cli::table::serialize::inline | sed 's/^/    /'
+        ::cli::bash::table::write::inline | sed 's/^/    /'
 
     echo 'allowed_values'
     arg_name=CLI_META_ALLOWED_VALUES \
     arg_multi_value=true \
-        ::cli::table::serialize::inline | sed 's/^/    /'
+        ::cli::bash::table::write::inline | sed 's/^/    /'
 
     echo 'aliases'
     arg_name=CLI_META_ALIASES \
-        ::cli::table::serialize::inline | sed 's/^/    /'
+        ::cli::bash::table::write::inline | sed 's/^/    /'
  
     echo 'implicit_values'
     arg_name=CLI_META_IMPLICIT_VALUES \
-        ::cli::table::serialize::inline | sed 's/^/    /'
+        ::cli::bash::table::write::inline | sed 's/^/    /'
 }
 
 self_test() (
