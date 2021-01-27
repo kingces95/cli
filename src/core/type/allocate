@@ -42,7 +42,7 @@ inline() {
     local -a type=( ${arg_type} )
 
     # builtin type
-    if ! ::cli::core::type::is_user_defined::inline ${type[@]}; then
+    if ! arg_type=${arg_type} ::cli::core::type::is_user_defined::inline; then
 
         # initialize declare flags
         local declare_flag=g
@@ -119,7 +119,7 @@ self_test() {
     ${CLI_COMMAND} --name var --type 'map_of integer' \
         | assert::pipe_eq \
             'declare -A VAR=()'
-            
+
     # user defined
     cli core type define --name version \
         | cli core type define-field --name major --type integer \

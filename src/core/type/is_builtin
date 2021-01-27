@@ -60,6 +60,9 @@ self_test() {
     assert::ok 'array'
 
     set +e
+    arg_type='map_of string' inline
+    assert::failed 'map_of string'
+
     arg_type=user_defined inline
     assert::failed 'user_defined'
     set -e

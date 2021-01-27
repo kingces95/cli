@@ -55,6 +55,9 @@ self_test() {
 
     arg_type=user_defined inline
     assert::failed 'user_defined'
+
+    arg_type='map_of string' inline
+    assert::failed 'map_of string'
     set -e
 }
 

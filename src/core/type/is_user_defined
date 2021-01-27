@@ -36,11 +36,9 @@ Global Arguments
 EOF
 }
 
-inline() {
-    local -a type=( ${arg_type} )
-   
-    if arg_type=${type} ::cli::core::type::is_builtin::inline || \
-        arg_type=${type} ::cli::core::type::is_modified::inline; then
+inline() {   
+    if arg_type=${arg_type} ::cli::core::type::is_builtin::inline || \
+        arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
         false
     else
         true
@@ -66,6 +64,9 @@ self_test() {
 
     arg_type=array inline 
     assert::failed 'array'
+
+    arg_type='map_of string' inline 
+    assert::failed 'map_of string'
     set -e
 }
 
