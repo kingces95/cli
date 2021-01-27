@@ -48,7 +48,7 @@ inline() {
     local -n ref=${arg_name^^}
     local -a type=( ${arg_type} )
 
-    if ::cli::core::type::is_scaler::inline ${arg_type}; then
+    if arg_type=${arg_type} ::cli::core::type::is_scaler::inline; then
         cli::check::condition "(( $# < 2 ))" "Unexpected excess value '${@:2}'."
 
         if (( $# != 0 )); then

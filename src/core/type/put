@@ -45,7 +45,7 @@ inline() {
     local -a type=( ${arg_type} )
 
     # builtin
-    if ::cli::core::type::is_builtin::inline ${arg_type}; then
+    if arg_type=${arg_type} ::cli::core::type::is_builtin::inline; then
         arg_type=${arg_type} \
         arg_name=${variable} \
             ::cli::core::type::put_builtin::inline "$@"
@@ -55,7 +55,7 @@ inline() {
         local next_name=${arg_name}_$1
 
         # anonymous
-        if ::cli::core::type::is_modified::inline ${arg_type}; then
+        if arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
             next_type=${type[@]:1}
 
             if [[ ! -n ${variable_ref[$1]+set} ]]; then

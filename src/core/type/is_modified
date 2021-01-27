@@ -21,7 +21,7 @@ Description
     yet another map whose values point to strings.
 
 Arguments
-    --                      : Type
+    --type      [Required]  : Type
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -30,25 +30,26 @@ EOF
 }
 
 inline() {
-    cli::assert "(( $# > 0 ))"
+    local -a type=( ${arg_type} )
 
-    if (( $# > 1 )); then
-        cli::assert "[[ $1 == 'map_of' ]]"
+    if (( ${#type[@]} > 1 )); then
+        cli::assert "[[ ${type} == 'map_of' ]]"
         true
     else
-        cli::assert "! [[ $1 == 'map_of' ]]"
+        cli::assert "! [[ ${type} == 'map_of' ]]"
         false
     fi
 }
 
 self_test() {
-    set +e
 
-    inline map_of map
+    arg_type='map_of map' inline 
     assert::ok 'map_of map'
 
-    inline map
+    set +e
+    arg_type='map' inline 
     assert::failed 'map'
+    set -e
 }
 
 cli::load "$@"

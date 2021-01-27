@@ -28,7 +28,7 @@ Description
     Otherwise, return true.
 
 Arguments
-    --                      : Type
+    --type -t     [Require] : Variable type.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -37,8 +37,10 @@ EOF
 }
 
 inline() {
-    if ::cli::core::type::is_builtin::inline $@ || \
-        ::cli::core::type::is_modified::inline $@; then
+    local -a type=( ${arg_type} )
+   
+    if arg_type=${type} ::cli::core::type::is_builtin::inline || \
+        arg_type=${type} ::cli::core::type::is_modified::inline; then
         false
     else
         true
@@ -46,25 +48,25 @@ inline() {
 }
 
 self_test() {
+    arg_type=user_defined inline 
+    assert::ok 'user_defined'
+
     set +e
-    inline boolean
+    arg_type=boolean inline boolean
     assert::failed 'boolean'
 
-    inline string
+    arg_type=string inline 
     assert::failed 'string'
 
-    inline integer
+    arg_type=integer inline 
     assert::failed 'integer'
 
-    inline map
+    arg_type=map inline 
     assert::failed 'map'
 
-    inline array
+    arg_type=array inline 
     assert::failed 'array'
     set -e
-
-    inline user_defined
-    assert::ok 'user_defined'
 }
 
 cli::load "$@"

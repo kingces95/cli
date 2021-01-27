@@ -21,7 +21,7 @@ Description
         array
 
 Arguments
-    --                      : Type
+    --type      [Required]  : Type
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -30,10 +30,12 @@ EOF
 }
 
 inline() {
-    if ::cli::core::type::is_scaler::inline $1; then
+    local -a type=( ${arg_type} )
+
+    if arg_type=${type} ::cli::core::type::is_scaler::inline; then
         true
     else
-        case $1 in
+        case ${type} in
             'map') ;&
             'array') true ;;
             *) false ;;
@@ -42,23 +44,23 @@ inline() {
 }
 
 self_test() {
-    inline boolean
+    arg_type=boolean inline boolean
     assert::ok 'boolean'
 
-    inline string
+    arg_type=string inline 
     assert::ok 'string'
 
-    inline integer
+    arg_type=integer inline 
     assert::ok 'integer'
 
-    inline map
+    arg_type=map inline 
     assert::ok 'map'
 
-    inline array
+    arg_type=array inline 
     assert::ok 'array'
 
     set +e
-    inline user_defined
+    arg_type=user_defined inline
     assert::failed 'user_defined'
     set -e
 }

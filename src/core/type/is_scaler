@@ -18,7 +18,7 @@ Description
         boolean
 
 Arguments
-    --                      : Type
+    --type       [Required] : Type
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -27,7 +27,11 @@ EOF
 }
 
 inline() {
-    case $1 in
+    : ${arg_type?"Unexpected missing 'type'."}
+
+    local -a type=( ${arg_type} )
+
+    case ${type} in
         'integer') ;&
         'boolean') ;&
         'string') true ;;
@@ -36,19 +40,22 @@ inline() {
 }
 
 self_test() {
-    set +e
-
-    inline boolean
+    arg_type=boolean inline
     assert::ok 'boolean'
 
-    inline string
+    arg_type=string inline
     assert::ok 'string'
 
-    inline integer
+    arg_type=integer inline
     assert::ok 'integer'
 
-    inline map
+    set +e
+    arg_type=map inline 
     assert::failed 'map'
+
+    arg_type=user_defined inline
+    assert::failed 'user_defined'
+    set -e
 }
 
 cli::load "$@"
