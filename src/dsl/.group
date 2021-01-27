@@ -19,6 +19,7 @@ readonly CLI_DSL_ARG_NAME_GLOB="--@(${CLI_DSL_ARG_CHAR_GLOB})+(${CLI_DSL_ARG_CHA
 
 readonly CLI_DSL_LITERAL_TAB='    '
 readonly CLI_DSL_LITERAL_COLON=':'
+readonly CLI_DSL_LITERAL_REGEX='Regex:'
 readonly CLI_DSL_LITERAL_DEFAULT='Default:'
 readonly CLI_DSL_LITERAL_ALLOWED='Allowed'
 readonly CLI_DSL_LITERAL_VALUES='values:'
@@ -38,6 +39,7 @@ export() {
         'NAME'
         'ALIAS'
         'COLON'
+        'REGEX'
         'REQUIRED'
         'EOF' 
         'ERROR' 
@@ -48,6 +50,7 @@ export() {
         'NAME'
         'ALIAS'
         'DEFAULT'
+        'REGEX'
         'REQUIRED'
         'FLAG'
         'ALLOWED'

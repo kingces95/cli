@@ -22,6 +22,7 @@ main() {
     local -a declarations # eg +=( 'arg_foo' )
     local -A names # eg +=( ['--foo']='arg_foo' ) and maybe +=( ['-f']='arg_foo' )
     local -A flags # eg +=( ['arg_bar']='true' )
+    local -A regex # eg +=( ['--foo']='^.*$' )
     local -A defaults # eg +=( ['arg_foo']='bar' )
     local -A allowed_values # eg +=( [--foo]='a b c' )
     local -a required # eg +=( '--foo' )
@@ -50,6 +51,10 @@ main() {
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
             names+=( [-${identifier}]="${arg_name}" )
+
+        # regex
+        elif (( production == CLI_DSL_PRODUCTION_REGEX )); then
+            regex+=( [${switch_name}]="${identifier}" )
 
         # defaults
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
@@ -138,6 +143,15 @@ main() {
                     | emit::case_default
             } | emit::case_statement "\${${names[$i]}}"
         done | emit::header 'allowed values'
+
+        {
+            for i in "${!regex[@]}"; do
+                emit::error "Unexpected value '\${${names[$i]}}' for argument '${i}'" \
+                    "does not match regex ${regex[$i]}." \
+                    | emit::if "[[ ! \"\${${names[$i]}}\" =~ ${regex[$i]} ]]" 
+            done
+        } | emit::header 'regex'
+
     } | emit::function ${INITIALIZE}
 }
 
@@ -158,14 +172,16 @@ self_test() (
         | source /dev/stdin
 
     expected() {
+        
         # declarations
+        declare -g arg_run_as=""
+        declare -g arg_fruit=""
+        declare -g arg_header=""
+        declare -g arg_display_args=""
         declare -g arg_help=""
         declare -g arg_self_test=""
-        declare -g arg_fruit=""
-        declare -g arg_display_args=""
-        declare -g arg_header=""
-        declare -g arg_help=""
-        declare -g arg_run_as=""
+        declare -ga arg_=()
+        declare -gA arg__=()
         
         # defaults
         arg_fruit="banana"
@@ -176,15 +192,17 @@ self_test() (
         # assign variables from command line arguments
         while (( $# > 0 )); do
             case "$1" in
-                '--help') arg_help=true ;;
-                '--self-test') arg_self_test=true ;;
-                '--fruit') arg_fruit="${2:-}"; shift ;;
-                '--display-args') arg_display_args=true ;;
-                '--header') arg_header="${2:-}"; shift ;;
-                '-h') arg_help=true ;;
-                '--run-as') arg_run_as="${2:-}"; shift ;;
+                '--help') arg__[arg_help]="true"; arg_help=true ;;
+                '--self-test') arg__[arg_self_test]="true"; arg_self_test=true ;;
+                '--fruit') arg__[arg_fruit]="${2:-}"; arg_fruit="${2:-}"; shift ;;
+                '--display-args') arg__[arg_display_args]="true"; arg_display_args=true ;;
+                '--header') arg__[arg_header]="${2:-}"; arg_header="${2:-}"; shift ;;
+                '-f') arg__[arg_fruit]="${2:-}"; arg_fruit="${2:-}"; shift ;;
+                '-h') arg__[arg_help]="true"; arg_help=true ;;
+                '--run-as') arg__[arg_run_as]="${2:-}"; arg_run_as="${2:-}"; shift ;;
+                '--') shift; arg_=( "$@" ); break ;;
                 *)
-                    echo "Unexpected argument '$1'."
+                    echo "Unexpected argument '$1'." >&2
                     exit 1
                 ;;
             esac
@@ -193,7 +211,7 @@ self_test() (
         
         # required
         if [[ -z "${arg_header}" ]]; then
-            echo "Missing required argument '--header'."
+            echo "Missing required argument '--header'." >&2
             exit 1
         fi
         
@@ -202,18 +220,26 @@ self_test() (
             'orange') ;;
             'banana') ;;
             *)
-                echo "Unexpected value '${arg_fruit}' for argument '--fruit'."
+                echo "Unexpected value '${arg_fruit}' for argument '--fruit'." >&2
                 exit 1
             ;;
         esac
+        
+        # regex
+        if [[ ! "${arg_header}" =~ ^[A-Z][A-Za-z0-9_]*$ ]]; then
+            echo "Unexpected value '${arg_header}' for argument '--header' does not match regex ^[A-Z][A-Za-z0-9_]*$." >&2
+            exit 1
+        fi
     }
 
+    set +e
     diff <(declare -f expected) <(declare -f initialize) \
         | assert::pipe_eq \
             '1c1' \
-            '< expected ()' \
+            '< expected () ' \
             '---' \
-            '> initialize ()' 
+            '> initialize () '
+    set -e 
 )
 
 cli::load "$@"

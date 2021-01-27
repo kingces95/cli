@@ -44,7 +44,7 @@ declare identifier
 declare arg_name='.'
 
 yield() {
-    echo ${arg_name} $1 ${CLI_DSL_PRODUCTION[$1]} ${2-}
+    echo ${arg_name} $1 ${CLI_DSL_PRODUCTION[$1]} "${2-}"
 }
 
 error() {
@@ -137,6 +137,8 @@ main() {
         while true; do
             if (( token == CLI_DSL_TOKEN_DEFAULT )); then
                 DEFAULT
+            elif (( token == CLI_DSL_TOKEN_REGEX )); then
+                REGEX
             elif (( token == CLI_DSL_TOKEN_ALLOWED_VALUES )); then
                 ALLOWED_VALUES
             else
@@ -157,6 +159,12 @@ main() {
 
     FLAG() {
         yield ${CLI_DSL_PRODUCTION_FLAG}
+        read_token
+    }
+
+    REGEX() {
+        read_token ${CLI_DSL_TOKEN_VALUE_PERIOD}
+        yield ${CLI_DSL_PRODUCTION_REGEX} "${identifier}"
         read_token
     }
 
@@ -198,20 +206,23 @@ self_test() {
         | assert::pipe_eq \
             'run-as 0 NAME run-as' \
             'fruit 0 NAME fruit' \
+            'fruit 1 ALIAS f' \
             'fruit 2 DEFAULT banana' \
-            'fruit 5 ALLOWED' \
-            'fruit 6 ALLOWED_VALUE orange' \
-            'fruit 6 ALLOWED_VALUE banana' \
-            'fruit 7 ALLOWED_END' \
+            'fruit 6 ALLOWED ' \
+            'fruit 7 ALLOWED_VALUE orange' \
+            'fruit 7 ALLOWED_VALUE banana' \
+            'fruit 8 ALLOWED_END ' \
             'header 0 NAME header' \
-            'header 3 REQUIRED' \
+            'header 4 REQUIRED ' \
+            'header 3 REGEX ^[A-Z][A-Za-z0-9_]*$' \
             'display-args 0 NAME display-args' \
-            'display-args 4 FLAG' \
+            'display-args 5 FLAG ' \
+            'display-args 10 ANYARGS ' \
             'help 0 NAME help' \
             'help 1 ALIAS h' \
-            'help 4 FLAG' \
+            'help 5 FLAG ' \
             'self-test 0 NAME self-test' \
-            'self-test 4 FLAG'
+            'self-test 5 FLAG '
 }
 
 initialize() {
