@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Set a field.
+
+Arguments
+    --value -v              : Path to type where segments index maps or arrays.
+    --                      : Path to field.
+
+Debug Arguments
+    --print -p       [Flag] : Print the variable specified by path 
+                              instead of its name.
+    --source -x      [Flag] : Source stdin.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+declare_global_variable() {
+
+    # map the variable type to a bash declare flag
+    local declare_flag=g
+    case $1 in
+        'integer') declare_flag+=i ;;
+        'array') declare_flag+=a ;;
+        'string') ;&
+        'boolean') ;;
+        *) declare_flag+=A ;;
+    esac
+
+    # declare the bash type
+    local -${declare_flag} ${arg_name}
+}
+
+main() {
+    if (( $# < 2 )); then
+        cli::fail "Unexpected lack of name and scope."
+    fi
+
+    # read variables, and metadata stored in CLI_SCOPE__*, CLI_TYPE__*
+    if $arg_source; then
+        source /dev/stdin
+    fi
+
+    # get variable type
+    local -u scope=$1
+    local -n scope_ref=CLI_SCOPE__${scope^^}
+    local -a type=( ${scope_ref[$2]} )
+
+    # get variable reference
+    local -u variable=$1_$2
+    local -n variable_ref=${variable}
+
+    # shift scope and name
+    shift 2
+
+    while true; do
+
+        if (( $# == 0 )); then
+            if $arg_print; then
+                declare -p $variable
+            else
+                echo $variable
+            fi
+            return
+        fi
+
+        case $type in
+
+            # modifier
+            'map_of')
+                variable=${variable}_$1 
+                variable_ref+=( [$1]=${variable} )
+                shift
+
+                arg_name=${variable} \
+                    declare_global_variable ${type}
+                type=( ${type[@]:1} )
+
+                local -n variable_ref=${variable}
+                ;;
+
+            # builtin
+            'boolean') ;&
+            'integer') ;&
+            'string') variable_ref="$1"; break ;;
+            'set') variable_ref+=( [$1]= ); break ;;
+            'map') variable_ref+=( [$1]="${2-}" ); break ;;
+            'array') variable_ref+=( "$1" ); break ;;
+
+            # user defined
+            *)
+                local -u fields=CLI_TYPE__${type}
+                local -n fields_ref=${fields}
+                type=( ${fields_ref[$1]} )
+
+                variable=${variable}_$1 
+                shift
+
+                arg_name=${variable} \
+                    declare_global_variable ${type}
+
+                local -n variable_ref=${variable}
+                ;;
+        esac
+    done
+
+    declare -p ${!CLI_TYPE__*} ${!CLI_SCOPE__*}
+    eval "declare -p \${!${scope^^}_*}"
+}
+
+self_test() {
+    cli type define --name metadata_type \
+        | cli type define-field --name allow -- map_of set \
+        | cli type declare -x --scope meta --name data -- metadata_type \
+        | ${CLI_COMMAND} -x -- meta data allow color white \
+        | ${CLI_COMMAND} -x -- meta data allow color black \
+        | ${CLI_COMMAND} -x -p -- meta data allow color
+exit
+
+    cli type define --name metadata_type \
+        | cli type define-field --name allow -- map_of set \
+        | cli type declare -x --scope meta --name data -- metadata_type \
+        | ${CLI_COMMAND} -x -- meta data allow color white \
+        | ${CLI_COMMAND} -x -- meta data allow color black
+
+    cli type declare --scope my --name allow -- map_of set \
+        | ${CLI_COMMAND} -x -- my allow color white \
+        | ${CLI_COMMAND} -x -- my allow color black
+
+    cli type declare --scope my --name meta -- map_of map_of map \
+        | ${CLI_COMMAND} -x -- my meta allow color white true \
+        | ${CLI_COMMAND} -x -- my meta allow color black true
+
+    cli type declare --scope my --name map -- map \
+        | ${CLI_COMMAND} -x -- my map k0 v0 \
+        | ${CLI_COMMAND} -x -- my map k1 v1
+
+    cli type declare --scope my --name array -- array \
+        | ${CLI_COMMAND} -x -- my array e0 \
+        | ${CLI_COMMAND} -x -- my array e1
+
+    cli type declare --scope my --name string -- string \
+        | ${CLI_COMMAND} -x -- my string "Hello World"
+
+    cli type declare --scope my --name integer -- integer \
+        | ${CLI_COMMAND} -x -- my integer 42
+
+    cli type declare --scope my --name bool -- boolean \
+        | ${CLI_COMMAND} -x -- my bool true
+}
+
+cli::load "$@"

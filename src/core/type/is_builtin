@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_inline cli core type is-scaler
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return true if type is a builtin.
+
+Description
+    Return true if the type is:
+    
+        string
+        integer
+        boolean
+        map
+        array
+
+Arguments
+    --                      : Type
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    if ::cli::core::type::is_scaler::inline $1; then
+        true
+    else
+        case $1 in
+            'map') ;&
+            'array') true ;;
+            *) false ;;
+        esac
+    fi
+}
+
+self_test() {
+    inline boolean
+    assert::ok 'boolean'
+
+    inline string
+    assert::ok 'string'
+
+    inline integer
+    assert::ok 'integer'
+
+    inline map
+    assert::ok 'map'
+
+    inline array
+    assert::ok 'array'
+
+    set +e
+    inline user_defined
+    assert::failed 'user_defined'
+    set -e
+}
+
+cli::load "$@"

@@ -133,23 +133,23 @@ inline() {
 
 main() {    
     # declare tokens
-    declare -a ${arg_result}
-    declare -A ${arg_options}
-    declare -a ${arg_positional}
+    local -a ${arg_result}
+    local -A ${arg_options}
+    local -a ${arg_positional}
+
+    # declare metadata
+    local -A CLI_META_ALIASES
+    local -A CLI_META_DEFAULT
+    local -A CLI_META_ALLOWED_VALUES
+    local -a CLI_META_REQUIRED
+    local -A CLI_META_IMPLICIT_VALUES
+    local CLI_META_POSITIONAL
 
     # initialize tokens (i.e. command line lacks options or positional args)
     local -n ref_options=${arg_options}
     local -n ref_positional=${arg_positional}
     ref_options=()
     ref_positional=()
-
-    # declare metadata
-    declare -A CLI_META_ALIASES
-    declare -A CLI_META_DEFAULT
-    declare -A CLI_META_ALLOWED_VALUES
-    declare -a CLI_META_REQUIRED
-    declare -A CLI_META_IMPLICIT_VALUES
-    declare CLI_META_POSITIONAL
 
     # deserialize tokens and metadata
     ::cli::util::deserialize::inline

@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+cli::import_inline cli bash emit
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Define a field.
+
+Description
+    Adds entries to a sourced map with a well known name representing a 
+    type and then emits the updated map. Assumes the first line sourced 
+    is a comment containing the type name. The map name is 'CLI_TYPE__'
+    plus the upper case name of the type.
+
+    Builtin types are
+
+        map
+        array
+        string
+        integer
+        boolean
+
+    Valid modifiers are
+
+        map_of
+
+    For example, define a type 'table' with fields 'allow' and 'required' 
+    like this:
+
+        cli core type define --name table  \
+            | cli core type define-field --name require --type map \
+            | cli core type define-field --name allow --type "map_of map"
+
+    which will emit this:
+
+        # table
+        declare -A CLI_TYPE__TABLE=( [allow]='map_of map' [require]=map )
+
+Arguments
+    --name -n       [Require] : Name of the field.
+    --type -t       [Require] : Type of the field.
+
+Debug Arguments
+    --source -s        [Flag] : Source stdin.
+
+Global Arguments
+    --help -h          [Flag] : Show this message and exit.
+    --self-test        [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    : ${arg_declaring_type?}
+    : ${arg_name?}
+    : ${arg_type?}
+
+    # add the field to type
+    local -nu ref=CLI_TYPE__${arg_declaring_type}
+    ref+=( [${arg_name}]="${arg_type}" )
+}
+
+main() {
+    
+    # read metadata (e.g # my_type)
+    read pound type
+
+    # source the type
+    source /dev/stdin
+
+    # update fields associated with type
+    arg_declaring_type=${type} \
+    arg_name=${arg_name} \
+    arg_type="${arg_type}" \
+        inline 
+
+    # echo metadata
+    echo ${pound} ${type}
+
+    # emit type with the new field
+    ::cli::bash::emit::inline 'CLI_TYPE__*'
+}
+
+self_test() {
+    cli core type define --name version  \
+        | ${CLI_COMMAND} --name major --type 'integer' \
+        | ${CLI_COMMAND} --name minor --type 'integer' \
+        | cli core type define -s --name table \
+        | ${CLI_COMMAND} --name allow --type 'map_of map' \
+        | assert::pipe_eq \
+            '# table' \
+            'declare -A CLI_TYPE__TABLE=([allow]="map_of map" )' \
+            'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )'
+}
+
+cli::load "$@"

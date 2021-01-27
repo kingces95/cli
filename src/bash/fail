@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import cli_assert
+cli::import_inline cli bash callstack
 
 help() {
 cat << EOF
@@ -13,7 +14,6 @@ Summary
 Arguments
     --exit-code -e          : The exit code to return. Default: 1.
     --message -m            : The error message message.
-                              Default: Unexpected general failure.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -23,9 +23,19 @@ EOF
 
 inline() {
     : ${arg_exit_code=1}
-    : ${arg_message='Unexpected general failure.'}
+    : ${arg_message='Unexpected general failure. You found a bug!'}
 
     echo "${arg_message}" >&2
+
+    {
+        ::cli::bash::callstack::inline
+        echo
+        # echo ARGS:
+        # for arg in ${!arg_*}; do
+        #     declare -p ${arg} 
+        # done
+    } | sed 's/^/    /' >&2
+
     exit ${arg_exit_code}
 }
 

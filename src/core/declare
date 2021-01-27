@@ -1,0 +1,326 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_inline cli bash emit
+cli::import_inline cli core type is-scaler
+cli::import_inline cli core type unmodified
+cli::import_inline cli core type allocate
+cli::import_inline cli core type put
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Declare a variable of a given type.
+
+Description
+        cli::define_type --name table  \\
+            | cli::define_field --name allow --type Map --path A \\
+            | cli::define_field --name require --type Map \\
+            | cli::emit_type \\
+            | source /dev/stdin
+        # declare -A CLI_TYPE__TABLE=( [allow]='map_of Map' [require]=Map )
+
+        cli type declare --prefix meta --name param --type table
+        # declare -A CLI_PREFIX__META=( [param]=table )
+        # declare -A META_PARAM_ALLOW=()
+        # declare -A META_PARAM_REQUIRE=()
+        # declare -A META_PARAM=( [allow]=META_PARAM_ALLOW [require]=META_PARAM_REQUIRE )
+
+Redefinition
+    Bash supports redefinition without clobbering existing values. For example:
+
+        \$ declare -a my_array=( a )
+        \$ declare -a my_array
+        \$ echo \${my_array[@]}
+        a
+
+    Likewise, declare supports redefinition without clobbering existing values. 
+    For example:
+
+        \$ ${CLI_COMMAND} --name my_array --type array \\
+            | ${CLI_COMMAND} --name my_array -- a \\
+            | ${CLI_COMMAND} --name my_array --type array
+        \$ echo \${my_array[@]}
+        a
+
+    Redefinition that changes type is sometimes allowed by bash, but disallowed
+    in all cases by declare.
+
+Arguments
+    --name -n    [Required] : The name of the variable.
+    --type -t               : The type of the variable.
+    --print -p       [Flag] : Emit the type and the variable.
+    --                      : Value
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    : ${arg_name?"Unexpected missing 'name' while declaring type."}
+
+    # declare scope
+    declare -gA CLI_SCOPE
+    local current_type=${CLI_SCOPE[${arg_name}]-}
+
+    # type specified
+    if [[ -n ${arg_type} ]]; then
+
+        # no previous declaration
+        if [[ -z ${current_type} ]]; then
+
+            # update current type
+            CLI_SCOPE+=( [${arg_name}]=${arg_type} )
+            current_type=${arg_type}
+
+            # initialize variable 
+            arg_name=${arg_name} \
+            arg_type=${arg_type} \
+                ::cli::core::type::allocate::inline
+        fi
+
+        cli::check::condition \
+            "[[ \"${current_type}\" == \"${arg_type}\" ]]" \
+            "Unexpected redeclaration of '${arg_name}'" \
+            "type from '${current_type}' to '${arg_type}'."
+    fi
+
+    # put
+    if (( $# > 0 )); then
+        arg_name=${arg_name} \
+        arg_type=${current_type} \
+            ::cli::core::type::put::inline "$@"
+    fi
+
+    # print
+    if ${arg_print}; then
+        local unmodified_type=$(::cli::core::type::unmodified::inline ${current_type})
+        ::cli::bash::emit::inline "CLI_TYPE__${unmodified_type^^}"
+        echo "declare -A CLI_SCOPE+=([${arg_name}]=\"${current_type}\" )"
+        ::cli::bash::emit::inline "${arg_name^^}" "${arg_name^^}_*"
+    fi
+}
+
+main() {
+    if $arg_source; then
+        source /dev/stdin
+    fi
+
+    inline "$@"
+
+    if ! ${arg_print}; then
+        ::cli::bash::emit::inline 'CLI_TYPE__*' 'CLI_SCOPE' "${arg_name^^}" "${arg_name^^}_*"
+    fi
+}
+
+self_test() {
+
+    builtin_default() {
+
+        # string
+        ${CLI_COMMAND} --name my_string --type string \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_string]="string" )' \
+                'declare -- MY_STRING=""'
+
+        # integer
+        ${CLI_COMMAND} --name my_integer --type integer \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_integer]="integer" )' \
+                'declare -i MY_INTEGER="0"'
+
+        # boolean
+        ${CLI_COMMAND} --name my_boolean --type boolean \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_boolean]="boolean" )' \
+                'declare -- MY_BOOLEAN="false"'
+
+        # array
+        ${CLI_COMMAND} --name my_array --type array \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_array]="array" )' \
+                'declare -a MY_ARRAY=()'
+
+        # map
+        ${CLI_COMMAND} --name my_map --type map \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_map]="map" )' \
+                'declare -A MY_MAP=()'
+
+        # map_of
+        ${CLI_COMMAND} --name my_map_of_string --type "map_of string" \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_map_of_string]="map_of string" )' \
+                'declare -A MY_MAP_OF_STRING=()'
+    }
+
+    builtin_assign() {
+
+        # string
+        ${CLI_COMMAND} --name my_string --type string -- hi \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_string]="string" )' \
+                'declare -- MY_STRING="hi"'
+
+        # integer
+        ${CLI_COMMAND} --name my_integer --type integer -- 42 \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_integer]="integer" )' \
+                'declare -i MY_INTEGER="42"'
+
+        # boolean
+        ${CLI_COMMAND} --name my_boolean --type boolean -- true \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_boolean]="boolean" )' \
+                'declare -- MY_BOOLEAN="true"'
+
+        # array
+        ${CLI_COMMAND} --name my_array --type array -- a b c \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_array]="array" )' \
+                'declare -a MY_ARRAY=([0]="a" [1]="b" [2]="c")'
+
+        # map
+        ${CLI_COMMAND} --name my_map --type map -- k v \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_map]="map" )' \
+                'declare -A MY_MAP=([k]="v" )'
+
+        # map_of builtin
+        ${CLI_COMMAND} --name my_map_of_map --type "map_of map" -- n k v \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_map_of_map]="map_of map" )' \
+                'declare -A MY_MAP_OF_MAP=([n]="" )' \
+                'declare -A MY_MAP_OF_MAP_N=([k]="v" )'
+
+        # map_of map_of map
+        ${CLI_COMMAND} --name my_meta --type "map_of map_of map" \
+            | ${CLI_COMMAND} --source --name my_meta -- default color black \
+            | ${CLI_COMMAND} --source --name my_meta -- allow color black \
+            | ${CLI_COMMAND} --source --name my_meta -- allow color white \
+            | ${CLI_COMMAND} --source --name my_meta --print \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE+=([my_meta]="map_of map_of map" )' \
+                'declare -A MY_META=([default]="" [allow]="" )' \
+                'declare -A MY_META_ALLOW=([color]="" )' \
+                'declare -A MY_META_ALLOW_COLOR=([black]="" [white]="" )' \
+                'declare -A MY_META_DEFAULT=([color]="" )' \
+                'declare -A MY_META_DEFAULT_COLOR=([black]="" )'
+    }
+
+    user_defined() {
+
+        # map_of udt
+        declare -A CLI_TYPE__VERSION=(['major']='integer' ['minor']='integer')
+        declare -p CLI_TYPE__VERSION \
+            | ${CLI_COMMAND} --source \
+                --name my_map_of_version \
+                --type "map_of version" \
+                --print \
+                -- alpha major 1 \
+            | assert::pipe_eq \
+                'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
+                'declare -A CLI_SCOPE+=([my_map_of_version]="map_of version" )' \
+                'declare -A MY_MAP_OF_VERSION=([alpha]="" )' \
+                'declare -i MY_MAP_OF_VERSION_ALPHA_MAJOR="1"' \
+                'declare -i MY_MAP_OF_VERSION_ALPHA_MINOR="0"'
+
+        # defaults
+        cli core type define --name version \
+            | cli core type define-field --name major --type integer \
+            | cli core type define-field --name minor --type integer \
+            | cli core type define --source --name kitchen_sink_type \
+            | cli core type define-field --name version --type version \
+            | cli core type define-field --name integer --type integer \
+            | cli core type define-field --name map --type map \
+            | cli core type define-field --name array --type array \
+            | cli core type define-field --name boolean --type boolean \
+            | cli core type define-field --name string --type string \
+            | cli core type define-field --name map_of_map --type 'map_of map' \
+            | ${CLI_COMMAND} --source --name kitchen_sink --type kitchen_sink_type  \
+            | ${CLI_COMMAND} --source --name kitchen_sink --print \
+            | assert::pipe_eq \
+                'declare -A CLI_TYPE__KITCHEN_SINK_TYPE=([boolean]="boolean" [version]="version" [map]="map" [map_of_map]="map_of map" [string]="string" [array]="array" [integer]="integer" )' \
+                'declare -A CLI_SCOPE+=([kitchen_sink]="kitchen_sink_type" )' \
+                'declare -a KITCHEN_SINK_ARRAY=()' \
+                'declare -- KITCHEN_SINK_BOOLEAN="false"' \
+                'declare -i KITCHEN_SINK_INTEGER="0"' \
+                'declare -A KITCHEN_SINK_MAP=()' \
+                'declare -A KITCHEN_SINK_MAP_OF_MAP=()' \
+                'declare -- KITCHEN_SINK_STRING=""' \
+                'declare -i KITCHEN_SINK_VERSION_MAJOR="0"' \
+                'declare -i KITCHEN_SINK_VERSION_MINOR="0"'
+
+        # motiviating scenario -- representation of parameter metadata
+        cli core type define --name my_meta \
+            | cli core type define-field --name timeout --type integer \
+            | cli core type define-field --name require --type map \
+            | cli core type define-field --name default --type map \
+            | cli core type define-field --name alias --type map \
+            | cli core type define-field --name implicit_value --type map \
+            | cli core type define-field --name positional --type boolean \
+            | cli core type define-field --name allow --type 'map_of map' \
+            | ${CLI_COMMAND} --source --name my_meta --type my_meta \
+            | ${CLI_COMMAND} --source --name my_meta -- timeout 42 \
+            | ${CLI_COMMAND} --source --name my_meta -- allow help true \
+            | ${CLI_COMMAND} --source --name my_meta -- allow help false \
+            | ${CLI_COMMAND} --source --name my_meta -- implicit_value help true \
+            | ${CLI_COMMAND} --source --name my_meta -- default help false \
+            | ${CLI_COMMAND} --source --name my_meta -- alias h help \
+            | ${CLI_COMMAND} --source --name my_meta -- require name \
+            | ${CLI_COMMAND} --source --name my_meta -- positional true \
+            | ${CLI_COMMAND} --source --name my_meta --print \
+            | assert::pipe_eq \
+                'declare -A CLI_TYPE__MY_META=([require]="map" [default]="map" [timeout]="integer" [positional]="boolean" [implicit_value]="map" [alias]="map" [allow]="map_of map" )' \
+                'declare -A CLI_SCOPE+=([my_meta]="my_meta" )' \
+                'declare -A MY_META_ALIAS=([h]="help" )' \
+                'declare -A MY_META_ALLOW=([help]="" )' \
+                'declare -A MY_META_ALLOW_HELP=([false]="" [true]="" )' \
+                'declare -A MY_META_DEFAULT=([help]="false" )' \
+                'declare -A MY_META_IMPLICIT_VALUE=([help]="true" )' \
+                'declare -- MY_META_POSITIONAL="true"' \
+                'declare -A MY_META_REQUIRE=([name]="" )' \
+                'declare -i MY_META_TIMEOUT="42"'
+    }
+
+    redeclare() {
+
+        # array
+        ${CLI_COMMAND} --name my_array --type array \
+            | ${CLI_COMMAND} --source --name my_array -- a \
+            | ${CLI_COMMAND} --source --name my_array --type array \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_array]="array" )' \
+                'declare -a MY_ARRAY=([0]="a")'
+
+        # boolean
+        ${CLI_COMMAND} --name my_boolean --type boolean \
+            | ${CLI_COMMAND} --source --name my_boolean -- true \
+            | ${CLI_COMMAND} --source --name my_boolean --type boolean \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE=([my_boolean]="boolean" )' \
+                'declare -- MY_BOOLEAN="true"'
+
+        # switch
+        assert::pipe_fails << EOF
+            ${CLI_COMMAND} --name my_var --type boolean \
+                | ${CLI_COMMAND} --source --name my_var --type boolean \
+                | ${CLI_COMMAND} --source --name my_var --type integer
+EOF
+    }
+
+    builtin_default
+    builtin_assign
+    redeclare
+    user_defined
+}
+
+cli::load "$@"

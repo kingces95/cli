@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return the unmodified type of a type.
+
+Description
+    Return the type without any modifiers. For example, the unmodified type of
+    
+        map_of map_of map
+    
+    is 'map'.
+
+Arguments
+    --                      : Type
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    eval "echo \$$#"
+}
+
+self_test() {
+    assert::eq $(inline boolean) 'boolean'
+    assert::eq $(inline map_of boolean) 'boolean'
+}
+
+cli::load "$@"

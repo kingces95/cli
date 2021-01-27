@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return true if type is modified.
+
+Description
+    Return true if the type is modified by:
+    
+        map_of
+
+    A modified type is an associative array where the value is the name
+    of a variable whose type is the element type of the modified type.
+    For example a 'map_of map_of string' is a map whose values point to
+    yet another map whose values point to strings.
+
+Arguments
+    --                      : Type
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    cli::assert "(( $# > 0 ))"
+
+    if (( $# > 1 )); then
+        cli::assert "[[ $1 == 'map_of' ]]"
+        true
+    else
+        cli::assert "! [[ $1 == 'map_of' ]]"
+        false
+    fi
+}
+
+self_test() {
+    set +e
+
+    inline map_of map
+    assert::ok 'map_of map'
+
+    inline map
+    assert::failed 'map'
+}
+
+cli::load "$@"

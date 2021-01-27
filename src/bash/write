@@ -8,7 +8,7 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Writes a record.
+    Writes a record. Approximate opposite of 'read'.
 
 Description
     Tables consist of records which are lines containing fields separated by

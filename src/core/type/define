@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+cli::import_inline cli bash emit
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Define a type.
+
+Description
+    A type is declared by declaring a global variable as an associative array with
+    a well known name and then initializing it with an empty map. That variable is
+    emitted preceeded by a comment consisting of the type name. For example, to 
+    declare a type 'table', a map 'CLI_TYPE__TABLE' will be declared and the following
+    emitted:
+
+        # table
+        declare -A CLI_TYPE__TABLE=()
+
+Arguments
+    --name -n     [Require] : Name of the type.
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    # name
+    local -u variable=CLI_TYPE__${arg_name}
+    
+    # declare
+    declare -gA ${variable}
+    
+    # initialize
+    local -n ref=${variable}
+    ref=()
+}
+
+main() {
+    if $arg_source; then
+        source /dev/stdin
+    fi
+
+    inline
+
+    # emit metadata
+    echo "# ${arg_name}"
+
+    # emit
+    ::cli::bash::emit::inline 'CLI_TYPE__*'
+}
+
+self_test() {
+    ${CLI_COMMAND} --name version \
+        | ${CLI_COMMAND} -s --name table \
+        | assert::pipe_eq \
+            '# table' \
+            'declare -A CLI_TYPE__TABLE=()' \
+            'declare -A CLI_TYPE__VERSION=()'
+}
+
+cli::load "$@"

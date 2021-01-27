@@ -61,6 +61,7 @@ cli::loader::import_inline() {
             | source /dev/stdin
     }
 
+    inline 'bash::callstack' 'bash/callstack'
     inline 'bash::fail' 'bash/fail'
     inline 'bash::is_function_declared' 'bash/is_function_declared'
     inline 'cache::put' 'cache/put'
@@ -73,9 +74,33 @@ cli::loader::import_inline() {
     inline 'run_as' 'run_as'
 }
 
+cli::trap() {
+    if (( $? == 0 )); then return; fi
+    ::cli::bash::callstack::inline \
+        | sed 's/^/    /' >&2
+}
+
 cli::fail() {
-    arg_message="$@"
+    arg_message="$@" \
         ::cli::bash::fail::inline
+}
+
+cli::assert() {
+    if ! eval "$1"; then
+        cli::fail "Failed assert '$1'."
+    fi
+}
+
+cli::check::condition() {
+    if ! eval "$1"; then
+        cli::fail "${@:2}"
+    fi
+}
+
+cli::check::regex() {
+    if [[ ! "$1" =~ $2 ]]; then
+        cli::fail "Unexpected value '$1' does not match regex '$2'."
+    fi
 }
 
 cli::import() {
@@ -145,12 +170,12 @@ cli::loader::cache::initialize() {
             | arg_cache="${CLI_LOADER_INITIALIZE_PATH}" \
                 ::cli::cache::put::inline
 
-        "$0" '--help' \
-            | cli dsl tokenize \
-            | cli dsl parse \
-            | cli dsl meta \
-            | arg_cache="${CLI_LOADER_METADATA_PATH}" \
-                ::cli::cache::put::inline
+        # "$0" '--help' \
+        #     | cli dsl tokenize \
+        #     | cli dsl parse \
+        #     | cli dsl meta \
+        #     | arg_cache="${CLI_LOADER_METADATA_PATH}" \
+        #         ::cli::cache::put::inline
     fi
 }
 
@@ -248,12 +273,17 @@ cli::loader::execute() {
 }
 
 cli::loader::self_test() {
-    self_test
+    set +e
+    (set -e; self_test)
     result=$?
+    set -e
+
     if ! (( ${result} == 0 )); then
-        read line file < <(caller)
-        echo "Self-test failed: ${file}"
+        read line subroutine file < <(caller 1)
+        echo "Self-test for '${file}' failed with '${result}'."
     fi
+
+    cli::trap() { return; }
     exit ${result}
 }
 
@@ -341,6 +371,7 @@ cli::load() {
     esac 
 
     cli::loader::load::initialize
+
     cli::loader::execute "$@"
 }
 
@@ -379,8 +410,13 @@ main() {
     echo "declare -a CLI_LOADER_IMPORTS=()"
     echo ": \${CLI_COMMAND:=\${BASH_SOURCE[1]##*/}}"
     echo
+    echo "trap cli::trap EXIT"
 
+    declare -f cli::trap
     declare -f cli::fail
+    declare -f cli::check::condition
+    declare -f cli::check::regex
+    declare -f cli::assert
     declare -f cli::import
     declare -f cli::import_group
     declare -f cli::import_inline
@@ -391,15 +427,16 @@ main() {
     declare -f cli::loader::self_test
     echo
 
+    declare -f ::cli::run_as::inline
+    declare -f ::cli::args::tokenize::inline
+    declare -f ::cli::args::parse::inline
+    declare -f ::cli::path::join::inline
     declare -f ::cli::cache::test::inline
     declare -f ::cli::cache::path::inline
     declare -f ::cli::cache::put::inline
-    declare -f ::cli::path::join::inline
-    declare -f ::cli::bash::is_function_declared::inline
-    declare -f ::cli::run_as::inline
     declare -f ::cli::bash::fail::inline
-    declare -f ::cli::args::tokenize::inline
-    declare -f ::cli::args::parse::inline
+    declare -f ::cli::bash::callstack::inline
+    declare -f ::cli::bash::is_function_declared::inline
     echo
 
     declare -f cli::cache::test

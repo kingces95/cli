@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_inline cli core type is-builtin
+cli::import_inline cli core type is-modified
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return true if type is user defined.
+
+Description
+    Return false if the type is not:
+    
+        string
+        integer
+        boolean
+        map
+        array
+
+    Return false if the type is modified:
+
+        map_of
+
+    Otherwise, return true.
+
+Arguments
+    --                      : Type
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    if ::cli::core::type::is_builtin::inline $@ || \
+        ::cli::core::type::is_modified::inline $@; then
+        false
+    else
+        true
+    fi
+}
+
+self_test() {
+    set +e
+    inline boolean
+    assert::failed 'boolean'
+
+    inline string
+    assert::failed 'string'
+
+    inline integer
+    assert::failed 'integer'
+
+    inline map
+    assert::failed 'map'
+
+    inline array
+    assert::failed 'array'
+    set -e
+
+    inline user_defined
+    assert::ok 'user_defined'
+}
+
+cli::load "$@"

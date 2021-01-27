@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return true if type is a scaler.
+
+Description
+    Return true if the type is:
+    
+        string
+        integer
+        boolean
+
+Arguments
+    --                      : Type
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    case $1 in
+        'integer') ;&
+        'boolean') ;&
+        'string') true ;;
+        *) false ;;
+    esac
+}
+
+self_test() {
+    set +e
+
+    inline boolean
+    assert::ok 'boolean'
+
+    inline string
+    assert::ok 'string'
+
+    inline integer
+    assert::ok 'integer'
+
+    inline map
+    assert::failed 'map'
+}
+
+cli::load "$@"

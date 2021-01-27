@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_inline cli bash emit
+cli::import_inline cli core type initialize
+cli::import_inline cli core type is-scaler
+cli::import_inline cli core type is-user-defined
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Declare and initialize a bash variable or variables for a given type.
+
+Description
+    Declares and initializes a global bash variable or variables depending on 
+    the provided type.
+
+Arguments
+    --name -n               : Variable name.
+    --type -t               : Variable type.
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin to provide 'CLI_TYPE__*' metadata.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+::cli::core::type::allocate::inline() {
+    inline
+}
+
+inline() {
+    : ${arg_name?"Unexpected lack of 'name' in call to 'allocate'."}
+
+    local variable=${arg_name^^}
+    local -a type=( ${arg_type} )
+
+    # builtin type
+    if ! ::cli::core::type::is_user_defined::inline ${type[@]}; then
+
+        # initialize declare flags
+        local declare_flag=g
+        case ${type} in
+            'integer') declare_flag+=i ;;
+            'map') declare_flag+=A ;;
+            'array') declare_flag+=a ;;
+            'map_of') declare_flag+=A ;;
+        esac
+
+        # declare the bash variable
+        declare -${declare_flag} ${variable}
+    
+        # initialize the bash variable
+        arg_type=${arg_type} \
+        arg_name=${arg_name} \
+            ::cli::core::type::initialize::inline
+
+    # user defined type
+    else
+        local -n type_ref=CLI_TYPE__${arg_type^^}
+
+        # layout fields
+        for field in ${!type_ref[@]}; do
+            local field_type=${type_ref[$field]}
+
+            # recursively allocate scaler fields
+            arg_name=${arg_name}_${field} \
+            arg_type=${field_type} \
+                ::cli::core::type::allocate::inline 
+        done
+    fi
+}
+
+main() {
+    if $arg_source; then
+        source /dev/stdin
+    fi
+
+    arg_name=${arg_name} \
+        inline ${arg_type}
+
+    ::cli::bash::emit::inline "${arg_name^^}" "${arg_name^^}_*"
+}
+
+self_test() {
+
+    # string
+    ${CLI_COMMAND} --name var --type string \
+        | assert::pipe_eq \
+            'declare -- VAR=""'
+
+    # integer
+    ${CLI_COMMAND} --name var --type integer \
+        | assert::pipe_eq \
+            'declare -i VAR="0"'
+
+    # boolean
+    ${CLI_COMMAND} --name var --type boolean \
+        | assert::pipe_eq \
+            'declare -- VAR="false"'
+
+    # array
+    ${CLI_COMMAND} --name var --type array \
+        | assert::pipe_eq \
+            'declare -a VAR=()'
+
+    # map
+    ${CLI_COMMAND} --name var --type map \
+        | assert::pipe_eq \
+            'declare -A VAR=()'
+
+    # map_of
+    ${CLI_COMMAND} --name var --type 'map_of integer' \
+        | assert::pipe_eq \
+            'declare -A VAR=()'
+            
+    # user defined
+    cli core type define --name version \
+        | cli core type define-field --name major --type integer \
+        | cli core type define-field --name minor --type integer \
+        | cli core type define --source --name udt \
+        | cli core type define-field --name string_field --type string \
+        | cli core type define-field --name integer_field --type integer \
+        | cli core type define-field --name boolean_field --type boolean \
+        | cli core type define-field --name map_field --type map \
+        | cli core type define-field --name array_field --type array \
+        | cli core type define-field --name map_of_map_field --type 'map_of map' \
+        | cli core type define-field --name version_field --type version \
+        | ${CLI_COMMAND} --source --name var --type udt \
+        | assert::pipe_eq \
+            'declare -a VAR_ARRAY_FIELD=()' \
+            'declare -- VAR_BOOLEAN_FIELD="false"' \
+            'declare -i VAR_INTEGER_FIELD="0"' \
+            'declare -A VAR_MAP_FIELD=()' \
+            'declare -A VAR_MAP_OF_MAP_FIELD=()' \
+            'declare -- VAR_STRING_FIELD=""' \
+            'declare -i VAR_VERSION_FIELD_MAJOR="0"' \
+            'declare -i VAR_VERSION_FIELD_MINOR="0"'
+}
+
+cli::load "$@"

@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Emit a variable declaration.
+
+Description
+    Emit a variable declaration for each variable but unlike 'declare -p' emit
+    nothing if either (1) the variable is not declared, or (2) no names, or only 
+    empty names, are specified.
+
+    Any variable names that end in '*' are expanded to include all variable names
+    with a matching prefix.
+
+Arguments
+    --                      : The variables to emit.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Examples
+    Emit the embedded variable 'MY_STRING'.
+        ${CLI_COMMAND} -- MY_STRING
+
+    Emit the embedded variables that start with 'MY_'.
+        ${CLI_COMMAND} -- MY_*
+
+    Emit nothing.
+        ${CLI_COMMAND}
+
+    Emit nothing.
+        ${CLI_COMMAND} -- ''
+EOF
+}
+
+declare MY_STRING='Hello world!'
+declare -i MY_NUMBER=42
+declare -A MY_MAP
+declare -a MY_ARRAY
+
+::cli::bash::emit::inline() {
+    inline "$@"
+}
+
+inline() {
+    for name in "$@"; do
+        if [[ ${name} =~ ^.*[*]$ ]]; then
+            # declare -p \
+            #     | grep "^declare [-A-Za-z]* ${name:0:-1}" \
+            #     || true # grep fails on no match but we want it to succeed
+
+            # the syntax ${!VAR*} will only print *initialized* variables
+            # (e.g. 'declare VAR=' but not 'declare VAR') whereas the above
+            # grep will print both initialized and uninitialized variables
+            # The one above is slow. Instead we choose to initialize all
+            # variables so we can use the faster one below.
+            
+            ::cli::bash::emit::inline $(eval "echo \${!${name}}")
+        elif [[ -z ${name} ]]; then
+            continue
+        else
+            set +e
+            declare -p ${name} 2> /dev/null
+            set -e
+        fi
+    done
+}
+
+self_test() {
+    inline MY_STRING MY_NUMBER MY_NOT_DEFINED \
+        | assert::pipe_eq \
+            "declare -- MY_STRING=\"Hello world!\"" \
+            "declare -i MY_NUMBER=\"42\""
+
+    inline 'MY_*' \
+        | assert::pipe_eq \
+            'declare -a MY_ARRAY' \
+            'declare -A MY_MAP' \
+            'declare -i MY_NUMBER="42"' \
+            'declare -- MY_STRING="Hello world!"'
+
+    inline "NOOP_*" \
+        | assert::pipe_eq
+
+    inline "" \
+        | assert::pipe_eq
+
+    inline MY_NOT_DEFINED \
+        | assert::pipe_eq
+}
+
+cli::load "$@"

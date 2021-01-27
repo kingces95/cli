@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_inline cli bash get-type
+cli::import_inline cli bash write
+cli::import cli_assert
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Serialize a tree where each record is a path to a leaf.
+
+Description
+    Serialize a tree where each record is a path to a leaf. Nodes are maps that have
+    been assiged extended type information which indicates its values are variable names.
+    Root nodes names will be stripped up a prefix and converted to lowercase. Internal
+    nodes use the map key for a name.
+
+    For example, given a map named 'ACME_ALLOWED_VALUE' containg keys 'predicate' 
+    and 'color' with values 'ACME_PREDICATE' and 'ACME_COLOR' where those values 
+    are the names of maps acting as sets (i.e. the value is an empty string) with 
+    keys 'true' 'false' and 'black' 'white':
+    
+        cli type declare --type An -- ACME_ALLOWED_VALUE | source /dev/stdin 
+        declare -A ACME_ALLOWED_VALUE=( [predicate]='ACME_PREDICATE' [color]='ACME_COLOR' )
+        declare -A ACME_PREDICATE=( [true]= [false]= )
+        declare -A ACME_COLOR=( [black]= [white]= )
+
+    then a call:
+
+        ${CLI_COMMAND} --prefix ACME -- allowed_value
+
+    would produce the following records: 
+
+        allowed_value predicate true
+        allowed_value predicate false
+        allowed_value color black
+        allowed_value color white
+
+Arguments
+    --prefix -p             : Prefix to strip from variables.
+    --                      : Variables to write.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+
+Example
+    Serialize an array and a map.
+        declare -A ACME_MAP=( [x]=y )
+        declare -a ACME_ARRAY=( a b c )
+        declare -p ACME_MAP ACME_ARRAY \\
+            | ${CLI_COMMAND} --prefix ACME -- ACME_MAP ACME_ARRAY
+EOF
+}
+
+write() {
+    local -n ref="${arg_name}"
+    ::cli::bash::get_type::inline ref | read type REPLY
+
+    case "${type}" in
+        'map') 
+            # recursive case
+            if [[ -n ${__CLI_TYPE[$arg_name]-} ]]; then
+                for key in "${!ref[@]}"; do
+                    arg_name="${ref[${key}]}" \
+                        write "$@" "${key}"
+                done
+            else
+                for key in "${!ref[@]}"; do
+                    ::cli::bash::write::inline "$@" "${key}" "${ref[${key}]}"
+                done
+            fi
+            ;;
+        'array') 
+            for value in "${ref[@]}"; do
+                ::cli::bash::write::inline "$@" "${value}"
+            done 
+            ;;
+        *) 
+            ::cli::bash::write::inline "$@" "${ref}"
+    esac
+}
+
+main() (
+    source /dev/stdin
+
+    declare -A CLI_TYPE_ROOT
+    cli type declare --type An -- CLI_TYPE_ROOT \
+        | source /dev/stdin 
+
+    for name in "$@"; do
+        local -l key="${name/#${arg_prefix}_/}"
+        CLI_TYPE_ROOT+=( [${key}]="${name}" )
+    done
+
+    arg_name=CLI_TYPE_ROOT write
+)
+
+self_test() {
+    declare ACME_STRING='hi'
+    declare -p ACME_STRING \
+        | ${CLI_COMMAND} --prefix ACME -- ACME_STRING \
+        | assert::pipe_eq_exact \
+            'string hi'
+
+    declare STRING='Hello world!'
+    declare -p STRING \
+        | ${CLI_COMMAND} -- STRING \
+        | assert::pipe_eq_exact \
+            'string Hello\ world!'
+
+    declare -a ARRAY=( '$' $'\t' 'b c' )
+    declare -p ARRAY \
+        | ${CLI_COMMAND} -- ARRAY \
+        | assert::pipe_eq_exact \
+            'array $' \
+           $'array \\\t' \
+            'array b\ c'
+
+    declare -A MAP=( [z]='a b $' [a]=z [my key]=$'\ttabbed' )
+    declare -p MAP \
+        | ${CLI_COMMAND} -- MAP \
+        | sort \
+        | assert::pipe_eq_exact \
+            'map a z' \
+           $'map my\ key \\\ttabbed' \
+            'map z a\ b\ $'
+
+    declare -a ARRAY=( 'x' )
+    declare -A MAP=( [a]=z )
+    declare STRING='s'
+    declare -p STRING ARRAY MAP \
+        | ${CLI_COMMAND} -- STRING ARRAY MAP \
+        | sort \
+        | assert::pipe_eq_exact \
+            'array x' \
+            'map a z' \
+            'string s'
+
+    cli type declare --type An -- MAP_OF_SETS | source /dev/stdin 
+    declare -A MAP_OF_SETS=( [letter]='LETTERS' [number]='NUMBERS' )
+    declare -A LETTERS=( [x]= [y]= )
+    declare -A NUMBERS=( [2]= [4]= )
+    declare -p __CLI_TYPE MAP_OF_SETS LETTERS NUMBERS \
+        | ${CLI_COMMAND} -- MAP_OF_SETS \
+        | sort \
+        | assert::pipe_records_eq \
+            'map_of_sets letter x' \
+            'map_of_sets letter y' \
+            'map_of_sets number 2' \
+            'map_of_sets number 4'
+  
+    cli type declare --type An -- MAP_OF_MAPS | source /dev/stdin 
+    declare -A MAP_OF_MAPS=( [upper]='UPPER' [less_one]='LESS_ONE' )
+    declare -A UPPER=( [x]=X [y]=Y )
+    declare -A LESS_ONE=( [2]=1 [4]=3 )
+    declare -p __CLI_TYPE MAP_OF_MAPS UPPER LESS_ONE \
+        | ${CLI_COMMAND} -- MAP_OF_MAPS \
+        | sort \
+        | assert::pipe_records_eq \
+            'map_of_maps less_one 2 1' \
+            'map_of_maps less_one 4 3' \
+            'map_of_maps upper x X' \
+            'map_of_maps upper y Y'
+
+    cli type declare --type An -- TABLE | source /dev/stdin 
+    declare -A TABLE=( [map_of_maps]='MAP_OF_MAPS' )
+    declare -p __CLI_TYPE TABLE MAP_OF_MAPS UPPER LESS_ONE \
+        | ${CLI_COMMAND} -- TABLE \
+        | sort \
+        | assert::pipe_records_eq \
+            'table map_of_maps less_one 2 1' \
+            'table map_of_maps less_one 4 3' \
+            'table map_of_maps upper x X' \
+            'table map_of_maps upper y Y'
+
+    cli type declare --type An -- MAP_OF_ARRAYS | source /dev/stdin 
+    declare -A MAP_OF_ARRAYS=( [fib]='FIB' [random]='RANDOM' )
+    declare -a FIB=( 1 1 2 3 )
+    declare -a RANDOM=( 0 0 4 2 )
+    declare -p __CLI_TYPE MAP_OF_ARRAYS FIB RANDOM \
+        | ${CLI_COMMAND} -- MAP_OF_ARRAYS \
+        | assert::pipe_records_eq \
+            'map_of_arrays fib 1' \
+            'map_of_arrays fib 1' \
+            'map_of_arrays fib 2' \
+            'map_of_arrays fib 3' \
+            'map_of_arrays random 0' \
+            'map_of_arrays random 0' \
+            'map_of_arrays random 4' \
+            'map_of_arrays random 2'
+exit
+}
+
+cli::load "$@"
