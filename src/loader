@@ -114,6 +114,13 @@ cli::import_group() {
     cli::import ${group} .group
 }
 
+cli::import_parent_group() {
+    local segments=( ${CLI_COMMAND} )
+    local length=${#segments[@]}
+    local parent_group="${segments[@]:0:$(( length - 2 ))}"
+    cli::import ${parent_group} .group
+}
+
 cli::import_inline() {
     cli::import "$*"
 }
@@ -419,6 +426,7 @@ main() {
     declare -f cli::assert
     declare -f cli::import
     declare -f cli::import_group
+    declare -f cli::import_parent_group
     declare -f cli::import_inline
     declare -f cli::load
     echo

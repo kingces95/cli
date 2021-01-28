@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_group
+cli::import cli_assert
+cli::import_inline cli bash emit
+cli::import_inline cli core type is-builtin
+cli::import_inline cli core type unmodified
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Emit a type, the type of its fields, and their fields, etc.
+
+Description
+    A user defined type has fields and each field has a type. This forms a 
+    tree which is walked and each visted user defined type is emitted.
+
+Arguments
+    --type -t     [Require] : The type to emit. Regex: ${CLI_REGEX_TYPE_NAME}.
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin.
+
+Global Arguments
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
+EOF
+}
+
+::cli::core::struct::emit::inline() {
+    inline
+}
+
+inline() {
+    : ${arg_type?}
+    : ${arg_visited?}
+    
+    # strip 'map_of' prefixes 
+    local element_type=$(arg_type=${arg_type} ::cli::core::type::unmodified::inline)
+
+    # skip builtin types
+    local -n visted_ref=${arg_visited}
+    if arg_type=${element_type} ::cli::core::type::is_builtin::inline ||
+        [[ -n ${visted_ref[${element_type}]+set} ]]; then
+        return
+    fi
+    visted_ref[${element_type}]=
+
+    # emit the user defined type
+    local -u udt_type=CLI_TYPE__${element_type}
+    declare -p ${udt_type}
+
+    # recurse using the type of each of the user defined type's fields
+    local -n udt_type_ref=${udt_type}
+    for field_type in "${udt_type_ref[@]}"; do
+        arg_type=${field_type} \
+        arg_visited=${arg_visited} \
+            ::cli::core::struct::emit::inline
+    done
+}
+
+main() {
+    if ${arg_source}; then
+        source /dev/stdin
+    fi
+
+    declare -A visited=()
+
+    arg_type=${arg_type} \
+    arg_visited=visited \
+        inline
+}
+
+self_test() {
+    ${CLI_COMMAND} --type string | assert::pipe_eq
+    ${CLI_COMMAND} --type boolean | assert::pipe_eq
+    ${CLI_COMMAND} --type integer | assert::pipe_eq
+    ${CLI_COMMAND} --type map | assert::pipe_eq
+    ${CLI_COMMAND} --type array | assert::pipe_eq
+    ${CLI_COMMAND} --type 'map_of string' | assert::pipe_eq
+    ${CLI_COMMAND} --type 'map_of map_of string' | assert::pipe_eq
+ 
+     cli core struct define --name float \
+        | cli core struct define-field --name integer --type integer \
+        | cli core struct define-field --name decimal --type integer \
+        | cli core struct define-field --name places --type integer \
+        | ${CLI_COMMAND} --source --type 'map_of float' \
+        | assert::pipe_eq \
+            'declare -A CLI_TYPE__FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+
+    cli core struct define --name float \
+        | cli core struct define-field --name integer --type integer \
+        | cli core struct define-field --name decimal --type integer \
+        | cli core struct define-field --name places --type integer \
+        | cli core struct define --source --name constant \
+        | cli core struct define-field --name value --type float \
+        | cli core struct define-field --name name --type string \
+        | cli core struct define --source --name ignore \
+        | cli core struct define --source --name table \
+        | cli core struct define-field --name pi --type constant \
+        | cli core struct define-field --name e --type constant \
+        | cli core struct define-field --name lookup --type 'map_of constant' \
+        | ${CLI_COMMAND} --source --type table \
+        | assert::pipe_eq \
+            'declare -A CLI_TYPE__TABLE=([lookup]="map_of constant" [pi]="constant" [e]="constant" )' \
+            'declare -A CLI_TYPE__CONSTANT=([value]="float" [name]="string" )' \
+            'declare -A CLI_TYPE__FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+}
+
+cli::load "$@"

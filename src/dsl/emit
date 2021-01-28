@@ -25,7 +25,7 @@ main() {
     local -A regex # eg +=( ['--foo']='^.*$' )
     local -A defaults # eg +=( ['arg_foo']='bar' )
     local -A allowed_values # eg +=( [--foo]='a b c' )
-    local -a required # eg +=( '--foo' )
+    local -A required # eg +=( [--foo]='' )
     local any_args=false
 
     local name
@@ -62,7 +62,7 @@ main() {
 
         # required
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
-            required+=( ${switch_name} )
+            required+=( [${switch_name}]='' )
 
         # flag
         elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
@@ -129,7 +129,7 @@ main() {
             | emit::while "(( \$# > 0 ))" \
             | emit::header 'assign variables from command line arguments'
 
-        for i in "${required[@]}"; do
+        for i in "${!required[@]}"; do
             emit::error "Missing required argument '${i}'." |
                 emit::if_empty ${names[$i]}
         done | emit::header 'required'
@@ -146,9 +146,14 @@ main() {
 
         {
             for i in "${!regex[@]}"; do
+                local regex=${regex[$i]}
+                if [[ -z ${required[$i]+set} ]]; then
+                    regex="^$|${regex}"
+                fi
+
                 emit::error "Unexpected value '\${${names[$i]}}' for argument '${i}'" \
                     "does not match regex ${regex[$i]}." \
-                    | emit::if "[[ ! \"\${${names[$i]}}\" =~ ${regex[$i]} ]]" 
+                    | emit::if "[[ ! \"\${${names[$i]}}\" =~ ${regex} ]]" 
             done
         } | emit::header 'regex'
 

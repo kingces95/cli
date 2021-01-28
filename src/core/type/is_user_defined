@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
 cli::import cli_assert
@@ -28,11 +29,11 @@ Description
     otherwise, return true.
 
 Arguments
-    --type -t     [Require] : Variable type.
+    ${CLI_CORE_TYPE_ARG_NAME}
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 

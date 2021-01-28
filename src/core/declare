@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type unmodified
-cli::import_inline cli core location allocate
-cli::import_inline cli core location put
+cli::import_inline cli core struct emit
+cli::import_inline cli core variable allocate
+cli::import_inline cli core variable put
 cli::import cli_assert
 
 help() {
@@ -50,8 +52,8 @@ Redefinition
     in all cases by declare.
 
 Arguments
-    --name -n    [Required] : The name of the variable.
-    --type -t               : The type of the variable.
+    --name -n    [Required] : The variable name. Regex: ${CLI_REGEX_VARIABLE_NAME}.
+    --type -t               : The variable type. Regex: ${CLI_REGEX_TYPE_NAME}.
     --print -p       [Flag] : Emit the type and the variable.
     --                      : Value
 
@@ -59,13 +61,13 @@ Debug Arguments
     --source -s      [Flag] : Source stdin.
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
 inline() {
-    : ${arg_name?"Unexpected missing 'name' while declaring type."}
+    : ${arg_name?}
 
     # declare scope
     declare -gA CLI_SCOPE
@@ -82,9 +84,9 @@ inline() {
             current_type=${arg_type}
 
             # initialize variable 
-            arg_name=${arg_name} \
+            arg_name=${arg_name^^} \
             arg_type=${arg_type} \
-                ::cli::core::location::allocate::inline
+                ::cli::core::variable::allocate::inline
         fi
 
         cli::check::condition \
@@ -95,22 +97,24 @@ inline() {
 
     # put
     if (( $# > 0 )); then
-        arg_name=${arg_name} \
+        arg_name=${arg_name^^} \
         arg_type=${current_type} \
-            ::cli::core::location::put::inline "$@"
+            ::cli::core::variable::put::inline "$@"
     fi
 
     # print
     if ${arg_print}; then
-        local unmodified_type=$(arg_type=${current_type} ::cli::core::type::unmodified::inline)
-        ::cli::bash::emit::inline "CLI_TYPE__${unmodified_type^^}"
+        local -A visited=()
+        arg_type=${current_type} \
+        arg_visited=visited \
+            ::cli::core::struct::emit::inline
         echo "declare -A CLI_SCOPE+=([${arg_name}]=\"${current_type}\" )"
         ::cli::bash::emit::inline "${arg_name^^}" "${arg_name^^}_*"
     fi
 }
 
 main() {
-    if $arg_source; then
+    if ${arg_source}; then
         source /dev/stdin
     fi
 
@@ -232,23 +236,23 @@ self_test() {
                 'declare -A MY_MAP_OF_VERSION=([alpha]="" )' \
                 'declare -i MY_MAP_OF_VERSION_ALPHA_MAJOR="1"' \
                 'declare -i MY_MAP_OF_VERSION_ALPHA_MINOR="0"'
-
         # defaults
-        cli core type define --name version \
-            | cli core type define-field --name major --type integer \
-            | cli core type define-field --name minor --type integer \
-            | cli core type define --source --name kitchen_sink_type \
-            | cli core type define-field --name version --type version \
-            | cli core type define-field --name integer --type integer \
-            | cli core type define-field --name map --type map \
-            | cli core type define-field --name array --type array \
-            | cli core type define-field --name boolean --type boolean \
-            | cli core type define-field --name string --type string \
-            | cli core type define-field --name map_of_map --type 'map_of map' \
+        cli core struct define --name version \
+            | cli core struct define-field --name major --type integer \
+            | cli core struct define-field --name minor --type integer \
+            | cli core struct define --source --name kitchen_sink_type \
+            | cli core struct define-field --name version --type version \
+            | cli core struct define-field --name integer --type integer \
+            | cli core struct define-field --name map --type map \
+            | cli core struct define-field --name array --type array \
+            | cli core struct define-field --name boolean --type boolean \
+            | cli core struct define-field --name string --type string \
+            | cli core struct define-field --name map_of_map --type 'map_of map' \
             | ${CLI_COMMAND} --source --name kitchen_sink --type kitchen_sink_type  \
             | ${CLI_COMMAND} --source --name kitchen_sink --print \
             | assert::pipe_eq \
                 'declare -A CLI_TYPE__KITCHEN_SINK_TYPE=([boolean]="boolean" [version]="version" [map]="map" [map_of_map]="map_of map" [string]="string" [array]="array" [integer]="integer" )' \
+                'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
                 'declare -A CLI_SCOPE+=([kitchen_sink]="kitchen_sink_type" )' \
                 'declare -a KITCHEN_SINK_ARRAY=()' \
                 'declare -- KITCHEN_SINK_BOOLEAN="false"' \
@@ -260,14 +264,14 @@ self_test() {
                 'declare -i KITCHEN_SINK_VERSION_MINOR="0"'
 
         # motiviating scenario -- representation of parameter metadata
-        cli core type define --name my_meta \
-            | cli core type define-field --name timeout --type integer \
-            | cli core type define-field --name require --type map \
-            | cli core type define-field --name default --type map \
-            | cli core type define-field --name alias --type map \
-            | cli core type define-field --name implicit_value --type map \
-            | cli core type define-field --name positional --type boolean \
-            | cli core type define-field --name allow --type 'map_of map' \
+        cli core struct define --name my_meta \
+            | cli core struct define-field --name timeout --type integer \
+            | cli core struct define-field --name require --type map \
+            | cli core struct define-field --name default --type map \
+            | cli core struct define-field --name alias --type map \
+            | cli core struct define-field --name implicit_value --type map \
+            | cli core struct define-field --name positional --type boolean \
+            | cli core struct define-field --name allow --type 'map_of map' \
             | ${CLI_COMMAND} --source --name my_meta --type my_meta \
             | ${CLI_COMMAND} --source --name my_meta -- timeout 42 \
             | ${CLI_COMMAND} --source --name my_meta -- allow help true \

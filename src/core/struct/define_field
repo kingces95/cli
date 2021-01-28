@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 cli::import_inline cli bash emit
 
@@ -42,15 +43,15 @@ Description
         declare -A CLI_TYPE__TABLE=( [allow]='map_of map' [require]=map )
 
 Arguments
-    --name -n       [Require] : Name of the field.
-    --type -t       [Require] : Type of the field.
+    --name -n       [Require] : Name of the field. Regex: ${CLI_REGEX_STRUCT_FIELD_NAME}.
+    --type -t       [Require] : Type of the field. Regex: ${CLI_REGEX_TYPE_NAME}.
 
 Debug Arguments
     --source -s        [Flag] : Source stdin.
 
 Global Arguments
-    --help -h          [Flag] : Show this message and exit.
-    --self-test        [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
@@ -86,10 +87,10 @@ main() {
 }
 
 self_test() {
-    cli core type define --name version  \
+    cli core struct define --name version  \
         | ${CLI_COMMAND} --name major --type 'integer' \
         | ${CLI_COMMAND} --name minor --type 'integer' \
-        | cli core type define -s --name table \
+        | cli core struct define -s --name table \
         | ${CLI_COMMAND} --name allow --type 'map_of map' \
         | assert::pipe_eq \
             '# table' \

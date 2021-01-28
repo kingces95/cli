@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 cli::import_inline cli bash emit
 
@@ -23,20 +24,23 @@ Description
     Indirect variables (e.g. map_of) are initialized same as maps.
 
 Arguments
-    --name -n     [Require] : Variable name.
-    --type -t     [Require] : Variable type.
+    ${CLI_CORE_VARIABLE_ARG_NAME}
+    ${CLI_CORE_VARIABLE_ARG_TYPE}
 
 Debug Arguments
     --source -s      [Flag] : Source stdin to provide variable to initialize.
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
 inline() {
-    local -n ref=${arg_name^^}
+    : ${arg_type?}
+    : ${arg_name?}
+
+    local -n ref=${arg_name}
     local -a type=( ${arg_type} )
 
     case ${type} in
@@ -50,7 +54,7 @@ inline() {
 }
 
 main() {
-    if $arg_source; then
+    if ${arg_source}; then
         source /dev/stdin
     fi
 
@@ -58,43 +62,43 @@ main() {
     arg_name=${arg_name} \
         inline "$@"
 
-    ::cli::bash::emit::inline "${arg_name^^}"
+    ::cli::bash::emit::inline "${arg_name}"
 }
 
 self_test() {
     declare MY_STRING
     declare -p MY_STRING \
-        | ${CLI_COMMAND} -s --type string --name my_string \
+        | ${CLI_COMMAND} -s --type string --name MY_STRING \
         | assert::pipe_eq \
             "declare -- MY_STRING=\"\""
 
     declare MY_BOOLEAN
     declare -p MY_BOOLEAN \
-        | ${CLI_COMMAND} -s --type boolean --name my_boolean \
+        | ${CLI_COMMAND} -s --type boolean --name MY_BOOLEAN \
         | assert::pipe_eq \
             'declare -- MY_BOOLEAN="false"'
 
     declare -i MY_INTEGER
     declare -p MY_INTEGER \
-        | ${CLI_COMMAND} -s --type integer --name my_integer \
+        | ${CLI_COMMAND} -s --type integer --name MY_INTEGER \
         | assert::pipe_eq \
             'declare -i MY_INTEGER="0"'
 
     declare -a MY_ARRAY
     declare -p MY_ARRAY \
-        | ${CLI_COMMAND} -s --type array --name my_array \
+        | ${CLI_COMMAND} -s --type array --name MY_ARRAY \
         | assert::pipe_eq \
             'declare -a MY_ARRAY=()'
 
     declare -A MY_MAP
     declare -p MY_MAP \
-        | ${CLI_COMMAND} -s --type map --name my_map \
+        | ${CLI_COMMAND} -s --type map --name MY_MAP \
         | assert::pipe_eq \
             'declare -A MY_MAP=()'
 
     declare -A MY_MAP_OF_MAP
     declare -p MY_MAP_OF_MAP \
-        | ${CLI_COMMAND} -s --type 'map_of map' --name my_map_of_map \
+        | ${CLI_COMMAND} -s --type 'map_of map' --name MY_MAP_OF_MAP \
         | assert::pipe_eq \
             'declare -A MY_MAP_OF_MAP=()'
 }

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
@@ -20,11 +21,11 @@ Description
         string
 
 Arguments
-    --type        [Require] : Type
+    ${CLI_CORE_TYPE_ARG_NAME}
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 

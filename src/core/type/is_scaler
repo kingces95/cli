@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
@@ -20,11 +21,11 @@ Description
     otherwise false.
 
 Arguments
-    --type       [Required] : Type
+    ${CLI_CORE_TYPE_ARG_NAME}
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
@@ -42,6 +43,7 @@ inline() {
 }
 
 self_test() {
+    set +e
     arg_type=boolean inline
     assert::ok 'boolean'
 
@@ -51,7 +53,6 @@ self_test() {
     arg_type=integer inline
     assert::ok 'integer'
 
-    set +e
     arg_type=map inline 
     assert::failed 'map'
 

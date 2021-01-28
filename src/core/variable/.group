@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_parent_group
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+declare CLI_CORE_VARIABLE_ARG_NAME=
+declare CLI_CORE_VARIABLE_ARG_TYPE=
+
+export() {
+    CLI_CORE_VARIABLE_ARG_NAME="--name -n   [Required]  : The variable name. Regex: ${CLI_REGEX_GLOBAL_NAME}."
+    CLI_CORE_VARIABLE_ARG_TYPE="--type -t   [Required]  : The variable type. Regex: ${CLI_REGEX_TYPE_NAME}."
+  
+    cli::export::import_parent_group
+    cli::export cli core variable
+}
+
+cli::load "$@"

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import_inline cli bash emit
-cli::import_inline cli core location initialize
+cli::import_inline cli core variable initialize
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type is-user-defined
 cli::import cli_assert
@@ -19,26 +20,26 @@ Description
     the provided type.
 
 Arguments
-    --name -n               : Variable name.
-    --type -t               : Variable type.
+    ${CLI_CORE_VARIABLE_ARG_NAME}
+    ${CLI_CORE_VARIABLE_ARG_TYPE}
 
 Debug Arguments
     --source -s      [Flag] : Source stdin to provide 'CLI_TYPE__*' metadata.
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
-::cli::core::location::allocate::inline() {
+::cli::core::variable::allocate::inline() {
     inline
 }
 
 inline() {
-    : ${arg_name?"Unexpected lack of 'name' in call to 'allocate'."}
+    : ${arg_type?}
+    : ${arg_name?}
 
-    local variable=${arg_name^^}
     local -a type=( ${arg_type} )
 
     # builtin type
@@ -54,12 +55,12 @@ inline() {
         esac
 
         # declare the bash variable
-        declare -${declare_flag} ${variable}
+        declare -${declare_flag} ${arg_name}
     
         # initialize the bash variable
         arg_type=${arg_type} \
         arg_name=${arg_name} \
-            ::cli::core::location::initialize::inline
+            ::cli::core::variable::initialize::inline
 
     # user defined type
     else
@@ -70,69 +71,69 @@ inline() {
             local field_type=${type_ref[$field]}
 
             # recursively allocate scaler fields
-            arg_name=${arg_name}_${field} \
+            arg_name=${arg_name}_${field^^} \
             arg_type=${field_type} \
-                ::cli::core::location::allocate::inline 
+                ::cli::core::variable::allocate::inline 
         done
     fi
 }
 
 main() {
-    if $arg_source; then
+    if ${arg_source}; then
         source /dev/stdin
     fi
 
     arg_name=${arg_name} \
         inline ${arg_type}
 
-    ::cli::bash::emit::inline "${arg_name^^}" "${arg_name^^}_*"
+    ::cli::bash::emit::inline "${arg_name}" "${arg_name}_*"
 }
 
 self_test() {
 
     # string
-    ${CLI_COMMAND} --name var --type string \
+    ${CLI_COMMAND} --name VAR --type string \
         | assert::pipe_eq \
             'declare -- VAR=""'
 
     # integer
-    ${CLI_COMMAND} --name var --type integer \
+    ${CLI_COMMAND} --name VAR --type integer \
         | assert::pipe_eq \
             'declare -i VAR="0"'
 
     # boolean
-    ${CLI_COMMAND} --name var --type boolean \
+    ${CLI_COMMAND} --name VAR --type boolean \
         | assert::pipe_eq \
             'declare -- VAR="false"'
 
     # array
-    ${CLI_COMMAND} --name var --type array \
+    ${CLI_COMMAND} --name VAR --type array \
         | assert::pipe_eq \
             'declare -a VAR=()'
 
     # map
-    ${CLI_COMMAND} --name var --type map \
+    ${CLI_COMMAND} --name VAR --type map \
         | assert::pipe_eq \
             'declare -A VAR=()'
 
     # map_of
-    ${CLI_COMMAND} --name var --type 'map_of integer' \
+    ${CLI_COMMAND} --name VAR --type 'map_of integer' \
         | assert::pipe_eq \
             'declare -A VAR=()'
 
     # user defined
-    cli core type define --name version \
-        | cli core type define-field --name major --type integer \
-        | cli core type define-field --name minor --type integer \
-        | cli core type define --source --name udt \
-        | cli core type define-field --name string_field --type string \
-        | cli core type define-field --name integer_field --type integer \
-        | cli core type define-field --name boolean_field --type boolean \
-        | cli core type define-field --name map_field --type map \
-        | cli core type define-field --name array_field --type array \
-        | cli core type define-field --name map_of_map_field --type 'map_of map' \
-        | cli core type define-field --name version_field --type version \
-        | ${CLI_COMMAND} --source --name var --type udt \
+    cli core struct define --name version \
+        | cli core struct define-field --name major --type integer \
+        | cli core struct define-field --name minor --type integer \
+        | cli core struct define --source --name udt \
+        | cli core struct define-field --name string_field --type string \
+        | cli core struct define-field --name integer_field --type integer \
+        | cli core struct define-field --name boolean_field --type boolean \
+        | cli core struct define-field --name map_field --type map \
+        | cli core struct define-field --name array_field --type array \
+        | cli core struct define-field --name map_of_map_field --type 'map_of map' \
+        | cli core struct define-field --name version_field --type version \
+        | ${CLI_COMMAND} --source --name VAR --type udt \
         | assert::pipe_eq \
             'declare -a VAR_ARRAY_FIELD=()' \
             'declare -- VAR_BOOLEAN_FIELD="false"' \

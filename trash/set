@@ -47,7 +47,7 @@ main() {
     fi
 
     # read variables, and metadata stored in CLI_SCOPE__*, CLI_TYPE__*
-    if $arg_source; then
+    if ${arg_source}; then
         source /dev/stdin
     fi
 

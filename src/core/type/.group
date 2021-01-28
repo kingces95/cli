@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_parent_group
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+declare CLI_CORE_TYPE_ARG_NAME=
+
+export() {
+    CLI_CORE_TYPE_ARG_NAME="--name -n     [Require] : Name of the type. Regex: ${CLI_REGEX_STRUCT_NAME}."
+
+    cli::export::import_parent_group
+    cli::export cli core type
+}
+
+cli::load "$@"

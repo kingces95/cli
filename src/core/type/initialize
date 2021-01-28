@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+cli::import_inline cli bash emit
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Initialize scaler values.
+
+Description
+    Variables initialize in accordance with their type as follows:
+    
+        string      ''
+        boolean     false
+        integer     0
+        map         ()
+        array       ()
+
+    Indirect variables (e.g. map_of) are initialized same as maps.
+
+Arguments
+    --name -n     [Require] : Variable name.
+    --type -t     [Require] : Variable type.
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin to provide variable to initialize.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    local -n ref=${arg_name^^}
+    local -a type=( ${arg_type} )
+
+    case ${type} in
+        'string') ref="" ;;
+        'integer') ref=0 ;;
+        'boolean') ref=false ;;
+        'array') ref=() ;;
+        'map') ref=() ;;
+        'map_of') ref=() ;;
+    esac
+}
+
+main() {
+    if ${arg_source}; then
+        source /dev/stdin
+    fi
+
+    arg_type=${arg_type} \
+    arg_name=${arg_name} \
+        inline "$@"
+
+    ::cli::bash::emit::inline "${arg_name^^}"
+}
+
+self_test() {
+    declare MY_STRING
+    declare -p MY_STRING \
+        | ${CLI_COMMAND} -s --type string --name my_string \
+        | assert::pipe_eq \
+            "declare -- MY_STRING=\"\""
+
+    declare MY_BOOLEAN
+    declare -p MY_BOOLEAN \
+        | ${CLI_COMMAND} -s --type boolean --name my_boolean \
+        | assert::pipe_eq \
+            'declare -- MY_BOOLEAN="false"'
+
+    declare -i MY_INTEGER
+    declare -p MY_INTEGER \
+        | ${CLI_COMMAND} -s --type integer --name my_integer \
+        | assert::pipe_eq \
+            'declare -i MY_INTEGER="0"'
+
+    declare -a MY_ARRAY
+    declare -p MY_ARRAY \
+        | ${CLI_COMMAND} -s --type array --name my_array \
+        | assert::pipe_eq \
+            'declare -a MY_ARRAY=()'
+
+    declare -A MY_MAP
+    declare -p MY_MAP \
+        | ${CLI_COMMAND} -s --type map --name my_map \
+        | assert::pipe_eq \
+            'declare -A MY_MAP=()'
+
+    declare -A MY_MAP_OF_MAP
+    declare -p MY_MAP_OF_MAP \
+        | ${CLI_COMMAND} -s --type 'map_of map' --name my_map_of_map \
+        | assert::pipe_eq \
+            'declare -A MY_MAP_OF_MAP=()'
+}
+
+cli::load "$@"

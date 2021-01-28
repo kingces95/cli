@@ -17,12 +17,31 @@ declare CLI_REGEX_FLAGS="^[a-z]+$"
 declare CLI_REGEX_BASH_NAME="^[a-z_][a-z0-9_]*$"
 declare CLI_REGEX_UNIX_NAME="^[a-z.][a-z0-9_]*$"
 
+declare CLI_REGEX_VARIABLE_NAME="^[a-z][a-z0-9_]*$"
+declare CLI_REGEX_STRUCT_NAME=${CLI_REGEX_VARIABLE_NAME}
+declare CLI_REGEX_STRUCT_FIELD_NAME=${CLI_REGEX_VARIABLE_NAME}
+declare CLI_REGEX_TYPE_NAME="^(map_of[[:space:]])*[a-z][a-z0-9_]*$"
+declare CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
+
+declare CLI_GLOBAL_ARG_HELP="--help -h        [Flag] : Show this message and exit."
+declare CLI_GLOBAL_ARG_SELF_TEST="--self-test      [Flag] : Runs a self test."
+
 export() {
     {
         declare -p CLI_REGEX_NAME
         declare -p CLI_REGEX_FLAGS
         declare -p CLI_REGEX_BASH_NAME
         declare -p CLI_REGEX_UNIX_NAME
+
+        declare -p CLI_REGEX_VARIABLE_NAME
+        declare -p CLI_REGEX_STRUCT_NAME
+        declare -p CLI_REGEX_STRUCT_FIELD_NAME
+        declare -p CLI_REGEX_TYPE_NAME
+        declare -p CLI_REGEX_GLOBAL_NAME
+
+        declare -p CLI_GLOBAL_ARG_HELP
+        declare -p CLI_GLOBAL_ARG_SELF_TEST
+
     } | sed 's/^declare/declare -g/'
 }
 

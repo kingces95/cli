@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 cli::import_inline cli bash emit
 
@@ -22,14 +23,14 @@ Description
         declare -A CLI_TYPE__TABLE=()
 
 Arguments
-    --name -n     [Require] : Name of the type.
+    --name -n     [Require] : Name of the type. Regex: ${CLI_REGEX_STRUCT_NAME}.
 
 Debug Arguments
     --source -s      [Flag] : Source stdin.
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
@@ -46,7 +47,7 @@ inline() {
 }
 
 main() {
-    if $arg_source; then
+    if ${arg_source}; then
         source /dev/stdin
     fi
 
