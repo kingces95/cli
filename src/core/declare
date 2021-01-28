@@ -3,8 +3,8 @@ source $(cli loader)
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type unmodified
-cli::import_inline cli core type allocate
-cli::import_inline cli core type put
+cli::import_inline cli core location allocate
+cli::import_inline cli core location put
 cli::import cli_assert
 
 help() {
@@ -84,7 +84,7 @@ inline() {
             # initialize variable 
             arg_name=${arg_name} \
             arg_type=${arg_type} \
-                ::cli::core::type::allocate::inline
+                ::cli::core::location::allocate::inline
         fi
 
         cli::check::condition \
@@ -97,12 +97,12 @@ inline() {
     if (( $# > 0 )); then
         arg_name=${arg_name} \
         arg_type=${current_type} \
-            ::cli::core::type::put::inline "$@"
+            ::cli::core::location::put::inline "$@"
     fi
 
     # print
     if ${arg_print}; then
-        local unmodified_type=$(::cli::core::type::unmodified::inline ${current_type})
+        local unmodified_type=$(arg_type=${current_type} ::cli::core::type::unmodified::inline)
         ::cli::bash::emit::inline "CLI_TYPE__${unmodified_type^^}"
         echo "declare -A CLI_SCOPE+=([${arg_name}]=\"${current_type}\" )"
         ::cli::bash::emit::inline "${arg_name^^}" "${arg_name^^}_*"

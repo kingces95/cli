@@ -9,7 +9,7 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Return true if type is a builtin.
+    Return true if type is builtin.
 
 Description
     Return true if the type is:
@@ -19,6 +19,8 @@ Description
         boolean
         map
         array
+
+    otherwise false.
 
 Arguments
     --type      [Required]  : Type

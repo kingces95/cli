@@ -13,7 +13,7 @@ Summary
     Return true if type is user defined.
 
 Description
-    Return false if the type is not:
+    Return false if the type is:
     
         string
         integer
@@ -21,11 +21,11 @@ Description
         map
         array
 
-    Return false if the type is modified:
+    also return false if the type is modified:
 
         map_of
 
-    Otherwise, return true.
+    otherwise, return true.
 
 Arguments
     --type -t     [Require] : Variable type.

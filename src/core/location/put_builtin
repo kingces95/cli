@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import cli_assert
-cli::import_inline cli core type initialize
+cli::import_inline cli core location initialize
 cli::import_inline cli core type is-scaler
 
 help() {
@@ -62,7 +62,7 @@ inline() {
         else
             arg_type=${arg_type} \
             arg_name=${arg_name} \
-                ::cli::core::type::initialize::inline
+                ::cli::core::location::initialize::inline
         fi
 
     elif [[ ${type} == 'map' ]]; then

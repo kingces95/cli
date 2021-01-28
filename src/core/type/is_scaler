@@ -17,6 +17,8 @@ Description
         integer
         boolean
 
+    otherwise false.
+
 Arguments
     --type       [Required] : Type
 

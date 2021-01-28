@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import_inline cli bash emit
-cli::import_inline cli core type initialize
+cli::import_inline cli core location initialize
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type is-user-defined
 cli::import cli_assert
@@ -31,7 +31,7 @@ Global Arguments
 EOF
 }
 
-::cli::core::type::allocate::inline() {
+::cli::core::location::allocate::inline() {
     inline
 }
 
@@ -59,7 +59,7 @@ inline() {
         # initialize the bash variable
         arg_type=${arg_type} \
         arg_name=${arg_name} \
-            ::cli::core::type::initialize::inline
+            ::cli::core::location::initialize::inline
 
     # user defined type
     else
@@ -72,7 +72,7 @@ inline() {
             # recursively allocate scaler fields
             arg_name=${arg_name}_${field} \
             arg_type=${field_type} \
-                ::cli::core::type::allocate::inline 
+                ::cli::core::location::allocate::inline 
         done
     fi
 }

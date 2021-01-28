@@ -9,7 +9,7 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Define a field.
+    Define a field on a type.
 
 Description
     Adds entries to a sourced map with a well known name representing a 
