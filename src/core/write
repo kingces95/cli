@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import_inline cli bash get-type
+cli::import_group
 cli::import_inline cli bash write
+cli::import_inline cli core type is-scaler
+cli::import_inline cli core type is-builtin
+cli::import_inline cli core type is-modified
+cli::import_inline cli core type is-user-defined
+cli::import_inline cli core type unmodify
 cli::import cli_assert
 
 help() {
@@ -10,189 +15,209 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Serialize a tree where each record is a path to a leaf.
+    Write a variable as a sequence of records.
 
 Description
-    Serialize a tree where each record is a path to a leaf. Nodes are maps that have
-    been assiged extended type information which indicates its values are variable names.
-    Root nodes names will be stripped up a prefix and converted to lowercase. Internal
-    nodes use the map key for a name.
-
-    For example, given a map named 'ACME_ALLOWED_VALUE' containg keys 'predicate' 
-    and 'color' with values 'ACME_PREDICATE' and 'ACME_COLOR' where those values 
-    are the names of maps acting as sets (i.e. the value is an empty string) with 
-    keys 'true' 'false' and 'black' 'white':
+    To write a variable as a seqeunce of records, treat the variable as the 
+    root of a tree. Whether a node has children is determined by its type:
     
-        cli type declare --type An -- ACME_ALLOWED_VALUE | source /dev/stdin 
-        declare -A ACME_ALLOWED_VALUE=( [predicate]='ACME_PREDICATE' [color]='ACME_COLOR' )
-        declare -A ACME_PREDICATE=( [true]= [false]= )
-        declare -A ACME_COLOR=( [black]= [white]= )
+    Scaler types have no children; Scaler types are leafs.
+    
+    Arrays have implicitly named children. An array's elements are its children and
+    the names are their index which is implied by their position in the array and 
+    are not included in the record.
 
-    then a call:
+    Maps have named children. An map's values are its children and the map's keys
+    are the child names.
+.     
+    Anonymous structs (i.e. a type modified by 'map_of') have named children. An 
+    annonymous struct is represented by a bash map. Its children are its values 
+    and each child's name is its associated keys.
 
-        ${CLI_COMMAND} --prefix ACME -- allowed_value
+    Structs have named children. A structs children are the values of its fields and 
+    the field names names are the child names
+
+    Records are printed for each leaf visted during a depth first walk of a tree. For
+    each leaf, the record consists of fields which are the names of all parents plus
+    the scaler value.
+
+Arguments
+    ${CLI_CORE_ARG_NAME}
+    ${CLI_CORE_ARG_TYPE}
+    --                      : Names of the parents.
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin.
+
+Global Arguments
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
+
+Examples
+    For example, writing a type variable of type 'metadata' consisting of 
+    
+        a field 'positional' of type 'boolean' and 
+        a field 'allow' of type 'map_of map' 
+        
+    where 'positional' is 'true' and 'allow' is has a key 'color' which points at a 
+    map whose keys are 'black' and 'white' and whose values are empty:
+
+        cli core struct define --name metadata \
+            | cli core struct define-field --name positional --type boolean \
+            | cli core struct define-field --name allow --type 'map_of map' \
+            | cli core declare --source --name meta --type metadata \
+            | cli core declare --source --name meta -- allow color black \
+            | cli core declare --source --name meta -- allow color white \
+            | cli core declare --source --name meta -- positional true \
+            | cli core write --source --name meta
 
     would produce the following records: 
 
-        allowed_value predicate true
-        allowed_value predicate false
-        allowed_value color black
-        allowed_value color white
-
-Arguments
-    --prefix -p             : Prefix to strip from variables.
-    --                      : Variables to write.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-
-Example
-    Serialize an array and a map.
-        declare -A ACME_MAP=( [x]=y )
-        declare -a ACME_ARRAY=( a b c )
-        declare -p ACME_MAP ACME_ARRAY \\
-            | ${CLI_COMMAND} --prefix ACME -- ACME_MAP ACME_ARRAY
+        allow color black
+        allow color white
+        positional true
 EOF
 }
 
-write() {
-    local -n ref="${arg_name}"
-    ::cli::bash::get_type::inline ref | read type REPLY
-
-    case "${type}" in
-        'map') 
-            # recursive case
-            if [[ -n ${__CLI_TYPE[$arg_name]-} ]]; then
-                for key in "${!ref[@]}"; do
-                    arg_name="${ref[${key}]}" \
-                        write "$@" "${key}"
-                done
-            else
-                for key in "${!ref[@]}"; do
-                    ::cli::bash::write::inline "$@" "${key}" "${ref[${key}]}"
-                done
-            fi
-            ;;
-        'array') 
-            for value in "${ref[@]}"; do
-                ::cli::bash::write::inline "$@" "${value}"
-            done 
-            ;;
-        *) 
-            ::cli::bash::write::inline "$@" "${ref}"
-    esac
+::cli::core::write::inline() {
+    inline "$@"
 }
 
-main() (
-    source /dev/stdin
+inline() {
+    : ${arg_name?}    
+    : ${arg_type:=${CLI_SCOPE[${arg_name}]}}
 
-    declare -A CLI_TYPE_ROOT
-    cli type declare --type An -- CLI_TYPE_ROOT \
-        | source /dev/stdin 
+    local -n ref=${arg_name}
 
-    for name in "$@"; do
-        local -l key="${name/#${arg_prefix}_/}"
-        CLI_TYPE_ROOT+=( [${key}]="${name}" )
-    done
+    # leaf
+    if arg_type=${arg_type} ::cli::core::type::is_builtin::inline; then
 
-    arg_name=CLI_TYPE_ROOT write
-)
+        # map
+        if [[ "${arg_type}" == 'map' ]]; then
+            for key in ${!ref[@]}; do
+                local value=${ref[$key]}
+                ::cli::bash::write::inline "$@" "${key}" "${value}"
+            done
+
+        # array
+        elif [[ "${arg_type}" == 'array' ]]; then
+            for key in ${ref[@]}; do
+                ::cli::bash::write::inline "$@" "${key}"
+            done
+
+        # scaler
+        else
+            ::cli::bash::write::inline "$@" "${ref}"
+        fi
+
+    # node
+    elif arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
+        local field_type=$(arg_type=${arg_type} ::cli::core::type::unmodify::inline)
+
+        # map_of
+        for field_name in ${!ref[@]}; do
+            local field_variable=${arg_name}_${field_name^^}
+
+            arg_type=${field_type} \
+            arg_name=${field_variable} \
+                ::cli::core::write::inline "$@" ${field_name}
+        done
+
+    # node
+    else
+
+        # user defined type
+        local -n fields=CLI_TYPE__${arg_type^^}
+        for field_name in ${!fields[@]}; do
+            local field_type=${fields[$field_name]}
+            local field_variable=${arg_name}_${field_name^^}
+
+            arg_type=${field_type} \
+            arg_name=${field_variable} \
+                ::cli::core::write::inline  "$@" ${field_name}
+        done
+    fi
+}
+
+main() {
+    if ${arg_source}; then
+        source /dev/stdin
+    fi
+
+    arg_name=${arg_name} \
+        inline "$@"
+}
 
 self_test() {
-    declare ACME_STRING='hi'
-    declare -p ACME_STRING \
-        | ${CLI_COMMAND} --prefix ACME -- ACME_STRING \
-        | assert::pipe_eq_exact \
-            'string hi'
 
-    declare STRING='Hello world!'
+    declare STRING='Hello World!'
     declare -p STRING \
-        | ${CLI_COMMAND} -- STRING \
+        | cli core write --source --name STRING --type string \
         | assert::pipe_eq_exact \
-            'string Hello\ world!'
+            'Hello\ World!'
 
-    declare -a ARRAY=( '$' $'\t' 'b c' )
-    declare -p ARRAY \
-        | ${CLI_COMMAND} -- ARRAY \
-        | assert::pipe_eq_exact \
-            'array $' \
-           $'array \\\t' \
-            'array b\ c'
+    declare -i INTEGER=42
+    declare -p INTEGER \
+        | cli core write --source --name INTEGER --type integer \
+        | assert::pipe_eq \
+            '42'
 
-    declare -A MAP=( [z]='a b $' [a]=z [my key]=$'\ttabbed' )
+    declare BOOLEAN=true
+    declare -p BOOLEAN \
+        | cli core write --source --name BOOLEAN --type boolean \
+        | assert::pipe_eq \
+            'true'
+
+    declare -A MAP=( [key]=value [element]= )
     declare -p MAP \
-        | ${CLI_COMMAND} -- MAP \
-        | sort \
-        | assert::pipe_eq_exact \
-            'map a z' \
-           $'map my\ key \\\ttabbed' \
-            'map z a\ b\ $'
-
-    declare -a ARRAY=( 'x' )
-    declare -A MAP=( [a]=z )
-    declare STRING='s'
-    declare -p STRING ARRAY MAP \
-        | ${CLI_COMMAND} -- STRING ARRAY MAP \
-        | sort \
-        | assert::pipe_eq_exact \
-            'array x' \
-            'map a z' \
-            'string s'
-
-    cli type declare --type An -- MAP_OF_SETS | source /dev/stdin 
-    declare -A MAP_OF_SETS=( [letter]='LETTERS' [number]='NUMBERS' )
-    declare -A LETTERS=( [x]= [y]= )
-    declare -A NUMBERS=( [2]= [4]= )
-    declare -p __CLI_TYPE MAP_OF_SETS LETTERS NUMBERS \
-        | ${CLI_COMMAND} -- MAP_OF_SETS \
+        | cli core write --source --name MAP --type map \
         | sort \
         | assert::pipe_records_eq \
-            'map_of_sets letter x' \
-            'map_of_sets letter y' \
-            'map_of_sets number 2' \
-            'map_of_sets number 4'
-  
-    cli type declare --type An -- MAP_OF_MAPS | source /dev/stdin 
-    declare -A MAP_OF_MAPS=( [upper]='UPPER' [less_one]='LESS_ONE' )
-    declare -A UPPER=( [x]=X [y]=Y )
-    declare -A LESS_ONE=( [2]=1 [4]=3 )
-    declare -p __CLI_TYPE MAP_OF_MAPS UPPER LESS_ONE \
-        | ${CLI_COMMAND} -- MAP_OF_MAPS \
+            'element' \
+            'key value'
+
+    declare -a ARRAY=( a a b a )
+    declare -p ARRAY \
+        | cli core write --source --name ARRAY --type array \
+        | assert::pipe_records_eq \
+            'a' 'a' 'b' 'a'
+
+    cli core declare --name MOD --type 'map_of map_of integer' -- seq pi 3141 \
+        | cli core declare --source --name MOD -- seq fib 11235 \
+        | cli core write --source --name MOD \
+        | sort \
+        | assert::pipe_eq \
+            'seq fib 11235' \
+            'seq pi 3141'
+
+    cli core declare --name MOD_MAP --type 'map_of map' -- seq pi 3141 \
+        | cli core declare --source --name MOD_MAP -- seq fib 11235 \
+        | cli core write --source --name MOD_MAP \
+        | sort \
+        | assert::pipe_eq \
+            'seq fib 11235' \
+            'seq pi 3141'
+            
+    cli core declare --name MOD_ARRAY --type 'map_of array' -- seq pi \
+        | cli core declare --source --name MOD_ARRAY -- seq fib \
+        | cli core write --source --name MOD_ARRAY \
+        | assert::pipe_eq \
+            'seq pi' \
+            'seq fib'
+
+    cli core struct define --name metadata \
+        | cli core struct define-field --name positional --type boolean \
+        | cli core struct define-field --name allow --type 'map_of map' \
+        | cli core declare --source --name META --type metadata \
+        | cli core declare --source --name META -- allow color black \
+        | cli core declare --source --name META -- allow color white \
+        | cli core declare --source --name META -- positional true \
+        | cli core write --source --name META \
         | sort \
         | assert::pipe_records_eq \
-            'map_of_maps less_one 2 1' \
-            'map_of_maps less_one 4 3' \
-            'map_of_maps upper x X' \
-            'map_of_maps upper y Y'
-
-    cli type declare --type An -- TABLE | source /dev/stdin 
-    declare -A TABLE=( [map_of_maps]='MAP_OF_MAPS' )
-    declare -p __CLI_TYPE TABLE MAP_OF_MAPS UPPER LESS_ONE \
-        | ${CLI_COMMAND} -- TABLE \
-        | sort \
-        | assert::pipe_records_eq \
-            'table map_of_maps less_one 2 1' \
-            'table map_of_maps less_one 4 3' \
-            'table map_of_maps upper x X' \
-            'table map_of_maps upper y Y'
-
-    cli type declare --type An -- MAP_OF_ARRAYS | source /dev/stdin 
-    declare -A MAP_OF_ARRAYS=( [fib]='FIB' [random]='RANDOM' )
-    declare -a FIB=( 1 1 2 3 )
-    declare -a RANDOM=( 0 0 4 2 )
-    declare -p __CLI_TYPE MAP_OF_ARRAYS FIB RANDOM \
-        | ${CLI_COMMAND} -- MAP_OF_ARRAYS \
-        | assert::pipe_records_eq \
-            'map_of_arrays fib 1' \
-            'map_of_arrays fib 1' \
-            'map_of_arrays fib 2' \
-            'map_of_arrays fib 3' \
-            'map_of_arrays random 0' \
-            'map_of_arrays random 0' \
-            'map_of_arrays random 4' \
-            'map_of_arrays random 2'
-exit
+            'allow color black' \
+            'allow color white' \
+            'positional true'
 }
 
 cli::load "$@"

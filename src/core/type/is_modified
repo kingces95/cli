@@ -24,7 +24,7 @@ Description
     yet another map whose values point to strings.
 
 Arguments
-    ${CLI_CORE_TYPE_ARG_NAME}
+    ${CLI_CORE_TYPE_ARG_TYPE}
 
 Global Arguments
     ${CLI_GLOBAL_ARG_HELP}

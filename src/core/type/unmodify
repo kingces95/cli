@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_group
+cli::import cli_assert
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Return the unmodified type of a type.
+
+Description
+    Return a type without any modifiers. For example, the unmodified type of
+    
+        map_of map_of string
+
+    is 
+
+        map_of string
+
+Arguments
+    ${CLI_CORE_TYPE_ARG_TYPE}
+    --recurse -r     [Flag] : Name
+    
+Global Arguments
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
+EOF
+}
+
+inline() {
+    : ${arg_type?}
+    : ${arg_recurse:=false}
+
+    set ${arg_type}
+
+    if ${arg_recurse}; then
+        eval "echo \$$#"
+    else
+        if (( $# > 1 )); then
+            shift
+        fi
+
+        echo "$@"
+    fi
+}
+
+self_test() {
+    assert::eq \
+        "$(arg_type=boolean inline)" \
+        'boolean'
+
+    assert::eq \
+        "$(arg_type='map_of map_of boolean' inline)" \
+        'map_of boolean'
+
+    assert::eq \
+        "$(arg_type='map_of map_of boolean' arg_recurse=true inline)" \
+        'boolean'
+}
+
+cli::load "$@"

@@ -4,7 +4,7 @@ cli::import_group
 cli::import cli_assert
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-builtin
-cli::import_inline cli core type unmodified
+cli::import_inline cli core type unmodify
 
 help() {
 cat << EOF
@@ -39,7 +39,8 @@ inline() {
     : ${arg_visited?}
     
     # strip 'map_of' prefixes 
-    local element_type=$(arg_type=${arg_type} ::cli::core::type::unmodified::inline)
+    local element_type=$( \
+        arg_type=${arg_type} arg_recurse=true ::cli::core::type::unmodify::inline)
 
     # skip builtin types
     local -n visted_ref=${arg_visited}
@@ -76,14 +77,15 @@ main() {
 
 self_test() {
     ${CLI_COMMAND} --type string | assert::pipe_eq
+ exit
     ${CLI_COMMAND} --type boolean | assert::pipe_eq
     ${CLI_COMMAND} --type integer | assert::pipe_eq
     ${CLI_COMMAND} --type map | assert::pipe_eq
     ${CLI_COMMAND} --type array | assert::pipe_eq
     ${CLI_COMMAND} --type 'map_of string' | assert::pipe_eq
     ${CLI_COMMAND} --type 'map_of map_of string' | assert::pipe_eq
- 
-     cli core struct define --name float \
+
+    cli core struct define --name float \
         | cli core struct define-field --name integer --type integer \
         | cli core struct define-field --name decimal --type integer \
         | cli core struct define-field --name places --type integer \

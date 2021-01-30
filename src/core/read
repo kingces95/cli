@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import cli_assert
-cli::import_inline cli bash get-type
+cli::import_group
+cli::import_inline cli core declare
 
 help() {
     cat << EOF
@@ -9,173 +10,42 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Deserialize a table into a variable.
+    Read a list of records into a variable.
 
 Description
-    Deserialize a set of records read from stdin to a variable. 
-    
-    If the variable is declared as a string or integer, then the stream is 
-    assumed to contain a single record consisting of a single field. 
-    
-    If the variable is declared as an array, then the stream is assumed to
-    contain multipule records, each consisting of a single field.
-
-    If the variable is declared as an associative array, then the stream is
-    assumed to contain multipule records, each consisting of two fields,
-    a key and a value.
-
-    If name is a map, then so long as depth is greater than zero, reading
-    proceeds recursively reducing the value of depth by one for each call.
-    Before the call a new map is declared with the name of 'prefix' joined 
-    to an upper case version of the first field. That new map name is used
-    as 'name' for the recursive call. If depth is one, and 'array' is true
-    then an array is declared instead of a map. 
-
-    Variables MY_ARRAY, MY_MAP, MY_INTEGER and MY_STRING are embedded for 
-    debugging reading of tables.
+    Reads records and for each record write the record to a variable by
+    calling 'cli core declare'.
 
 Arguments
-    --name -n    [Required] : Name of variable to receive the table.
-    --prefix -p  [Required] : The prefix to underbar join with the map value
-                              to create the name of map (or array) to declare 
-                              and use as the 'name' for the recursive call. 
-                                    
+    ${CLI_CORE_ARG_NAME}
+    ${CLI_CORE_ARG_TYPE}
+
 Debug Arguments
-    --type -t               : Declare global variable.
-    --emit -e        [Flag] : Emit variable.
-    --                      : Variables to emit.
+    --source -s      [Flag] : Source stdin.
 
 Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-
-Example
-    Serialize and deserialize an array.
-        declare -p ARRAY \\
-            | cli table serialize --source --name ARRAY \\
-            | cli table deserialize --name ARRAY --emit
+    ${CLI_GLOBAL_ARG_HELP}
+    ${CLI_GLOBAL_ARG_SELF_TEST}
 EOF
 }
 
-declare -a MY_ARRAY
-declare -A MY_MAP
-declare -i MY_INTEGER
-declare MY_STRING
-
 inline() {
-
-    # while there are records
-    while read -a __ARRAY; do
-        __ARRAY+=( '' )
-
-        # initialize frame { $@, ref, type }
-        set "${__ARRAY[@]}"
-        local -n ref="${arg_name}"
-        ::cli::bash::get_type::inline ref | read type REPLY
-
-        # for each field
-        while true; do
-
-            # base case
-            if [[ -z ${__CLI_TYPE[$arg_name]-} ]]; then
-                case "${type}" in
-                    'array') ref+=( "${1-}" ) ;;
-                    'map') ref[$1]="${2-}" ;;
-                    *) ref="${1-}" ;;
-                esac
-                break;
-
-            elif [[ "${type}" == 'map' ]]; then
-                # field is map key and used to compose variable name
-                local -u name="${arg_prefix}_$1" # e.g. 'ACME_COLORS'
-                ref[$1]="${name}" # ref[colors]='ACME_COLORS'
-            
-                # recurse; update frame { $@, ref, type }
-                shift
-                local -n ref="${name}"
-                depth=$(( depth - 1 ))
-
-                if (( depth == 0 )) && $arg_array; then
-                    local -ag "${name}"
-                    type='array'
-                else
-                    local -Ag "${name}"
-                    type='map'
-                fi
-            else
-                cli::fail "Unexpected non-map variable '${arg_name}' while reading table."
-            fi
-        done
-    done
+    return
 }
 
 main() {
-    inline
-
-    if $arg_emit; then
-        declare -p "${arg_name}"
-
-        while (( $# > 0 )); do
-            declare -p "$1"
-            shift
-        done
-    fi
+    return
 }
 
 self_test() {
-    declare MY_ARRAY=( 'Hello world' $'\ttabbed' $'  indented' '' )
-    declare -p MY_ARRAY \
-        | cli bash table write --source --name MY_ARRAY \
-        | ${CLI_COMMAND} --name MY_ARRAY --prefix MY --emit \
+    echo 'Hello\ World!' \
+        ${CLI_COMMAND} --name STRING
+        
+    declare STRING='Hello World!'
+    declare -p STRING \
+        | cli core write --source --name STRING --type string \
         | assert::pipe_eq_exact \
-            "declare -a MY_ARRAY=([0]=\"Hello world\" [1]=$'\ttabbed' [2]=\"  indented\" [3]=\"\")"
-
-    declare MY_STRING='Hello world!'
-    declare -p MY_STRING \
-        | cli bash table write --source --name MY_STRING \
-        | ${CLI_COMMAND} --name MY_STRING --prefix MY --emit \
-        | assert::pipe_eq \
-            'declare -- MY_STRING="Hello world!"'
-
-    declare -A MY_MAP=( [my key]=$'\tmy tabbed value' )
-    declare -p MY_MAP \
-        | cli bash table write --source --name MY_MAP \
-        | ${CLI_COMMAND} --name MY_MAP --prefix MY --emit \
-        | assert::pipe_eq_exact \
-            "declare -A MY_MAP=([\"my key\"]=$'\tmy tabbed value' )"
-
-    declare -A MAP_OF_SETS=( [letter]='LETTERS' [number]='NUMBERS' )
-    declare -A LETTERS=( [x]= [y]= )
-    declare -A NUMBERS=( [2]= [4]= )
-    declare -p MAP_OF_SETS LETTERS NUMBERS \
-        | cli bash table write --source --depth 1 --name MAP_OF_SETS \
-        | ${CLI_COMMAND} --name MY_MAP --prefix MY --depth 1 --emit -- MY_LETTER MY_NUMBER \
-        | assert::pipe_eq \
-            'declare -A MY_MAP=([letter]="MY_LETTER" [number]="MY_NUMBER" )' \
-            'declare -A MY_LETTER=([y]="" [x]="" )' \
-            'declare -A MY_NUMBER=([4]="" [2]="" )'
-
-    declare -A MAP_OF_MAPS=( [upper]='UPPER' [less_one]='LESS_ONE' )
-    declare -A UPPER=( [x]=X [y]=Y )
-    declare -A LESS_ONE=( [2]=1 [4]=3 )
-    declare -p MAP_OF_MAPS UPPER LESS_ONE \
-        | cli bash table write --source --depth 1 --name MAP_OF_MAPS \
-        | ${CLI_COMMAND} --name MY_MAP --prefix MY --depth 1 --emit -- MY_UPPER MY_LESS_ONE \
-        | assert::pipe_eq \
-            'declare -A MY_MAP=([upper]="MY_UPPER" [less_one]="MY_LESS_ONE" )' \
-            'declare -A MY_UPPER=([y]="Y" [x]="X" )' \
-            'declare -A MY_LESS_ONE=([4]="3" [2]="1" )'
-
-    declare -A MAP_OF_ARRAYS=( [fib]='FIB' [random]='RANDOM' )
-    declare -a FIB=( 1 1 2 3 )
-    declare -a RANDOM=( 0 0 4 2 )
-    declare -p MAP_OF_ARRAYS FIB RANDOM \
-        | cli bash table write --source --depth 1 --name MAP_OF_ARRAYS \
-        | ${CLI_COMMAND} --name MY_MAP --prefix MY --depth 1 --emit --array -- MY_FIB MY_RANDOM \
-        | assert::pipe_eq \
-            'declare -A MY_MAP=([fib]="MY_FIB" [random]="MY_RANDOM" )' \
-            'declare -a MY_FIB=([0]="1" [1]="1" [2]="2" [3]="3")' \
-            'declare -a MY_RANDOM=([0]="0" [1]="0" [2]="2" [3]="4")'
+            
 }
 
 cli::load "$@"
