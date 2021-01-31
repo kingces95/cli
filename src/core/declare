@@ -4,7 +4,7 @@ cli::import_group
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core struct emit
-cli::import_inline cli core variable allocate
+cli::import_inline cli core variable declare
 cli::import_inline cli core variable put
 cli::import cli_assert
 
@@ -91,7 +91,7 @@ inline() {
             # initialize variable 
             arg_name=${arg_name} \
             arg_type=${arg_type} \
-                ::cli::core::variable::allocate::inline
+                ::cli::core::variable::declare::inline
         fi
 
         cli::check::condition \

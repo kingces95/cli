@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+cli::import_group
+cli::import_inline cli bash write
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Save a stream of records to files using the first field as the file name
+    and the remaining fields as the file content.
+
+Description
+    Save a stream of records read from stdin to files in a directory. The
+    first field of each record is the file in which the remaing fields
+    will be written.
+
+    Existing files will be overwritten.
+
+Arguments
+    --dir                   : The directory to save files. Default is the
+                              the present working directory.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    : ${arg_dir:=$(pwd)}
+
+    local -A names=()
+
+    while read -a REPLY; do
+
+        # load record into locals
+        set "${REPLY[@]}"
+
+        # shift file name
+        local name="$1"
+        cli::check::regex "${name}" "${CLI_REGEX_VARIABLE_NAME}"
+        shift
+
+        # construct file path
+        local path="${arg_dir}/${name}"
+
+        # erase existing file
+        if [[ -f "${path}" && -z "${names[${name}]+set}" ]]; then
+            rm "${path}"
+        fi
+        names+=( [${name}]= )
+
+        # write record
+        ::cli::bash::write::inline "$@" >> "${path}"
+    done
+}
+
+self_test() {
+
+    # explicit dir
+    arg_dir=/tmp/ inline << EOF
+        foo r00 r01 r02
+        foo r10 r11 r12
+        bar s00 s01 s\ 02
+EOF
+
+    cat /tmp/foo /tmp/bar \
+        | assert::pipe_records_eq \
+            'r00 r01 r02' \
+            'r10 r11 r12' \
+            's00 s01 s\ 02'
+
+    # implicit dir
+    cd /tmp
+    inline << EOF
+        foo r00 r01 r02
+        foo r10 r11 r12
+        bar s00 s01 s\ 02
+EOF
+
+    cat /tmp/foo /tmp/bar \
+        | assert::pipe_records_eq \
+            'r00 r01 r02' \
+            'r10 r11 r12' \
+            's00 s01 s\ 02'
+}
+
+cli::load "$@"

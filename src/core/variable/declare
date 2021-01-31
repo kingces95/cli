@@ -32,7 +32,7 @@ Global Arguments
 EOF
 }
 
-::cli::core::variable::allocate::inline() {
+::cli::core::variable::declare::inline() {
     inline
 }
 
@@ -70,10 +70,10 @@ inline() {
         for field in ${!type_ref[@]}; do
             local field_type=${type_ref[$field]}
 
-            # recursively allocate fields
+            # recursively declare fields
             arg_name=${arg_name}${CLI_NSS}${field^^} \
             arg_type=${field_type} \
-                ::cli::core::variable::allocate::inline 
+                ::cli::core::variable::declare::inline 
         done
     fi
 }

@@ -3,7 +3,7 @@ source $(cli loader)
 cli::import_group
 cli::import_inline cli bash emit
 cli::import_inline cli core variable put-builtin
-cli::import_inline cli core variable allocate
+cli::import_inline cli core variable declare
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
 cli::import cli_assert
@@ -101,10 +101,10 @@ inline() {
                 # update anonymous type
                 ref+=( [$1]= )
 
-                # allocate variable
+                # declare variable
                 arg_name=${next_name} \
                 arg_type=${next_type} \
-                    ::cli::core::variable::allocate::inline
+                    ::cli::core::variable::declare::inline
             fi
 
         # user defined

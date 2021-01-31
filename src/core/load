@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import cli_assert
+cli::import_group
+cli::import_inline cli bash write
+
+help() {
+cat << EOF
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Read records from a set of files and write the records to stdout using 
+    the file name as the first field followed by the fields of the record.
+
+Arguments
+    --dir                   : The directory to save files. Default is the
+                              the present working directory.
+    --                      : The file names
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+inline() {
+    : ${arg_dir:=$(pwd)}
+
+    for name in "$@"; do
+        cli::check::regex "${name}" "${CLI_REGEX_VARIABLE_NAME}"
+    
+        while IFS= read -r; do
+            echo "${name}" "${REPLY}"
+        done < "${arg_dir}/${name}"
+    done
+}
+
+self_test() {
+
+    cli core save --dir /tmp << EOF
+        foo r00 r01 r02
+        foo r10 r11 r12
+        bar s00 s01 s\ 02
+EOF
+
+    ${CLI_COMMAND} --dir /tmp -- foo bar \
+        | assert::pipe_records_eq \
+            'foo r00 r01 r02' \
+            'foo r10 r11 r12' \
+            'bar s00 s01 s\ 02'
+}
+
+cli::load "$@"
