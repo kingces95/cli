@@ -70,8 +70,8 @@ inline() {
         for field in ${!type_ref[@]}; do
             local field_type=${type_ref[$field]}
 
-            # recursively allocate scaler fields
-            arg_name=${arg_name}_${field^^} \
+            # recursively allocate fields
+            arg_name=${arg_name}${CLI_NSS}${field^^} \
             arg_type=${field_type} \
                 ::cli::core::variable::allocate::inline 
         done
@@ -135,14 +135,14 @@ self_test() {
         | cli core struct define-field --name version_field --type version \
         | ${CLI_COMMAND} --source --name VAR --type udt \
         | assert::pipe_eq \
-            'declare -a VAR_ARRAY_FIELD=()' \
-            'declare -- VAR_BOOLEAN_FIELD="false"' \
-            'declare -i VAR_INTEGER_FIELD="0"' \
-            'declare -A VAR_MAP_FIELD=()' \
-            'declare -A VAR_MAP_OF_MAP_FIELD=()' \
-            'declare -- VAR_STRING_FIELD=""' \
-            'declare -i VAR_VERSION_FIELD_MAJOR="0"' \
-            'declare -i VAR_VERSION_FIELD_MINOR="0"'
+            'declare -a VAR__ARRAY_FIELD=()' \
+            'declare -- VAR__BOOLEAN_FIELD="false"' \
+            'declare -i VAR__INTEGER_FIELD="0"' \
+            'declare -A VAR__MAP_FIELD=()' \
+            'declare -A VAR__MAP_OF_MAP_FIELD=()' \
+            'declare -- VAR__STRING_FIELD=""' \
+            'declare -i VAR__VERSION_FIELD__MAJOR="0"' \
+            'declare -i VAR__VERSION_FIELD__MINOR="0"'
 }
 
 cli::load "$@"

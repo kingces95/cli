@@ -193,7 +193,7 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="" )' \
-                'declare -A MY_MAP_OF_MAP_N=([k]="v" )'
+                'declare -A MY_MAP_OF_MAP__N=([k]="v" )'
 
         # map_of map_of map
         printf '%s\n' \
@@ -204,10 +204,23 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_META]="map_of map_of map" )' \
                 'declare -A MY_META=([default]="" [allow]="" )' \
-                'declare -A MY_META_ALLOW=([color]="" )' \
-                'declare -A MY_META_ALLOW_COLOR=([black]="" [white]="" )' \
-                'declare -A MY_META_DEFAULT=([color]="" )' \
-                'declare -A MY_META_DEFAULT_COLOR=([black]="" )'
+                'declare -A MY_META__ALLOW=([color]="" )' \
+                'declare -A MY_META__ALLOW__COLOR=([black]="" [white]="" )' \
+                'declare -A MY_META__DEFAULT=([color]="" )' \
+                'declare -A MY_META__DEFAULT__COLOR=([black]="" )'
+
+        # name collision
+        ${CLI_COMMAND} --name VAR --type 'map_of map_of string' \
+            | ${CLI_COMMAND} --source --name VAR -- foo bar_baz x \
+            | ${CLI_COMMAND} --source --name VAR -- foo_bar baz y \
+            | ${CLI_COMMAND} --source --name VAR --print \
+            | assert::pipe_eq \
+                'declare -A CLI_SCOPE+=([VAR]="map_of map_of string" )' \
+                'declare -A VAR=([foo]="" [foo_bar]="" )' \
+                'declare -A VAR__FOO=([bar_baz]="" )' \
+                'declare -A VAR__FOO_BAR=([baz]="" )' \
+                'declare -- VAR__FOO_BAR__BAZ="y"' \
+                'declare -- VAR__FOO__BAR_BAZ="x"'
     }
 
     builtin_default() {
@@ -286,7 +299,7 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="" )' \
-                'declare -A MY_MAP_OF_MAP_N=([k]="v" )'
+                'declare -A MY_MAP_OF_MAP__N=([k]="v" )'
 
         # map_of map_of map
         ${CLI_COMMAND} --name MY_META --type "map_of map_of map" \
@@ -296,10 +309,10 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE=([MY_META]="map_of map_of map" )' \
                 'declare -A MY_META=([default]="" [allow]="" )' \
-                'declare -A MY_META_ALLOW=([color]="" )' \
-                'declare -A MY_META_ALLOW_COLOR=([black]="" [white]="" )' \
-                'declare -A MY_META_DEFAULT=([color]="" )' \
-                'declare -A MY_META_DEFAULT_COLOR=([black]="" )'
+                'declare -A MY_META__ALLOW=([color]="" )' \
+                'declare -A MY_META__ALLOW__COLOR=([black]="" [white]="" )' \
+                'declare -A MY_META__DEFAULT=([color]="" )' \
+                'declare -A MY_META__DEFAULT__COLOR=([black]="" )'
     }
 
     user_defined() {
@@ -316,8 +329,8 @@ self_test() {
                 'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_VERSION]="map_of version" )' \
                 'declare -A MY_MAP_OF_VERSION=([alpha]="" )' \
-                'declare -i MY_MAP_OF_VERSION_ALPHA_MAJOR="1"' \
-                'declare -i MY_MAP_OF_VERSION_ALPHA_MINOR="0"'
+                'declare -i MY_MAP_OF_VERSION__ALPHA__MAJOR="1"' \
+                'declare -i MY_MAP_OF_VERSION__ALPHA__MINOR="0"'
         # defaults
         cli core struct define --name version \
             | cli core struct define-field --name major --type integer \
@@ -336,14 +349,14 @@ self_test() {
                 'declare -A CLI_TYPE__KITCHEN_SINK_TYPE=([boolean]="boolean" [version]="version" [map]="map" [map_of_map]="map_of map" [string]="string" [array]="array" [integer]="integer" )' \
                 'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
                 'declare -A CLI_SCOPE+=([KITCHEN_SINK]="kitchen_sink_type" )' \
-                'declare -a KITCHEN_SINK_ARRAY=()' \
-                'declare -- KITCHEN_SINK_BOOLEAN="false"' \
-                'declare -i KITCHEN_SINK_INTEGER="0"' \
-                'declare -A KITCHEN_SINK_MAP=()' \
-                'declare -A KITCHEN_SINK_MAP_OF_MAP=()' \
-                'declare -- KITCHEN_SINK_STRING=""' \
-                'declare -i KITCHEN_SINK_VERSION_MAJOR="0"' \
-                'declare -i KITCHEN_SINK_VERSION_MINOR="0"'
+                'declare -a KITCHEN_SINK__ARRAY=()' \
+                'declare -- KITCHEN_SINK__BOOLEAN="false"' \
+                'declare -i KITCHEN_SINK__INTEGER="0"' \
+                'declare -A KITCHEN_SINK__MAP=()' \
+                'declare -A KITCHEN_SINK__MAP_OF_MAP=()' \
+                'declare -- KITCHEN_SINK__STRING=""' \
+                'declare -i KITCHEN_SINK__VERSION__MAJOR="0"' \
+                'declare -i KITCHEN_SINK__VERSION__MINOR="0"'
 
         # motiviating scenario -- representation of parameter metadata
         cli core struct define --name my_meta \
@@ -367,14 +380,14 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_TYPE__MY_META=([require]="map" [default]="map" [timeout]="integer" [positional]="boolean" [implicit_value]="map" [alias]="map" [allow]="map_of map" )' \
                 'declare -A CLI_SCOPE+=([MY_META]="my_meta" )' \
-                'declare -A MY_META_ALIAS=([h]="help" )' \
-                'declare -A MY_META_ALLOW=([help]="" )' \
-                'declare -A MY_META_ALLOW_HELP=([false]="" [true]="" )' \
-                'declare -A MY_META_DEFAULT=([help]="false" )' \
-                'declare -A MY_META_IMPLICIT_VALUE=([help]="true" )' \
-                'declare -- MY_META_POSITIONAL="true"' \
-                'declare -A MY_META_REQUIRE=([name]="" )' \
-                'declare -i MY_META_TIMEOUT="42"'
+                'declare -A MY_META__ALIAS=([h]="help" )' \
+                'declare -A MY_META__ALLOW=([help]="" )' \
+                'declare -A MY_META__ALLOW__HELP=([false]="" [true]="" )' \
+                'declare -A MY_META__DEFAULT=([help]="false" )' \
+                'declare -A MY_META__IMPLICIT_VALUE=([help]="true" )' \
+                'declare -- MY_META__POSITIONAL="true"' \
+                'declare -A MY_META__REQUIRE=([name]="" )' \
+                'declare -i MY_META__TIMEOUT="42"'
     }
 
     redeclare() {

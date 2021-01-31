@@ -41,18 +41,56 @@ inline() {
     : ${arg_type?}
 
     local -n ref=${arg_name}
-
     local -a type=( ${arg_type} )
 
     # builtin
     if arg_type=${arg_type} ::cli::core::type::is_builtin::inline; then
-        arg_type=${arg_type} \
-        arg_name=${arg_name} \
-            ::cli::core::variable::put_builtin::inline "$@"
+
+        # scaler
+        if arg_type=${arg_type} ::cli::core::type::is_scaler::inline; then
+            cli::check::condition "(( $# < 2 ))" "Unexpected excess value '${@:2}'."
+
+            # supplied
+            if (( $# != 0 )); then
+                case ${type} in
+                    'boolean') cli::check::regex "$1" '^$|^true$|^false$' ;;
+                    'integer') cli::check::regex "$1" '^$|^[-]?[0-9]+$' ;;
+                esac
+
+                ref="$1" 
+
+            # default
+            else
+                arg_type=${arg_type} \
+                arg_name=${arg_name} \
+                    ::cli::core::variable::initialize::inline
+            fi
+
+        # map
+        elif [[ ${type} == 'map' ]]; then
+            cli::check::condition "(( $# < 3 ))" "Unexpected excess value '${@:3}'."
+
+            # supplied
+            if (( $# != 0 )); then
+                cli::check::regex "${1-}" '.'
+                ref+=( [$1]="${2:-}" )
+
+            # default
+            else
+                ref+=()
+            fi
+
+        # array
+        else
+            cli::assert "[[ ${type} == 'array' ]]"
+
+            # default or supplied
+            ref+=( "$@" ) 
+        fi
 
     else
         local next_type
-        local next_name=${arg_name}_${1^^}
+        local next_name=${arg_name}${CLI_NSS}${1^^}
 
         # anonymous
         if arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
@@ -188,7 +226,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_STRING --type 'map_of string' -- x 'Hello World' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_STRING=([x]=\"\" )" \
-                "declare -- MY_MAP_OF_STRING_X=\"Hello World\""
+                "declare -- MY_MAP_OF_STRING__X=\"Hello World\""
 
         # boolean
         declare -A MY_MAP_OF_BOOLEAN=()
@@ -196,7 +234,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_BOOLEAN --type 'map_of boolean' -- x true \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_BOOLEAN=([x]=\"\" )" \
-                "declare -- MY_MAP_OF_BOOLEAN_X=\"true\""
+                "declare -- MY_MAP_OF_BOOLEAN__X=\"true\""
 
         # integer
         declare -A MY_MAP_OF_INTEGER=()
@@ -204,7 +242,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_INTEGER --type 'map_of integer' -- x 42 \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_INTEGER=([x]=\"\" )" \
-                "declare -i MY_MAP_OF_INTEGER_X=\"42\""
+                "declare -i MY_MAP_OF_INTEGER__X=\"42\""
 
         # array
         declare -A MY_MAP_OF_ARRAY=()
@@ -212,7 +250,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_ARRAY --type 'map_of array' -- x a b c \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_ARRAY=([x]=\"\" )" \
-                "declare -a MY_MAP_OF_ARRAY_X=([0]=\"a\" [1]=\"b\" [2]=\"c\")"
+                "declare -a MY_MAP_OF_ARRAY__X=([0]=\"a\" [1]=\"b\" [2]=\"c\")"
 
         # map
         declare -A MY_MAP_OF_MAP=()
@@ -223,8 +261,8 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_MAP --type 'map_of map' -- y a \
             | assert::pipe_eq \
                 'declare -A MY_MAP_OF_MAP=([y]="" [x]="" )' \
-                'declare -A MY_MAP_OF_MAP_X=([b]="1" [a]="0" )' \
-                "declare -A MY_MAP_OF_MAP_Y=([a]=\"\" )"
+                'declare -A MY_MAP_OF_MAP__X=([b]="1" [a]="0" )' \
+                "declare -A MY_MAP_OF_MAP__Y=([a]=\"\" )"
     }
 
     set_indirect_default() {
@@ -235,7 +273,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_STRING --type 'map_of string' -- x \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_STRING=([x]=\"\" )" \
-                "declare -- MY_MAP_OF_STRING_X=\"\""
+                "declare -- MY_MAP_OF_STRING__X=\"\""
 
         # boolean
         declare -A MY_MAP_OF_BOOLEAN=()
@@ -243,7 +281,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_BOOLEAN --type 'map_of boolean' -- x \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_BOOLEAN=([x]=\"\" )" \
-                "declare -- MY_MAP_OF_BOOLEAN_X=\"false\""
+                "declare -- MY_MAP_OF_BOOLEAN__X=\"false\""
 
         # integer
         declare -A MY_MAP_OF_INTEGER=()
@@ -251,7 +289,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_INTEGER --type 'map_of integer' -- x \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_INTEGER=([x]=\"\" )" \
-                "declare -i MY_MAP_OF_INTEGER_X=\"0\""
+                "declare -i MY_MAP_OF_INTEGER__X=\"0\""
 
         # array
         declare -A MY_MAP_OF_ARRAY=()
@@ -259,7 +297,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_ARRAY --type 'map_of array' -- x \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_ARRAY=([x]=\"\" )" \
-                "declare -a MY_MAP_OF_ARRAY_X=()"
+                "declare -a MY_MAP_OF_ARRAY__X=()"
 
         # map
         declare -A MY_MAP_OF_MAP=()
@@ -267,7 +305,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_MAP --type 'map_of map' -- x \
             | assert::pipe_eq \
                 'declare -A MY_MAP_OF_MAP=([x]="" )' \
-                'declare -A MY_MAP_OF_MAP_X=()'
+                'declare -A MY_MAP_OF_MAP__X=()'
     }
 
     set_udt() {
@@ -283,8 +321,8 @@ self_test() {
             | assert::pipe_eq \
                 "declare -A CLI_TYPE__VERSION=([minor]=\"integer\" [major]=\"integer\" )" \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"\" )" \
-                "declare -i MY_MAP_OF_VERSION_X_MAJOR=\"1\"" \
-                "declare -i MY_MAP_OF_VERSION_X_MINOR=\"2\""
+                "declare -i MY_MAP_OF_VERSION__X__MAJOR=\"1\"" \
+                "declare -i MY_MAP_OF_VERSION__X__MINOR=\"2\""
 
         # indirect default
         declare -A CLI_TYPE__VERSION=(['major']='integer' ['minor']='integer')
@@ -297,22 +335,22 @@ self_test() {
             | assert::pipe_eq \
                 "declare -A CLI_TYPE__VERSION=([minor]=\"integer\" [major]=\"integer\" )" \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"\" )" \
-                "declare -i MY_MAP_OF_VERSION_X_MAJOR=\"0\"" \
-                "declare -i MY_MAP_OF_VERSION_X_MINOR=\"0\""
+                "declare -i MY_MAP_OF_VERSION__X__MAJOR=\"0\"" \
+                "declare -i MY_MAP_OF_VERSION__X__MINOR=\"0\""
 
         # direct
         declare -A CLI_TYPE__UDT=(['positional']='boolean' ['allow']='map_of map' ['version']='version')
-        declare -- MY_UDT_POSITIONAL=false
-        declare -i MY_UDT_VERSION_MAJOR=0
-        declare -i MY_UDT_VERSION_MINOR=0
-        declare -A MY_UDT_ALLOW=()
+        declare -- MY_UDT__POSITIONAL=false
+        declare -i MY_UDT__VERSION__MAJOR=0
+        declare -i MY_UDT__VERSION__MINOR=0
+        declare -A MY_UDT__ALLOW=()
         declare -p \
             CLI_TYPE__UDT \
             CLI_TYPE__VERSION \
-            MY_UDT_POSITIONAL \
-            MY_UDT_VERSION_MAJOR \
-            MY_UDT_VERSION_MINOR \
-            MY_UDT_ALLOW \
+            MY_UDT__POSITIONAL \
+            MY_UDT__VERSION__MAJOR \
+            MY_UDT__VERSION__MINOR \
+            MY_UDT__ALLOW \
             | ${CLI_COMMAND} -s --name MY_UDT --type udt -- positional true \
             | ${CLI_COMMAND} -s --name MY_UDT --type udt -- version minor 2 \
             | ${CLI_COMMAND} -s --name MY_UDT --type udt -- version major 1 \
@@ -321,12 +359,50 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_TYPE__UDT=([positional]="boolean" [version]="version" [allow]="map_of map" )' \
                 'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
-                'declare -A MY_UDT_ALLOW=([color]="" )' \
-                'declare -A MY_UDT_ALLOW_COLOR=([black]="" [white]="" )' \
-                'declare -- MY_UDT_POSITIONAL="true"' \
-                'declare -i MY_UDT_VERSION_MAJOR="1"' \
-                'declare -i MY_UDT_VERSION_MINOR="2"'    
-}
+                'declare -A MY_UDT__ALLOW=([color]="" )' \
+                'declare -A MY_UDT__ALLOW__COLOR=([black]="" [white]="" )' \
+                'declare -- MY_UDT__POSITIONAL="true"' \
+                'declare -i MY_UDT__VERSION__MAJOR="1"' \
+                'declare -i MY_UDT__VERSION__MINOR="2"'    
+    }
+
+    test_bad_value() {
+        set +e
+        declare MY_BOOLEAN
+        declare -p MY_BOOLEAN \
+            | ${CLI_COMMAND} -s --type boolean --name MY_BOOLEAN -- 'bad' \
+            2> /dev/null
+        assert::failed
+
+        declare -i MY_INTEGER
+        declare -p MY_INTEGER \
+            | ${CLI_COMMAND} -s --type integer --name MY_INTEGER -- 'bad' \
+            2> /dev/null
+        assert::failed
+
+        declare -A MY_MAP
+        declare -p MY_MAP \
+            | ${CLI_COMMAND} -s --type map --name MY_MAP -- '' \
+            2> /dev/null
+        assert::failed
+        set -e
+    }
+
+    test_too_many_values() {
+        set +e
+        declare MY_BOOLEAN
+        declare -p MY_BOOLEAN \
+            | ${CLI_COMMAND} -s --type boolean --name MY_BOOLEAN -- 'true' 'bad' \
+            2> /dev/null
+        assert::failed
+
+        declare -A MY_MAP
+        declare -p MY_MAP \
+            | ${CLI_COMMAND} -s --type map --name MY_MAP -- 'key' 'value' 'bad' \
+            2> /dev/null
+        assert::failed
+        set -e
+    }
 
     set_builtin
     set_builtin_default
@@ -335,6 +411,9 @@ self_test() {
     set_indirect_default
 
     set_udt
+
+    test_bad_value
+    test_too_many_values
 }
 
 cli::load "$@"

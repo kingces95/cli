@@ -111,27 +111,28 @@ inline() {
         fi
 
     # node
-    elif arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
-        local field_type=$(arg_type=${arg_type} ::cli::core::type::unmodify::inline)
-
-        # map_of
-        for field_name in ${!ref[@]}; do
-            local field_variable=${arg_name}_${field_name^^}
-
-            arg_type=${field_type} \
-            arg_name=${field_variable} \
-                ::cli::core::write::inline "$@" ${field_name}
-        done
-
-    # node
     else
 
-        # user defined type
-        local -n fields=CLI_TYPE__${arg_type^^}
-        for field_name in ${!fields[@]}; do
-            local field_type=${fields[$field_name]}
-            local field_variable=${arg_name}_${field_name^^}
+        # modified
+        if arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
+            local -n fields=ref
+            local default_field_type=$( \
+                arg_type=${arg_type} \
+                    ::cli::core::type::unmodify::inline
+            )
 
+        # user defined
+        else
+            local -n fields=CLI_TYPE__${arg_type^^}
+            local default_field_type=
+        fi
+
+        # for each field in the type
+        for field_name in ${!fields[@]}; do
+            local field_type=${fields[$field_name]:-${default_field_type}}
+            local field_variable=${arg_name}${CLI_NSS}${field_name^^}
+
+            # recurse
             arg_type=${field_type} \
             arg_name=${field_variable} \
                 ::cli::core::write::inline  "$@" ${field_name}
@@ -182,17 +183,17 @@ self_test() {
         | assert::pipe_records_eq \
             'a' 'a' 'b' 'a'
 
-    cli core declare --name MOD --type 'map_of map_of integer' -- seq pi 3141 \
-        | cli core declare --source --name MOD -- seq fib 11235 \
-        | cli core write --source --name MOD \
+    cli core declare --name MOD_MAP --type 'map_of map' -- seq pi 3141 \
+        | cli core declare --source --name MOD_MAP -- seq fib 11235 \
+        | cli core write --source --name MOD_MAP \
         | sort \
         | assert::pipe_eq \
             'seq fib 11235' \
             'seq pi 3141'
 
-    cli core declare --name MOD_MAP --type 'map_of map' -- seq pi 3141 \
-        | cli core declare --source --name MOD_MAP -- seq fib 11235 \
-        | cli core write --source --name MOD_MAP \
+    cli core declare --name MOD --type 'map_of map_of integer' -- seq pi 3141 \
+        | cli core declare --source --name MOD -- seq fib 11235 \
+        | cli core write --source --name MOD \
         | sort \
         | assert::pipe_eq \
             'seq fib 11235' \
@@ -205,19 +206,30 @@ self_test() {
             'seq pi' \
             'seq fib'
 
-    cli core struct define --name metadata \
-        | cli core struct define-field --name positional --type boolean \
+    cli core struct define --name version \
+        | cli core struct define-field --name major --type integer \
+        | cli core struct define-field --name minor --type integer \
+        | cli core struct define --source --name metadata \
         | cli core struct define-field --name allow --type 'map_of map' \
+        | cli core struct define-field --name mmm --type 'map_of map_of map' \
+        | cli core struct define-field --name positional --type boolean \
+        | cli core struct define-field --name version --type version \
         | cli core declare --source --name META --type metadata \
+        | cli core declare --source --name META -- positional true \
         | cli core declare --source --name META -- allow color black \
         | cli core declare --source --name META -- allow color white \
-        | cli core declare --source --name META -- positional true \
+        | cli core declare --source --name META -- mmm a b c d \
+        | cli core declare --source --name META -- version major 1 \
+        | cli core declare --source --name META -- version minor 2 \
         | cli core write --source --name META \
         | sort \
         | assert::pipe_records_eq \
             'allow color black' \
             'allow color white' \
-            'positional true'
+            'mmm a b c d' \
+            'positional true' \
+            'version major 1' \
+            'version minor 2'
 }
 
 cli::load "$@"
