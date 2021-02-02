@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import_group
-cli::import cli emit initialize
-cli::import cli bash table write
+cli::import_inline cli core declare
+cli::import_inline cli core struct define
+cli::import_inline cli core struct define-field
 
 help() {
     cat << EOF
@@ -15,56 +16,89 @@ Global Arguments
 EOF
 }
 
-main() {    
-    local -A CLI_META_DEFAULT=() # eg +=( ['foo']='bar' )
-    local -a CLI_META_REQUIRED=() # eg +=( '--foo' )
-    local -A CLI_META_ALLOWED_VALUES=() # eg +=( [--foo]='a b c' )
-    local -A CLI_META_ALIASES=()
-    local -A CLI_META_IMPLICIT_VALUES=()
-    local CLI_META_POSITIONAL=false
+declare STRUCT_NAME=meta
+
+main() {
+    arg_name=${STRUCT_NAME} ::cli::core::struct::define::inline
+    {
+        local arg_struct=${STRUCT_NAME}
+        arg_name=default arg_type=map ::cli::core::struct::define_field::inline
+        arg_name=require arg_type=array ::cli::core::struct::define_field::inline
+        arg_name=allow arg_type='map_of map' ::cli::core::struct::define_field::inline
+        arg_name=alias arg_type=map ::cli::core::struct::define_field::inline
+        arg_name=implicit_value arg_type=map ::cli::core::struct::define_field::inline
+        arg_name=positional arg_type=boolean ::cli::core::struct::define_field::inline
+    }
+
+    arg_name=META \
+    arg_type=meta \
+        ::cli::core::declare::inline
+
+    # local -A CLI_META_DEFAULT=() # eg +=( ['foo']='bar' )
+    # local -a CLI_META_REQUIRED=() # eg +=( '--foo' )
+    # local -A CLI_META_ALLOWED_VALUES=() # eg +=( [--foo]='a b c' )
+    # local -A CLI_META_ALIASES=()
+    # local -A CLI_META_IMPLICIT_VALUES=()
+    # local CLI_META_POSITIONAL=false
 
     local name
-    local -a allowed_value_list
+    # local -a allowed_value_list
 
     # productions are sorted
     while read key production production_name identifier; do
 
         # anyargs
         if (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
-            CLI_META_POSITIONAL=true
+            arg_name=META ::cli::core::declare::inline positional true
+            # CLI_META_POSITIONAL=true
 
         # declaration
         elif (( production == CLI_DSL_PRODUCTION_NAME )); then
             name="${identifier}"
-            CLI_META_DEFAULT+=( [$name]= )
+            arg_name=META ::cli::core::declare::inline default ${name}
+            # CLI_META_DEFAULT+=( [$name]= )
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
-            CLI_META_ALIASES+=( [${identifier}]="${name}" )
+            arg_name=META ::cli::core::declare::inline alias ${identifier} ${name}
+            # CLI_META_ALIASES+=( [${identifier}]="${name}" )
 
-        # CLI_META_DEFAULT
+        # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
-            CLI_META_DEFAULT+=( [${name}]="${identifier}" )
+            arg_name=META ::cli::core::declare::inline default ${name} ${identifier}
+            # CLI_META_DEFAULT+=( [${name}]="${identifier}" )
 
-        # CLI_META_REQUIRED
+        # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
-            CLI_META_REQUIRED+=( ${name} )
+            arg_name=META ::cli::core::declare::inline require ${name}
+            # CLI_META_REQUIRED+=( ${name} )
 
         # flag
         elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
-            CLI_META_DEFAULT+=( [${name}]='false' )
-            CLI_META_IMPLICIT_VALUES+=( [${name}]='true' )
-            CLI_META_ALLOWED_VALUES+=( [${name}]='true false' )
+            arg_name=META ::cli::core::declare::inline default ${name} false
+            arg_name=META ::cli::core::declare::inline implicit_value ${name} true
+            arg_name=META ::cli::core::declare::inline allow ${name} true
+            # arg_name=META ::cli::core::declare::inline allow ${name} false
+            # CLI_META_DEFAULT+=( [${name}]='false' )
+            # CLI_META_IMPLICIT_VALUES+=( [${name}]='true' )
+            # CLI_META_ALLOWED_VALUES+=( [${name}]='true false' )
 
-        # allowed
+        # allow
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED )); then
-            allowed_value_list=()
+            :
+            # allowed_value_list=()
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
-            allowed_value_list+=( "${identifier}" )
+            arg_name=META ::cli::core::declare::inline allow ${name} ${identifier}
+            # allowed_value_list+=( "${identifier}" )
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_END )); then
-            CLI_META_ALLOWED_VALUES+=( [${name}]="${allowed_value_list[@]}" )
+            :
+            # CLI_META_ALLOWED_VALUES+=( [${name}]="${allowed_value_list[@]}" )
         fi
     done
+
+    arg_name=META \
+    arg_print=true \
+        ::cli::core::declare::inline
 
     # arg_emit=true ::cli::util::serialize::inline \
     #     CLI_META_REQUIRED \
@@ -74,100 +108,34 @@ main() {
     #     CLI_META_IMPLICIT_VALUES \
     #     CLI_META_POSITIONAL
 
-    echo 'default'
-    arg_name=CLI_META_DEFAULT \
-        ::cli::bash::table::write::inline | sed 's/^/    /'
+    # echo 'default'
+    # arg_name=CLI_META_DEFAULT \
+    #     ::cli::bash::table::write::inline | sed 's/^/    /'
  
-    echo 'positional'
-    arg_name=CLI_META_POSITIONAL \
-        ::cli::bash::table::write::inline | sed 's/^/    /'
+    # echo 'positional'
+    # arg_name=CLI_META_POSITIONAL \
+    #     ::cli::bash::table::write::inline | sed 's/^/    /'
 
-    echo 'required'
-    arg_name=CLI_META_REQUIRED \
-        ::cli::bash::table::write::inline | sed 's/^/    /'
+    # echo 'required'
+    # arg_name=CLI_META_REQUIRED \
+    #     ::cli::bash::table::write::inline | sed 's/^/    /'
 
-    echo 'allowed_values'
-    arg_name=CLI_META_ALLOWED_VALUES \
-    arg_multi_value=true \
-        ::cli::bash::table::write::inline | sed 's/^/    /'
+    # echo 'allowed_values'
+    # arg_name=CLI_META_ALLOWED_VALUES \
+    # arg_multi_value=true \
+    #     ::cli::bash::table::write::inline | sed 's/^/    /'
 
-    echo 'aliases'
-    arg_name=CLI_META_ALIASES \
-        ::cli::bash::table::write::inline | sed 's/^/    /'
+    # echo 'aliases'
+    # arg_name=CLI_META_ALIASES \
+    #     ::cli::bash::table::write::inline | sed 's/^/    /'
  
-    echo 'implicit_values'
-    arg_name=CLI_META_IMPLICIT_VALUES \
-        ::cli::bash::table::write::inline | sed 's/^/    /'
+    # echo 'implicit_values'
+    # arg_name=CLI_META_IMPLICIT_VALUES \
+    #     ::cli::bash::table::write::inline | sed 's/^/    /'
 }
 
 self_test() (
-    source /dev/stdin < <(cli_assert)
-
-    cd "$(dirname ${BASH_SOURCE})"
-
-    "./sample" -h \
-        | "./tokenize" \
-        | "./parse" \
-        | "./emit" \
-        | source /dev/stdin
-
-    expected() {
-        # declarations
-        declare -g arg_help=""
-        declare -g arg_self_test=""
-        declare -g arg_fruit=""
-        declare -g arg_display_args=""
-        declare -g arg_header=""
-        declare -g arg_help=""
-        declare -g arg_run_as=""
-        
-        # CLI_META_DEFAULT
-        arg_fruit="banana"
-        arg_self_test=false
-        arg_help=false
-        arg_display_args=false
-        
-        # assign variables from command line arguments
-        while (( $# > 0 )); do
-            case "$1" in
-                '--help') arg_help=true ;;
-                '--self-test') arg_self_test=true ;;
-                '--fruit') arg_fruit="${2:-}"; shift ;;
-                '--display-args') arg_display_args=true ;;
-                '--header') arg_header="${2:-}"; shift ;;
-                '-h') arg_help=true ;;
-                '--run-as') arg_run_as="${2:-}"; shift ;;
-                *)
-                    echo "Unexpected argument '$1'."
-                    exit 1
-                ;;
-            esac
-            if (( $# > 0 )); then shift; fi
-        done
-        
-        # CLI_META_REQUIRED
-        if [[ -z "${arg_header}" ]]; then
-            echo "Missing CLI_META_REQUIRED argument '--header'."
-            exit 1
-        fi
-        
-        # allowed values
-        case "${arg_fruit}" in
-            'orange') ;;
-            'banana') ;;
-            *)
-                echo "Unexpected value '${arg_fruit}' for argument '--fruit'."
-                exit 1
-            ;;
-        esac
-    }
-
-    diff <(declare -f expected) <(declare -f initialize) \
-        | assert::pipe_eq \
-            '1c1' \
-            '< expected ()' \
-            '---' \
-            '> initialize ()' 
+    return
 )
 
 cli::load "$@"

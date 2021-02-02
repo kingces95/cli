@@ -72,7 +72,10 @@ EOF
 }
 
 inline() {
-    : ${arg_name?}
+    : ${arg_name:?}
+    : ${arg_type=}
+    : ${arg_read=false}
+    : ${arg_print=false}
 
     # declare scope
     declare -gA CLI_SCOPE
@@ -99,6 +102,8 @@ inline() {
             "Unexpected redeclaration of '${arg_name}'" \
             "type from '${current_type}' to '${arg_type}'."
     fi
+
+    : ${current_type:?"Unexpected failure to find type for variable '${arg_name}'."}
 
     # read
     if ${arg_read}; then

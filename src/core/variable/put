@@ -363,7 +363,7 @@ self_test() {
                 'declare -A MY_UDT__ALLOW__COLOR=([black]="" [white]="" )' \
                 'declare -- MY_UDT__POSITIONAL="true"' \
                 'declare -i MY_UDT__VERSION__MAJOR="1"' \
-                'declare -i MY_UDT__VERSION__MINOR="2"'    
+                'declare -i MY_UDT__VERSION__MINOR="2"'
     }
 
     test_bad_value() {

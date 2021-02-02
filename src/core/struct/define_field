@@ -56,12 +56,12 @@ EOF
 }
 
 inline() {
-    : ${arg_declaring_type?}
+    : ${arg_struct?}
     : ${arg_name?}
     : ${arg_type?}
 
     # add the field to type
-    local -nu ref=CLI_TYPE__${arg_declaring_type}
+    local -nu ref=CLI_TYPE__${arg_struct}
     ref+=( [${arg_name}]="${arg_type}" )
 }
 
@@ -74,7 +74,7 @@ main() {
     source /dev/stdin
 
     # update fields associated with type
-    arg_declaring_type=${type} \
+    arg_struct=${type} \
     arg_name=${arg_name} \
     arg_type="${arg_type}" \
         inline 

@@ -24,7 +24,7 @@ EOF
 inline() {
     local i=0
     while read line frame file < <(caller $i); do
-        printf '%-40s %-30s %s\n' $frame $file $line
+        printf '%-40s %-30s:%s\n' $frame $file $line
         i=$(( i + 1 ))
     done
 }
