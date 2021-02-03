@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import_group
-cli::import_inline cli core declare
-cli::import_inline cli core struct define
-cli::import_inline cli core struct define-field
-cli::import_inline cli core write
 
 help() {
     cat << EOF
@@ -22,42 +18,6 @@ EOF
 
 declare META_STRUCT='meta'
 
-cli::define() {
-    arg_name=${1:-struct} \
-        ::cli::core::struct::define::inline
-}
-
-cli::define_field() {
-    arg_type="$1" \
-    arg_name="$2" \
-    arg_struct=${3:-struct} \
-        ::cli::core::struct::define_field::inline
-}
-
-cli::declare() {
-    arg_type="${1:-struct}" \
-    arg_name="${2:-STRUCT}" \
-    arg_read=false \
-    arg_print=false \
-        ::cli::core::declare::inline
-}
-
-cli::print() {
-    arg_name="${1:-STRUCT}" \
-    arg_read=false \
-    arg_print=true \
-    arg_type= \
-        ::cli::core::declare::inline
-}
-
-cli::read() {
-    arg_name="${1:-STRUCT}" \
-    arg_read=true \
-    arg_print=false \
-    arg_type= \
-        ::cli::core::declare::inline
-}
-
 swap() {
     awk "{ t = \$$1; \$$1 = \$$2; \$$2 = t; print }"
 }
@@ -65,7 +25,7 @@ swap() {
 main() {
     local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
 
-    cli core save --dir "${dir}"
+    cli::save "${dir}"
 
     cli::define
     cli::define_field 'map' default 
@@ -85,7 +45,7 @@ main() {
     for group in "${!STRUCT[@]}"; do
         cli core load --dir "${dir}" \
             | swap 1 2 \
-            | awk -v g=${group} '$1 == "*" { $1 = g; print; }' \
+            | awk -v group=${group} '$1 == "*" { $1 = group; print; }' \
             | cli::read
     done
 

@@ -2,7 +2,6 @@
 source $(cli loader)
 cli::import cli_assert
 cli::import_group
-cli::import_inline cli bash write
 
 help() {
 cat << EOF

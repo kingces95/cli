@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import_group
-cli::import_inline cli core declare
-cli::import_inline cli core struct define
-cli::import_inline cli core struct define-field
-cli::import_inline cli core write
 
 help() {
     cat << EOF
@@ -17,41 +13,16 @@ Global Arguments
 EOF
 }
 
-declare STAR='*'
-declare STRUCT_NAME='meta'
-declare VARIABLE_NAME='META'
-
-define_field() {
-    arg_struct=${STRUCT_NAME} \
-    arg_name="$1" \
-    arg_type="$2" \
-        ::cli::core::struct::define_field::inline
-}
-
-define_type() {
-    arg_name=${STRUCT_NAME} \
-        ::cli::core::struct::define::inline
-
-    define_field group 'map'
-    define_field default 'map_of map'
-    define_field require 'map_of array'
-    define_field allow 'map_of map_of map'
-    define_field alias 'map_of map'
-    define_field implicit_value 'map_of map'
-    define_field positional 'map_of boolean'
-}
-
-put() {
-    arg_name=${VARIABLE_NAME} \
-        ::cli::core::declare::inline "$@"
-}
-
 main() {
-    define_type
+    cli::define
+    cli::define_field 'map_of map' default
+    cli::define_field 'map_of array' require
+    cli::define_field 'map_of map_of map' allow
+    cli::define_field 'map_of map' alias
+    cli::define_field 'map_of map' implicit_value
+    cli::define_field 'map_of boolean' positional
 
-    arg_name=${VARIABLE_NAME} \
-    arg_type=${STRUCT_NAME} \
-        ::cli::core::declare::inline
+    cli::declare
 
     local group
     local name
@@ -67,39 +38,38 @@ main() {
         # arguments
         elif (( production == CLI_DSL_PRODUCTION_NAME )); then
             name="${identifier}"
-            put default "${group}" "${name}"
+            cli::put STRUCT default "${group}" "${name}"
 
         # anyargs
         elif (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
-            put positional "${group}" true
+            cli::put STRUCT positional "${group}" true
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
-            put alias "${group}" "${identifier}" "${name}"
+            cli::put STRUCT alias "${group}" "${identifier}" "${name}"
 
         # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
-            put default "${group}" "${name}" "${identifier}"
+            cli::put STRUCT default "${group}" "${name}" "${identifier}"
 
         # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
-            put require "${group}" "${name}"
+            cli::put STRUCT require "${group}" "${name}"
 
         # flag
         elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
-            put default "${group}" "${name}" false
-            put implicit_value "${group}" "${name}" true
-            put allow "${group}" "${name}" true
-            put allow "${group}" "${name}" false
+            cli::put STRUCT default "${group}" "${name}" false
+            cli::put STRUCT implicit_value "${group}" "${name}" true
+            cli::put STRUCT allow "${group}" "${name}" true
+            cli::put STRUCT allow "${group}" "${name}" false
 
         # allow
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
-            put allow "${group}" "${name}" "${identifier}"
+            cli::put STRUCT allow "${group}" "${name}" "${identifier}"
         fi
     done
 
-    arg_name=META \
-        ::cli::core::write::inline
+    cli::write
 }
 
 self_test() (

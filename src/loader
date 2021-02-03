@@ -61,16 +61,42 @@ cli::loader::import_inline() {
             | source /dev/stdin
     }
 
+    inline 'bash::emit' 'bash/emit'
+    inline 'bash::write' 'bash/write'
     inline 'bash::callstack' 'bash/callstack'
     inline 'bash::fail' 'bash/fail'
     inline 'bash::is_function_declared' 'bash/is_function_declared'
+
+    inline 'core::declare' 'core/declare'
+    inline 'core::load' 'core/load'
+    inline 'core::save' 'core/save'
+    inline 'core::write' 'core/write'
+
+    inline 'core::variable::declare' 'core/variable/declare'
+    inline 'core::variable::initialize' 'core/variable/initialize'
+    inline 'core::variable::put' 'core/variable/put'
+
+    inline 'core::struct::define' 'core/struct/define'
+    inline 'core::struct::define_field' 'core/struct/define_field'
+    inline 'core::struct::emit' 'core/struct/emit'
+   
+    inline 'core::type::initialize' 'core/type/initialize'
+    inline 'core::type::is_builtin' 'core/type/is_builtin'
+    inline 'core::type::is_modified' 'core/type/is_modified'
+    inline 'core::type::is_scaler' 'core/type/is_scaler'
+    inline 'core::type::is_user_defined' 'core/type/is_user_defined'
+    inline 'core::type::unmodify' 'core/type/unmodify'
+
     inline 'cache::put' 'cache/put'
     inline 'cache::test' 'cache/test'
     inline 'cache::path' 'cache/path'
+
     inline 'path::join' 'path/join'
+
     inline 'args::parse' 'args/parse'
     inline 'args::tokenize' 'args/tokenize'
     inline 'args::parse' 'args/parse'
+
     inline 'run_as' 'run_as'
 }
 
@@ -125,6 +151,64 @@ cli::import_inline() {
     cli::import "$*"
 }
 
+# core
+cli::define() {
+    arg_name=${1:-${CLI_STRUCT_DEFAULT_NAME}} \
+        ::cli::core::struct::define::inline
+}
+
+cli::define_field() {
+    arg_type="$1" \
+    arg_name="$2" \
+    arg_struct=${3:-${CLI_STRUCT_DEFAULT_NAME}} \
+        ::cli::core::struct::define_field::inline
+}
+
+cli::declare() {
+    arg_type="${1:-${CLI_STRUCT_DEFAULT_NAME}}" \
+    arg_name="${2:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+    arg_read=false \
+    arg_print=false \
+        ::cli::core::declare::inline
+}
+
+cli::put() {
+    arg_name="${1:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+        ::cli::core::declare::inline "${@:2}"
+}
+
+cli::print() {
+    arg_name="${1:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+    arg_read=false \
+    arg_print=true \
+    arg_type= \
+        ::cli::core::declare::inline
+}
+
+cli::read() {
+    arg_name="${1:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+    arg_read=true \
+    arg_print=false \
+    arg_type= \
+        ::cli::core::declare::inline
+}
+
+cli::write() {
+    arg_name="${1:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+        ::cli::core::write::inline
+}
+
+cli::save() {
+    arg_dir="${1-}" \
+        ::cli::core::save::inline
+}
+
+cli::load() {
+    arg_dir="${1-}" \
+        ::cli::core::load::inline
+}
+
+#cache
 cli::loader::cache::load() {
     declare -g CLI_LOADER_COMMAND_PATH="$1"
     declare -g CLI_LOADER_CACHE_DIR="$(arg_path="${CLI_LOADER_COMMAND_PATH}" \
@@ -430,18 +514,63 @@ main() {
     declare -f cli::import_inline
     declare -f cli::load
     echo
+   
+    declare -f cli::define
+    declare -f cli::define_field
+    declare -f cli::declare
+    declare -f cli::print
+    declare -f cli::read
+    declare -f cli::write
+    declare -f cli::put
+    declare -f cli::save
+    declare -f cli::load
+    echo
 
     declare -f cli::loader::execute
     declare -f cli::loader::self_test
     echo
 
+    declare -f ::cli::core::declare::inline
+    declare -f ::cli::core::load::inline
+    declare -f ::cli::core::save::inline
+    declare -f ::cli::core::write::inline
+    echo
+
+    declare -f ::cli::core::variable::declare::inline
+    declare -f ::cli::core::variable::initialize::inline
+    declare -f ::cli::core::variable::put::inline
+    echo
+
+    declare -f ::cli::core::struct::define::inline
+    declare -f ::cli::core::struct::define_field::inline
+    declare -f ::cli::core::struct::emit::inline
+    echo
+
+    declare -f ::cli::core::type::initialize::inline
+    declare -f ::cli::core::type::is_builtin::inline
+    declare -f ::cli::core::type::is_modified::inline
+    declare -f ::cli::core::type::is_scaler::inline
+    declare -f ::cli::core::type::is_user_defined::inline
+    declare -f ::cli::core::type::unmodify::inline
+    echo
+
     declare -f ::cli::run_as::inline
+    echo
+
     declare -f ::cli::args::tokenize::inline
     declare -f ::cli::args::parse::inline
+    echo
+
     declare -f ::cli::path::join::inline
+    echo
+    
     declare -f ::cli::cache::test::inline
     declare -f ::cli::cache::path::inline
     declare -f ::cli::cache::put::inline
+    echo
+    
+    declare -f ::cli::bash::emit::inline
+    declare -f ::cli::bash::write::inline
     declare -f ::cli::bash::fail::inline
     declare -f ::cli::bash::callstack::inline
     declare -f ::cli::bash::is_function_declared::inline
