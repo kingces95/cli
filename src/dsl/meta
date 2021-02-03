@@ -4,6 +4,7 @@ cli::import_group
 cli::import_inline cli core declare
 cli::import_inline cli core struct define
 cli::import_inline cli core struct define-field
+cli::import_inline cli core write
 
 help() {
     cat << EOF
@@ -16,126 +17,99 @@ Global Arguments
 EOF
 }
 
-declare STRUCT_NAME=meta
+declare STAR='*'
+declare STRUCT_NAME='meta'
+declare VARIABLE_NAME='META'
+
+define_field() {
+    arg_struct=${STRUCT_NAME} \
+    arg_name="$1" \
+    arg_type="$2" \
+        ::cli::core::struct::define_field::inline
+}
+
+define_type() {
+    arg_name=${STRUCT_NAME} \
+        ::cli::core::struct::define::inline
+
+    define_field group 'map'
+    define_field default 'map_of map'
+    define_field require 'map_of array'
+    define_field allow 'map_of map_of map'
+    define_field alias 'map_of map'
+    define_field implicit_value 'map_of map'
+    define_field positional 'map_of boolean'
+}
+
+put() {
+    arg_name=${VARIABLE_NAME} \
+        ::cli::core::declare::inline "$@"
+}
 
 main() {
-    arg_name=${STRUCT_NAME} ::cli::core::struct::define::inline
-    {
-        local arg_struct=${STRUCT_NAME}
-        arg_name=default arg_type=map ::cli::core::struct::define_field::inline
-        arg_name=require arg_type=array ::cli::core::struct::define_field::inline
-        arg_name=allow arg_type='map_of map' ::cli::core::struct::define_field::inline
-        arg_name=alias arg_type=map ::cli::core::struct::define_field::inline
-        arg_name=implicit_value arg_type=map ::cli::core::struct::define_field::inline
-        arg_name=positional arg_type=boolean ::cli::core::struct::define_field::inline
-    }
+    define_type
 
-    arg_name=META \
-    arg_type=meta \
+    arg_name=${VARIABLE_NAME} \
+    arg_type=${STRUCT_NAME} \
         ::cli::core::declare::inline
 
-    # local -A CLI_META_DEFAULT=() # eg +=( ['foo']='bar' )
-    # local -a CLI_META_REQUIRED=() # eg +=( '--foo' )
-    # local -A CLI_META_ALLOWED_VALUES=() # eg +=( [--foo]='a b c' )
-    # local -A CLI_META_ALIASES=()
-    # local -A CLI_META_IMPLICIT_VALUES=()
-    # local CLI_META_POSITIONAL=false
-
+    local group
     local name
-    # local -a allowed_value_list
 
-    # productions are sorted
-    while read key production production_name identifier; do
+    # productions are sorted by group + key
+    while read group key production production_name identifier; do
 
-        # anyargs
-        if (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
-            arg_name=META ::cli::core::declare::inline positional true
-            # CLI_META_POSITIONAL=true
+        # argument group
+        if (( production == CLI_DSL_PRODUCTION_ARGUMENTS )); then
+            name=
+            group="${identifier}"
 
-        # declaration
+        # arguments
         elif (( production == CLI_DSL_PRODUCTION_NAME )); then
             name="${identifier}"
-            arg_name=META ::cli::core::declare::inline default ${name}
-            # CLI_META_DEFAULT+=( [$name]= )
+            put default "${group}" "${name}"
+
+        # anyargs
+        elif (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
+            put positional "${group}" true
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
-            arg_name=META ::cli::core::declare::inline alias ${identifier} ${name}
-            # CLI_META_ALIASES+=( [${identifier}]="${name}" )
+            put alias "${group}" "${identifier}" "${name}"
 
         # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
-            arg_name=META ::cli::core::declare::inline default ${name} ${identifier}
-            # CLI_META_DEFAULT+=( [${name}]="${identifier}" )
+            put default "${group}" "${name}" "${identifier}"
 
         # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
-            arg_name=META ::cli::core::declare::inline require ${name}
-            # CLI_META_REQUIRED+=( ${name} )
+            put require "${group}" "${name}"
 
         # flag
         elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
-            arg_name=META ::cli::core::declare::inline default ${name} false
-            arg_name=META ::cli::core::declare::inline implicit_value ${name} true
-            arg_name=META ::cli::core::declare::inline allow ${name} true
-            # arg_name=META ::cli::core::declare::inline allow ${name} false
-            # CLI_META_DEFAULT+=( [${name}]='false' )
-            # CLI_META_IMPLICIT_VALUES+=( [${name}]='true' )
-            # CLI_META_ALLOWED_VALUES+=( [${name}]='true false' )
+            put default "${group}" "${name}" false
+            put implicit_value "${group}" "${name}" true
+            put allow "${group}" "${name}" true
+            put allow "${group}" "${name}" false
 
         # allow
-        elif (( production == CLI_DSL_PRODUCTION_ALLOWED )); then
-            :
-            # allowed_value_list=()
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
-            arg_name=META ::cli::core::declare::inline allow ${name} ${identifier}
-            # allowed_value_list+=( "${identifier}" )
-        elif (( production == CLI_DSL_PRODUCTION_ALLOWED_END )); then
-            :
-            # CLI_META_ALLOWED_VALUES+=( [${name}]="${allowed_value_list[@]}" )
+            put allow "${group}" "${name}" "${identifier}"
         fi
     done
 
     arg_name=META \
-    arg_print=true \
-        ::cli::core::declare::inline
-
-    # arg_emit=true ::cli::util::serialize::inline \
-    #     CLI_META_REQUIRED \
-    #     CLI_META_DEFAULT \
-    #     CLI_META_ALIASES \
-    #     CLI_META_ALLOWED_VALUES \
-    #     CLI_META_IMPLICIT_VALUES \
-    #     CLI_META_POSITIONAL
-
-    # echo 'default'
-    # arg_name=CLI_META_DEFAULT \
-    #     ::cli::bash::table::write::inline | sed 's/^/    /'
- 
-    # echo 'positional'
-    # arg_name=CLI_META_POSITIONAL \
-    #     ::cli::bash::table::write::inline | sed 's/^/    /'
-
-    # echo 'required'
-    # arg_name=CLI_META_REQUIRED \
-    #     ::cli::bash::table::write::inline | sed 's/^/    /'
-
-    # echo 'allowed_values'
-    # arg_name=CLI_META_ALLOWED_VALUES \
-    # arg_multi_value=true \
-    #     ::cli::bash::table::write::inline | sed 's/^/    /'
-
-    # echo 'aliases'
-    # arg_name=CLI_META_ALIASES \
-    #     ::cli::bash::table::write::inline | sed 's/^/    /'
- 
-    # echo 'implicit_values'
-    # arg_name=CLI_META_IMPLICIT_VALUES \
-    #     ::cli::bash::table::write::inline | sed 's/^/    /'
+        ::cli::core::write::inline
 }
 
 self_test() (
-    return
+    cli dsl sample -h \
+        | cli dsl tokenize \
+        | cli dsl parse \
+        | cli dsl meta \
+        | sort -k1 
+        # \
+        # | cli core save --dir /tmp/meta
 )
 
 cli::load "$@"

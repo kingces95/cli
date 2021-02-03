@@ -20,6 +20,8 @@ Description
 
     Existing files will be overwritten.
 
+    The directory will be created if it does not already exist.
+
 Arguments
     --dir                   : The directory to save files. Default is the
                               the present working directory.
@@ -32,6 +34,8 @@ EOF
 
 inline() {
     : ${arg_dir:=$(pwd)}
+
+    mkdir -p "${arg_dir}"
 
     local -A names=()
 

@@ -45,6 +45,7 @@ export() {
         'EOF' 
         'ERROR' 
         'DASHDASH' 
+        'ARGUMENTS' 
     ) && util::declare_enums CLI_DSL_TOKEN
 
     readonly CLI_DSL_PRODUCTION=(
@@ -59,6 +60,7 @@ export() {
         'ALLOWED_END'
         'ERROR'
         'ANYARGS'
+        'ARGUMENTS'
     ) && util::declare_enums CLI_DSL_PRODUCTION
 
     cli::export cli dsl

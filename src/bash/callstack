@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source $(cli loader)
-cli::import cli_assert
+#cli::import cli_assert
 
 help() {
 cat << EOF

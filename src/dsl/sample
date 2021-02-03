@@ -9,6 +9,13 @@ Command
 Summary    
     Sample command to test Domain Specific Language.
 
+Arguments when --id
+    --id                        : Id of the thing.
+
+Arguments when --name
+    --name                      : Name of the thing.
+    --namespace                 : Namespace of the thing.
+
 Arguments
     --run-as                    : Run as the specified user.
                                     --ignore-me -i.

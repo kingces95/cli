@@ -34,7 +34,7 @@ main() {
     local -a allowed_value_list
 
     # productions are sorted
-    while read key production production_name identifier; do
+    while read group key production production_name identifier; do
 
         # anyargs
         if (( production == CLI_DSL_PRODUCTION_ANYARGS )); then

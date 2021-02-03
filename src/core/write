@@ -111,31 +111,30 @@ inline() {
         fi
 
     # node
-    else
+    elif arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
+        local field_type=$(arg_type=${arg_type} ::cli::core::type::unmodify::inline)
 
-        # modified
-        if arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
-            local -n fields=ref
-            local default_field_type=$( \
-                arg_type=${arg_type} \
-                    ::cli::core::type::unmodify::inline
-            )
+        # map_of
+        for field_name in "${!ref[@]}"; do
+            local field_variable=${arg_name}${CLI_NSS}${ref[${field_name}]}
 
-        # user defined
-        else
-            local -n fields=CLI_TYPE__${arg_type^^}
-            local default_field_type=
-        fi
-
-        # for each field in the type
-        for field_name in ${!fields[@]}; do
-            local field_type=${fields[$field_name]:-${default_field_type}}
-            local field_variable=${arg_name}${CLI_NSS}${field_name^^}
-
-            # recurse
             arg_type=${field_type} \
             arg_name=${field_variable} \
-                ::cli::core::write::inline  "$@" ${field_name}
+                ::cli::core::write::inline "$@" "${field_name}"
+        done
+
+    # node
+    else
+
+        # user defined type
+        local -n fields=CLI_TYPE__${arg_type^^}
+        for field_name in ${!fields[@]}; do
+            local field_type=${fields[$field_name]}
+            local field_variable=${arg_name}${CLI_NSS}${field_name^^}
+
+            arg_type=${field_type} \
+            arg_name=${field_variable} \
+                ::cli::core::write::inline "$@" ${field_name}
         done
     fi
 }
@@ -190,7 +189,7 @@ self_test() {
         | assert::pipe_eq \
             'seq fib 11235' \
             'seq pi 3141'
-
+exit
     cli core declare --name MOD --type 'map_of map_of integer' -- seq pi 3141 \
         | cli core declare --source --name MOD -- seq fib 11235 \
         | cli core write --source --name MOD \

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+source $(cli loader)
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+export() {
+    cli::export::import_parent_group
+}
+
+cli::load "$@"

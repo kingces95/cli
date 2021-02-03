@@ -76,9 +76,18 @@ main() {
             word_number=1
 
             # does the header section declare arguments?
-            if [[ "${line}" =~ 'Arguments' ]]; then
+            local regex='Arguments([ ]when[ ](.*))?$'
+            if [[ "${line}" =~ ${regex} ]]; then
                 in_argument_header=true
                 in_argument_copy=false
+
+                # parameter groups
+                local word="${BASH_REMATCH[2]}"
+                if [[ "${word}" == ${CLI_DSL_ARG_NAME_GLOB} ]]; then
+                    yield ${CLI_DSL_TOKEN_ARGUMENTS} "${word#--}"
+                else
+                    yield ${CLI_DSL_TOKEN_ARGUMENTS}
+                fi
             else
                 in_argument_header=false
             fi

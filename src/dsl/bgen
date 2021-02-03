@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+source $(cli loader)
+cli::import_group
+cli::import_inline cli core declare
+cli::import_inline cli core struct define
+cli::import_inline cli core struct define-field
+cli::import_inline cli core write
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND}
+
+Description
+    Like ngen, but for bash.
+
+Global Arguments
+    --help -h        [Flag] : Show this message and exit.
+    --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+declare META_STRUCT='meta'
+
+cli::define() {
+    arg_name=${1:-struct} \
+        ::cli::core::struct::define::inline
+}
+
+cli::define_field() {
+    arg_type="$1" \
+    arg_name="$2" \
+    arg_struct=${3:-struct} \
+        ::cli::core::struct::define_field::inline
+}
+
+cli::declare() {
+    arg_type="${1:-struct}" \
+    arg_name="${2:-STRUCT}" \
+    arg_read=false \
+    arg_print=false \
+        ::cli::core::declare::inline
+}
+
+cli::print() {
+    arg_name="${1:-STRUCT}" \
+    arg_read=false \
+    arg_print=true \
+    arg_type= \
+        ::cli::core::declare::inline
+}
+
+cli::read() {
+    arg_name="${1:-STRUCT}" \
+    arg_read=true \
+    arg_print=false \
+    arg_type= \
+        ::cli::core::declare::inline
+}
+
+swap() {
+    awk "{ t = \$$1; \$$1 = \$$2; \$$2 = t; print }"
+}
+
+main() {
+    local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
+
+    cli core save --dir "${dir}"
+
+    cli::define
+    cli::define_field 'map' default 
+    cli::define_field 'array' require 
+    cli::define_field 'map_of map' allow 
+    cli::define_field 'map' alias 
+    cli::define_field 'map' implicit_value 
+    cli::define_field 'boolean' positional 
+
+    cli::declare "map_of struct"
+
+    cli core load --dir "${dir}" \
+        | swap 1 2 \
+        | awk '$1 != "*"' \
+        | cli::read
+
+    for group in "${!STRUCT[@]}"; do
+        cli core load --dir "${dir}" \
+            | swap 1 2 \
+            | awk -v g=${group} '$1 == "*" { $1 = g; print; }' \
+            | cli::read
+    done
+
+    cli::print
+
+    rm -r "${dir}"
+}
+
+self_test() {
+    cli dsl sample -h \
+        | cli dsl tokenize \
+        | cli dsl parse \
+        | cli dsl meta \
+        | ${CLI_COMMAND}
+}
+
+cli::load "$@"

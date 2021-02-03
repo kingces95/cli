@@ -41,10 +41,11 @@ declare word
 declare token
 declare token_name
 declare identifier
-declare arg_name='.'
+declare arg_group
+declare arg_name
 
 yield() {
-    echo ${arg_name} $1 ${CLI_DSL_PRODUCTION[$1]} "${2-}"
+    echo "${arg_group}" "${arg_name}" "$1" "${CLI_DSL_PRODUCTION[$1]}" "${2-}"
 }
 
 error() {
@@ -95,27 +96,41 @@ read_token() {
 main() {
 
     START() {
-        ARGUMENTS
+        ARGUMENTS_GROUP
+    }
+
+    ARGUMENTS_GROUP() {
+        read_token
+
+        while (( token != CLI_DSL_TOKEN_EOF )); do
+            assert_token_is ${CLI_DSL_TOKEN_ARGUMENTS}
+            arg_name='.'
+            arg_group=${identifier:='*'}
+            yield ${CLI_DSL_PRODUCTION_ARGUMENTS} "${identifier}"
+            ARGUMENTS
+        done
     }
 
     ARGUMENTS() {
         read_token
 
-        while (( token != CLI_DSL_TOKEN_EOF )); do
+        while true; do
             if (( token == CLI_DSL_TOKEN_DASHDASH )); then
                 yield ${CLI_DSL_PRODUCTION_ANYARGS}
                 read_token
-            else
+            elif (( token == CLI_DSL_TOKEN_NAME )); then
                 ARGUMENT
+            else
+                break
             fi
         done
     }
 
     ARGUMENT() {
-        assert_token_is $CLI_DSL_TOKEN_NAME
+        assert_token_is ${CLI_DSL_TOKEN_NAME}
     
         arg_name=${identifier}
-        yield ${CLI_DSL_PRODUCTION_NAME} ${identifier}
+        yield ${CLI_DSL_PRODUCTION_NAME} "${identifier}"
         read_token
 
         if (( token == CLI_DSL_TOKEN_ALIAS )); then
@@ -148,7 +163,7 @@ main() {
     }
 
     ALIAS() {
-        yield ${CLI_DSL_PRODUCTION_ALIAS} ${identifier}
+        yield ${CLI_DSL_PRODUCTION_ALIAS} "${identifier}"
         read_token
     }
 
