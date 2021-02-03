@@ -25,8 +25,6 @@ swap() {
 main() {
     local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
 
-    cli::save "${dir}"
-
     cli::define
     cli::define_field 'map' default 
     cli::define_field 'array' require 
@@ -37,13 +35,15 @@ main() {
 
     cli::declare "map_of struct"
 
-    cli core load --dir "${dir}" \
+    cli::save "${dir}"
+
+    cli::load "${dir}" \
         | swap 1 2 \
         | awk '$1 != "*"' \
         | cli::read
 
     for group in "${!STRUCT[@]}"; do
-        cli core load --dir "${dir}" \
+        cli::load "${dir}" \
             | swap 1 2 \
             | awk -v group=${group} '$1 == "*" { $1 = group; print; }' \
             | cli::read
@@ -62,4 +62,4 @@ self_test() {
         | ${CLI_COMMAND}
 }
 
-cli::load "$@"
+cli::main "$@"

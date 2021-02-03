@@ -89,4 +89,4 @@ main() {
     fi
 }
 
-cli::load "$@"
+cli::main "$@"

@@ -71,4 +71,4 @@ self_test() {
         'declare -A RESULT=([a]="true" )'
 }
 
-cli::load "$@"
+cli::main "$@"

@@ -59,4 +59,4 @@ main() {
     exit "${exit_code}"
 }
 
-cli::load "$@"
+cli::main "$@"

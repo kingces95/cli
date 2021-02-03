@@ -61,4 +61,4 @@ self_test() {
         'boolean'
 }
 
-cli::load "$@"
+cli::main "$@"

@@ -258,4 +258,4 @@ initialize() {
     : ${arg_file:='UNKNOWN'}
 }
 
-cli::load "$@"
+cli::main "$@"

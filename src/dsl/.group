@@ -66,4 +66,4 @@ export() {
     cli::export cli dsl
 }
 
-cli::load "$@"
+cli::main "$@"

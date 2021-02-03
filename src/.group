@@ -53,4 +53,4 @@ export() {
     } | sed 's/^declare/declare -g/'
 }
 
-cli::load "$@"
+cli::main "$@"

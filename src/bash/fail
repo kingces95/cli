@@ -44,4 +44,4 @@ self_test() {
     assert::fails "arg_message='failed' inline"
 }
 
-cli::load "$@"
+cli::main "$@"

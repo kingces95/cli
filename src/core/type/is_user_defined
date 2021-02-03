@@ -71,4 +71,4 @@ self_test() {
     set -e
 }
 
-cli::load "$@"
+cli::main "$@"

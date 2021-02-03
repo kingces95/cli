@@ -198,4 +198,4 @@ self_test() (
             'EOF 22 6 ' 
 )
 
-cli::load "$@"
+cli::main "$@"

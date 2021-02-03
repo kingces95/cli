@@ -49,7 +49,7 @@ Description
         main() { cli::export 'integrate'; }
         INTEGRATE_PI='3.14159'
         integrate::multiply() { IFS='*' expr=\$*; echo "\$expr" | bc -l; }
-        cli::load "\$@"
+        cli::main "\$@"
 
     then 'src/area/.group' could import 'src/.group' and use it to
     define and export 'integrate::area::square':
@@ -61,7 +61,7 @@ Description
             cli::export integrate area
         }
         integrate::area::square() { integrate::multiply \$1 \$1; }
-        cli::load "\$@"
+        cli::main "\$@"
 
      finally 'circle' could reference 'src/area/.group' like this:
 
@@ -76,7 +76,7 @@ Description
             echo \$(integrate::multiply \${INTEGRATE_PI} \\
                 \$(integrate::area::square \${arg_radius}))
         }
-        cli::load "\$@"
+        cli::main "\$@"
 
     To pack the 'area' cli into a single file:
 
@@ -193,4 +193,4 @@ self_test() (
     return
 )
 
-cli::load "$@"
+cli::main "$@"

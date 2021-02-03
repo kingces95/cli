@@ -40,4 +40,4 @@ self_test() {
     # TODO create user, test, delete user
 }
 
-cli::load "$@"
+cli::main "$@"

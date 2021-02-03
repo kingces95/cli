@@ -30,4 +30,4 @@ main() (
         | emit::function_contains "${arg_name}"
 )
 
-cli::load "$@"
+cli::main "$@"

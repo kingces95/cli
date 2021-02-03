@@ -22,4 +22,4 @@ export() {
     cli::export cli emit
 }
 
-cli::load "$@"
+cli::main "$@"

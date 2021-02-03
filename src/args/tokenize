@@ -271,4 +271,4 @@ self_test() {
     assert::fails "${CLI_COMMAND} -- --k0 v0 k1"
 }
 
-cli::load "$@"
+cli::main "$@"

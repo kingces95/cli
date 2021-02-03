@@ -423,4 +423,4 @@ self_test() {
     test_too_many_values
 }
 
-cli::load "$@"
+cli::main "$@"

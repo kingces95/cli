@@ -96,4 +96,4 @@ self_test() {
         | assert::pipe_eq
 }
 
-cli::load "$@"
+cli::main "$@"

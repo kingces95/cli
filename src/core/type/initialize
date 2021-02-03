@@ -99,4 +99,4 @@ self_test() {
             'declare -A MY_MAP_OF_MAP=()'
 }
 
-cli::load "$@"
+cli::main "$@"

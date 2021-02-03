@@ -38,4 +38,4 @@ main() {
     declare -f initialize
 }
 
-cli::load "$@"
+cli::main "$@"

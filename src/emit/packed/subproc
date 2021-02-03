@@ -24,4 +24,4 @@ main() (
         | emit::subproc "$(cli::emit::library_name ${arg_cli})"; \
 )
 
-cli::load "$@"
+cli::main "$@"

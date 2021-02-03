@@ -98,4 +98,4 @@ self_test() {
             'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )'
 }
 
-cli::load "$@"
+cli::main "$@"

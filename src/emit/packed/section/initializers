@@ -54,4 +54,4 @@ self_test() (
     return
 )
 
-cli::load "$@"
+cli::main "$@"

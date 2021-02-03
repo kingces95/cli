@@ -56,4 +56,4 @@ main() (
     done | sort
 )
 
-cli::load "$@"
+cli::main "$@"

@@ -26,4 +26,4 @@ main() (
         | emit::function "$(cli::emit::library_name "${arg_cli}" 'source')"
 )
 
-cli::load "$@"
+cli::main "$@"

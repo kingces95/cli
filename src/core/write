@@ -231,4 +231,4 @@ exit
             'version minor 2'
 }
 
-cli::load "$@"
+cli::main "$@"

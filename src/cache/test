@@ -58,4 +58,4 @@ self_test() {
     rm "${source_path}"
 }
 
-cli::load "$@"
+cli::main "$@"

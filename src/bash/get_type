@@ -105,4 +105,4 @@ self_test() {
         'map true false false level'
 }
 
-cli::load "$@"
+cli::main "$@"

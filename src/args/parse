@@ -270,4 +270,4 @@ self_test() {
         | assert::fails "${CLI_COMMAND}" 'positional'
 }
 
-cli::load "$@"
+cli::main "$@"

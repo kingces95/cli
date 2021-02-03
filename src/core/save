@@ -93,4 +93,4 @@ EOF
             's00 s01 s\ 02'
 }
 
-cli::load "$@"
+cli::main "$@"

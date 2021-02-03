@@ -69,4 +69,4 @@ self_test() {
             'declare -A CLI_TYPE__VERSION=()'
 }
 
-cli::load "$@"
+cli::main "$@"

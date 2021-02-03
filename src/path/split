@@ -102,4 +102,4 @@ self_test() {
     fi 
 }
 
-cli::load "$@"
+cli::main "$@"

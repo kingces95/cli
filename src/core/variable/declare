@@ -148,4 +148,4 @@ self_test() {
             'declare -A VAR=()'
 }
 
-cli::load "$@"
+cli::main "$@"

@@ -79,4 +79,4 @@ EOF
     rm -r "${dir}"
 }
 
-cli::load "$@"
+cli::main "$@"

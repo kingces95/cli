@@ -91,4 +91,4 @@ initialize() {
     done
 }
 
-cli::load "$@"
+cli::main "$@"

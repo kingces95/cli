@@ -40,4 +40,4 @@ main() (
         }
 )
 
-cli::load "$@"
+cli::main "$@"

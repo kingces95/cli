@@ -49,4 +49,4 @@ self_test() {
     rmdir "${cache_dir}"
 }
 
-cli::load "$@"
+cli::main "$@"

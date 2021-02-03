@@ -24,4 +24,4 @@ export() {
     cli::export cli core
 }
 
-cli::load "$@"
+cli::main "$@"

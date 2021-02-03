@@ -159,4 +159,4 @@ exit
         | ${CLI_COMMAND} -x -- my bool true
 }
 
-cli::load "$@"
+cli::main "$@"

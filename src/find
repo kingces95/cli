@@ -109,4 +109,4 @@ main() {
     find "${arg_cli}"
 }
 
-cli::load "$@"
+cli::main "$@"

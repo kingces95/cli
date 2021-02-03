@@ -64,4 +64,4 @@ self_test() {
         "declare -a ARRAY=([0]=\"a b\")"
 }
 
-cli::load "$@"
+cli::main "$@"

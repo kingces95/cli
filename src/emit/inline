@@ -24,7 +24,7 @@ Global Arguments
 Examples
     Print the main function renmaed to 'say_hi'.
         ${CLI_COMMAND} --name say_hi \\
-            <<< "source \\\$(cli loader); inline() { echo 'hi'; }; cli::load"
+            <<< "source \\\$(cli loader); inline() { echo 'hi'; }; cli::main"
 EOF
 }
 
@@ -37,7 +37,7 @@ inline() {
 
         # disable loader
         cli() { echo '/dev/null'; }
-        cli::load() { return; }
+        cli::main() { return; }
         cli::import() { return; }
         cli::import_group() { return; }
 
@@ -84,7 +84,7 @@ initialize() {
 
 self_test() {
     ${CLI_COMMAND} --name say_hi \
-        <<< "source \$(cli loader); inline() { echo 'hi'; }; cli::load" \
+        <<< "source \$(cli loader); inline() { echo 'hi'; }; cli::main" \
         | assert::pipe_eq_exact \
             "say_hi ()" \
             "{ " \
@@ -92,4 +92,4 @@ self_test() {
             "}"
 }
 
-cli::load "$@"
+cli::main "$@"

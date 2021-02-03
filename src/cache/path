@@ -36,4 +36,4 @@ self_test() {
 
 }
 
-cli::load "$@"
+cli::main "$@"

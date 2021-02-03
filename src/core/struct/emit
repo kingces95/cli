@@ -112,4 +112,4 @@ self_test() {
             'declare -A CLI_TYPE__FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
 }
 
-cli::load "$@"
+cli::main "$@"

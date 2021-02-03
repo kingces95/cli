@@ -82,4 +82,4 @@ self_test() (
         # | cli core save --dir /tmp/meta
 )
 
-cli::load "$@"
+cli::main "$@"

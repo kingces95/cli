@@ -16,4 +16,4 @@ export() {
     cli::export::import_parent_group
 }
 
-cli::load "$@"
+cli::main "$@"

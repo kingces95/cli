@@ -42,4 +42,4 @@ main() (
         | emit::function 'cli::shim::list'
 )
 
-cli::load "$@"
+cli::main "$@"

@@ -75,4 +75,4 @@ self_test() {
         "declare -A RESULT=([\$'\n']=\$'\t' )"
 }
 
-cli::load "$@"
+cli::main "$@"

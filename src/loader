@@ -5,7 +5,7 @@ Command
     cli loader
 
 Summary
-    Prints the source for function 'cli::load'.
+    Prints the source for function 'cli::main'.
     
 Description
 
@@ -378,7 +378,7 @@ cli::loader::self_test() {
     exit ${result}
 }
 
-cli::load() {
+cli::main() {
     declare -Ag CLI_META_DEFAULTS=()
     declare -Ag CLI_META_ALIASES=()
     declare -ag CLI_META_REQUIRED=()
@@ -512,7 +512,7 @@ main() {
     declare -f cli::import_group
     declare -f cli::import_parent_group
     declare -f cli::import_inline
-    declare -f cli::load
+    declare -f cli::main
     echo
    
     declare -f cli::define
@@ -651,4 +651,4 @@ if (( $# == 0 )); then
     exit
 fi
 
-cli::load "$@"
+cli::main "$@"
