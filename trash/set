@@ -46,7 +46,7 @@ main() {
         cli::fail "Unexpected lack of name and scope."
     fi
 
-    # read variables, and metadata stored in CLI_SCOPE__*, CLI_TYPE__*
+    # read variables, and metadata stored in CLI_SCOPE__*, CLI_TYPE_*
     if ${arg_source}; then
         source /dev/stdin
     fi
@@ -99,7 +99,7 @@ main() {
 
             # user defined
             *)
-                local -u fields=CLI_TYPE__${type}
+                local -u fields=CLI_TYPE_${type}
                 local -n fields_ref=${fields}
                 type=( ${fields_ref[$1]} )
 
@@ -114,7 +114,7 @@ main() {
         esac
     done
 
-    declare -p ${!CLI_TYPE__*} ${!CLI_SCOPE__*}
+    declare -p ${!CLI_TYPE_*} ${!CLI_SCOPE__*}
     eval "declare -p \${!${scope^^}_*}"
 }
 

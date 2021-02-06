@@ -51,7 +51,7 @@ inline() {
     visted_ref[${element_type}]=
 
     # emit the user defined type
-    local -u udt_type=CLI_TYPE__${element_type}
+    local -u udt_type=CLI_TYPE_${element_type}
     declare -p ${udt_type}
 
     # recurse using the type of each of the user defined type's fields
@@ -91,7 +91,7 @@ self_test() {
         | cli core struct define-field --name places --type integer \
         | ${CLI_COMMAND} --source --type 'map_of float' \
         | assert::pipe_eq \
-            'declare -A CLI_TYPE__FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+            'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
 
     cli core struct define --name float \
         | cli core struct define-field --name integer --type integer \
@@ -107,9 +107,9 @@ self_test() {
         | cli core struct define-field --name lookup --type 'map_of constant' \
         | ${CLI_COMMAND} --source --type table \
         | assert::pipe_eq \
-            'declare -A CLI_TYPE__TABLE=([lookup]="map_of constant" [pi]="constant" [e]="constant" )' \
-            'declare -A CLI_TYPE__CONSTANT=([value]="float" [name]="string" )' \
-            'declare -A CLI_TYPE__FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+            'declare -A CLI_TYPE_TABLE=([lookup]="map_of constant" [pi]="constant" [e]="constant" )' \
+            'declare -A CLI_TYPE_CONSTANT=([value]="float" [name]="string" )' \
+            'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
 }
 
 cli::main "$@"

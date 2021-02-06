@@ -15,7 +15,7 @@ Summary
 Description
     Adds entries to a sourced map with a well known name representing a 
     type and then emits the updated map. Assumes the first line sourced 
-    is a comment containing the type name. The map name is 'CLI_TYPE__'
+    is a comment containing the type name. The map name is 'CLI_TYPE_'
     plus the upper case name of the type.
 
     Builtin types are
@@ -40,7 +40,7 @@ Description
     which will emit this:
 
         # table
-        declare -A CLI_TYPE__TABLE=( [allow]='map_of map' [require]=map )
+        declare -A CLI_TYPE_TABLE=( [allow]='map_of map' [require]=map )
 
 Arguments
     --name -n       [Require] : Name of the field. Regex: ${CLI_REGEX_STRUCT_FIELD_NAME}.
@@ -61,7 +61,7 @@ inline() {
     : ${arg_type?}
 
     # add the field to type
-    local -nu ref=CLI_TYPE__${arg_struct}
+    local -nu ref=CLI_TYPE_${arg_struct}
     ref+=( [${arg_name}]="${arg_type}" )
 }
 
@@ -83,7 +83,7 @@ main() {
     echo ${pound} ${type}
 
     # emit type with the new field
-    ::cli::bash::emit::inline 'CLI_TYPE__*'
+    ::cli::bash::emit::inline 'CLI_TYPE_*'
 }
 
 self_test() {
@@ -94,8 +94,8 @@ self_test() {
         | ${CLI_COMMAND} --name allow --type 'map_of map' \
         | assert::pipe_eq \
             '# table' \
-            'declare -A CLI_TYPE__TABLE=([allow]="map_of map" )' \
-            'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )'
+            'declare -A CLI_TYPE_TABLE=([allow]="map_of map" )' \
+            'declare -A CLI_TYPE_VERSION=([minor]="integer" [major]="integer" )'
 }
 
 cli::main "$@"

@@ -16,11 +16,11 @@ Description
     A type is declared by declaring a global variable as an associative array with
     a well known name and then initializing it with an empty map. That variable is
     emitted preceeded by a comment consisting of the type name. For example, to 
-    declare a type 'table', a map 'CLI_TYPE__TABLE' will be declared and the following
+    declare a type 'table', a map 'CLI_TYPE_TABLE' will be declared and the following
     emitted:
 
         # table
-        declare -A CLI_TYPE__TABLE=()
+        declare -A CLI_TYPE_TABLE=()
 
 Arguments
     --name -n     [Require] : Name of the type. Regex: ${CLI_REGEX_STRUCT_NAME}.
@@ -36,7 +36,7 @@ EOF
 
 inline() {
     # name
-    local -u variable=CLI_TYPE__${arg_name}
+    local -u variable=CLI_TYPE_${arg_name}
     
     # declare
     declare -gA ${variable}
@@ -57,7 +57,7 @@ main() {
     echo "# ${arg_name}"
 
     # emit
-    ::cli::bash::emit::inline 'CLI_TYPE__*'
+    ::cli::bash::emit::inline 'CLI_TYPE_*'
 }
 
 self_test() {
@@ -65,8 +65,8 @@ self_test() {
         | ${CLI_COMMAND} -s --name table \
         | assert::pipe_eq \
             '# table' \
-            'declare -A CLI_TYPE__TABLE=()' \
-            'declare -A CLI_TYPE__VERSION=()'
+            'declare -A CLI_TYPE_TABLE=()' \
+            'declare -A CLI_TYPE_VERSION=()'
 }
 
 cli::main "$@"

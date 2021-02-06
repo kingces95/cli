@@ -25,7 +25,7 @@ Arguments
     ${CLI_CORE_VARIABLE_ARG_TYPE}
 
 Debug Arguments
-    --source -s      [Flag] : Source stdin to provide 'CLI_TYPE__*' metadata.
+    --source -s      [Flag] : Source stdin to provide 'CLI_TYPE_*' metadata.
 
 Global Arguments
     ${CLI_GLOBAL_ARG_HELP}
@@ -68,14 +68,14 @@ inline() {
     else
         cli::assert arg_type=${arg_type} ::cli::core::type::is_user_defined::inline
   
-        local -n type_ref=CLI_TYPE__${arg_type^^}
+        local -n type_ref=CLI_TYPE_${arg_type^^}
 
         # layout fields
         for field in ${!type_ref[@]}; do
             local field_type=${type_ref[$field]}
 
             # recursively declare fields
-            arg_name=${arg_name}${CLI_NSS}${field^^} \
+            arg_name=${arg_name}_${field^^} \
             arg_type=${field_type} \
                 ::cli::core::variable::declare::inline 
         done
@@ -133,14 +133,14 @@ self_test() {
         | cli core struct define-field --name map_of_map_field --type 'map_of map' \
         | ${CLI_COMMAND} --source --name VAR --type udt \
         | assert::pipe_eq \
-            'declare -a VAR__ARRAY_FIELD=()' \
-            'declare -- VAR__BOOLEAN_FIELD="false"' \
-            'declare -i VAR__INTEGER_FIELD="0"' \
-            'declare -A VAR__MAP_FIELD=()' \
-            'declare -A VAR__MAP_OF_MAP_FIELD=()' \
-            'declare -- VAR__STRING_FIELD=""' \
-            'declare -i VAR__VERSION_FIELD__MAJOR="0"' \
-            'declare -i VAR__VERSION_FIELD__MINOR="0"'
+            'declare -a VAR_ARRAY_FIELD=()' \
+            'declare -- VAR_BOOLEAN_FIELD="false"' \
+            'declare -i VAR_INTEGER_FIELD="0"' \
+            'declare -A VAR_MAP_FIELD=()' \
+            'declare -A VAR_MAP_OF_MAP_FIELD=()' \
+            'declare -- VAR_STRING_FIELD=""' \
+            'declare -i VAR_VERSION_FIELD_MAJOR="0"' \
+            'declare -i VAR_VERSION_FIELD_MINOR="0"'
 
     # map_of
     ${CLI_COMMAND} --name VAR --type 'map_of integer' \

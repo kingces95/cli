@@ -23,7 +23,6 @@ declare CLI_REGEX_STRUCT_FIELD_NAME=${CLI_REGEX_VARIABLE_NAME}
 declare CLI_REGEX_TYPE_NAME="^(map_of[[:space:]])*[a-z][a-z0-9_]*$"
 declare CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 
-declare CLI_NSS='__' # namespace separator
 declare CLI_STRUCT_DEFAULT_NAME=struct
 declare CLI_STRUCT_DEFAULT_VARIABLE=STRUCT
 
@@ -43,7 +42,6 @@ export() {
         declare -p CLI_REGEX_TYPE_NAME
         declare -p CLI_REGEX_GLOBAL_NAME
 
-        declare -p CLI_NSS
         declare -p CLI_STRUCT_DEFAULT_NAME
         declare -p CLI_STRUCT_DEFAULT_VARIABLE
 

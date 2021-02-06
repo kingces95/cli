@@ -125,7 +125,7 @@ cli::check::condition() {
 
 cli::check::regex() {
     if [[ ! "$1" =~ $2 ]]; then
-        cli::fail "Unexpected value '$1' does not match regex '$2'."
+        cli::fail "${@:3}" "'$1' does not match regex '$2'."
     fi
 }
 
@@ -195,6 +195,7 @@ cli::read() {
 
 cli::write() {
     arg_name="${1:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+    arg_type="${2:-}" \
         ::cli::core::write::inline
 }
 

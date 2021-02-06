@@ -101,7 +101,7 @@ inline() {
 
         # array
         elif [[ "${arg_type}" == 'array' ]]; then
-            for key in ${ref[@]}; do
+            for key in "${ref[@]}"; do
                 ::cli::bash::write::inline "$@" "${key}"
             done
 
@@ -116,7 +116,7 @@ inline() {
 
         # map_of
         for field_name in "${!ref[@]}"; do
-            local field_variable=${arg_name}${CLI_NSS}${ref[${field_name}]}
+            local field_variable=${arg_name}_${ref[${field_name}]}
 
             arg_type=${field_type} \
             arg_name=${field_variable} \
@@ -127,10 +127,10 @@ inline() {
     else
 
         # user defined type
-        local -n fields=CLI_TYPE__${arg_type^^}
+        local -n fields=CLI_TYPE_${arg_type^^}
         for field_name in ${!fields[@]}; do
             local field_type=${fields[$field_name]}
-            local field_variable=${arg_name}${CLI_NSS}${field_name^^}
+            local field_variable=${arg_name}_${field_name^^}
 
             arg_type=${field_type} \
             arg_name=${field_variable} \
@@ -182,6 +182,12 @@ self_test() {
         | assert::pipe_records_eq \
             'a' 'a' 'b' 'a'
 
+    declare -a ARRAY=( 'a a b a' )
+    declare -p ARRAY \
+        | cli core write --source --name ARRAY --type array \
+        | assert::pipe_records_eq \
+            'a\ a\ b\ a'
+
     cli core declare --name MOD_MAP --type 'map_of map' -- seq pi 3141 \
         | cli core declare --source --name MOD_MAP -- seq fib 11235 \
         | cli core write --source --name MOD_MAP \
@@ -189,7 +195,7 @@ self_test() {
         | assert::pipe_eq \
             'seq fib 11235' \
             'seq pi 3141'
-exit
+
     cli core declare --name MOD --type 'map_of map_of integer' -- seq pi 3141 \
         | cli core declare --source --name MOD -- seq fib 11235 \
         | cli core write --source --name MOD \

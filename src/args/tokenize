@@ -15,27 +15,25 @@ Summary
 Description
     Tokenizes command line arguments. Theoretically, a command line could be 
     matched by a regular expression. This command effectively does that match
-    and writes the follwing tables: 
+    and emits 
+    
+        an array of paths
+        an associative array of named arguments (aka options), and 
+        an array of positional arguments (aka arguments)
 
-        path
-        option
-        positional
+    For example, 
+    
+        ${CLI_COMMAND} -- bin sequence --name even -v -- two four six 
+        
+    produces:
 
-    For example, 'bin sequence --name even -v -- two four six' would produce 
-    the following files with the following content:
-
-        /path
-            bin
-            sequence
-
-        /option
-            name even
-            v true
-
-        /argument
-            two
-            four
-            six
+        path bin
+        path sequence
+        option name even
+        option v true
+        argument two
+        argument four
+        argument six
 
     The command line syntax is based off the Azure az tool with the additon that:
     
@@ -47,12 +45,12 @@ Description
 
        '-gh v' 
         
-    would produce records: 
+    produces: 
     
         option g true
         option h v
 
-    Options behind a double dash must be composed of lowercase letters, numbers, 
+    Options proceeded by a double dash must be composed of lowercase letters, numbers, 
     or dash, and must start with a letter. 
     
     Options behind a single dash must be a lowercase letter.
@@ -61,9 +59,6 @@ Description
     parsing ends with success.
 
 Arguments
-    --result -r             : Array to store command name. Default: RESULT.
-    --options -o            : Associative array to store options. Default: options.
-    --positional -p         : Array to store positional arguments. Default: positional.
     --                      : Command line arguments.
 
 Global Arguments
@@ -82,14 +77,7 @@ inline() {
     local DASH_DASH_ARG_REGEX="^--([^-].*)$"
     local DASH_DASH_DASH_ARG_REGEX="^---([^-].*)$"
 
-    local -a _result=()
-    local -n ref_result=${arg_result:-RESULT}
-
-    local -A _options=()
-    local -n ref_options=${arg_options:-_options}
-
-    local -a _positional=()
-    local -n ref_positional=${arg_positional:-_positional}
+    : ${arg_variable:=${CLI_STRUCT_DEFAULT_VARIABLE}}
 
     # path
     while (( $# > 0 )); do
@@ -97,7 +85,7 @@ inline() {
             break;
         fi
 
-        ref_result+=( "$1" )
+        cli::put "${arg_variable}" 'path' "$1"
         shift
     done
 
@@ -109,6 +97,7 @@ inline() {
     local key
     local value
     local flags
+    local -A named=()
 
     # optional
     while (( $# > 0 )); do
@@ -159,12 +148,13 @@ inline() {
             fi
 
             # trap duplicates
-            if [[ -n ${ref_options[$key]+set} ]]; then
+            if [[ -n ${named[$key]+set} ]]; then
                 cli::fail "Unexpected duplicate argument \"--${key}\"."
             fi
 
             # publish
-            ref_options+=( [$key]=$value )
+            cli::put "${arg_variable}" 'named' "${key}" "${value}"
+            named[${key}]=
             continue
         fi
 
@@ -174,36 +164,25 @@ inline() {
     # positional
     if [[ "${1-}" == "${DASH_DASH}" ]]; then
         shift
-        ref_positional+=( "$@" )
+
+        while (( $# > 0 )); do
+            cli::put "${arg_variable}" 'positional' "$1"
+            shift
+        done
     fi
 }
 
 main() {    
-    declare -a ${arg_result}
-    declare -A ${arg_options}
-    declare -a ${arg_positional}
+    cli::define
+    cli::define_field 'array' path
+    cli::define_field 'map' named
+    cli::define_field 'array' positional
+
+    cli::declare
 
     inline "$@"
 
-    ::cli::util::serialize::inline \
-        ${arg_result} ${arg_options} ${arg_positional}
-}
-
-record_associative_array() {
-    : ${arg_name?"Unexpected missing record name."}
-    while (( $# > 1 )); do
-        record "${arg_name}" "$1"
-        shift
-    done
-}
-
-record_array() {
-    local -n ref=${arg_name}
-
-    for element in ref; do
-        record "${arg_name}" "$1"
-        shift
-    done
+    cli::write
 }
 
 self_test() {
@@ -214,49 +193,53 @@ self_test() {
     ${CLI_COMMAND} -- \
     | assert::pipe_eq
 
-    # default variable names (e.g. command, named, positional)
+    # basic
     ${CLI_COMMAND} -- c --k v -- a0 \
+    | sort \
     | assert::pipe_records_eq \
-        'RESULT a c' \
-        'options A k v' \
-        'positional a a0'
+        'named k v' \
+        'path c' \
+        'positional a0'
 
-    # rename (e.g. c, n, p)
-    ${CLI_COMMAND} -r r -o o -p p -- c --k v -- a0 \
+    # escape
+    ${CLI_COMMAND} -- --k 'v v' -- 'a a' \
+    | sort \
     | assert::pipe_records_eq \
-        'r a c' \
-        'o A k v' \
-        'p a a0'
+        'named k v\ v' \
+        'positional a\ a'
 
     # named argument default aliasing (e.g. '-k' -> '--k' )
     ${CLI_COMMAND} -- -k v \
     | assert::pipe_records_eq \
-        'options A k v' 
+        'named k v' 
 
-    # named argument packed (e.g. '-mn' -> '--m --x' )
+    # named argument packed (e.g. '-mn' -> '--m --n' )
     ${CLI_COMMAND} -- -mn \
+    | sort \
     | assert::pipe_records_eq \
-        "options A m ''" \
-        "options A n ''"
+        "named m" \
+        "named n"
 
     # named argument implicit value (e.g. '' )
     ${CLI_COMMAND} -- --m -n \
+    | sort \
     | assert::pipe_records_eq \
-        "options A m ''" \
-        "options A n ''"
+        "named m" \
+        "named n"
 
-    # command arguments
+    # path
     ${CLI_COMMAND} -- g0 g1 cmd \
     | assert::pipe_records_eq \
-        'RESULT a g0' \
-        'RESULT a g1' \
-        'RESULT a cmd'
+        'path g0' \
+        'path g1' \
+        'path cmd'
 
-    # positional arguments
+    # positional
     ${CLI_COMMAND} -- -- a0 a1 \
+    | sort \
     | assert::pipe_records_eq \
-        'positional a a0' \
-        'positional a a1'
+        'positional a0' \
+        'positional a1'
 
     # bad names
     assert::fails "${CLI_COMMAND} -- -!"

@@ -22,10 +22,10 @@ Description
             | cli::define_field --name require --type Map \\
             | cli::emit_type \\
             | source /dev/stdin
-        # declare -A CLI_TYPE__TABLE=( [allow]='map_of Map' [require]=Map )
+        # declare -A CLI_TYPE_TABLE=( [allow]='map_of Map' [require]=Map )
 
         cli type declare --prefix meta --name param --type table
-        # declare -A CLI_PREFIX__META=( [param]=table )
+        # declare -A CLI_PREFIX_META=( [param]=table )
         # declare -A META_PARAM_ALLOW=()
         # declare -A META_PARAM_REQUIRE=()
         # declare -A META_PARAM=( [allow]=META_PARAM_ALLOW [require]=META_PARAM_REQUIRE )
@@ -142,7 +142,7 @@ main() {
     inline "$@"
 
     if ! ${arg_print}; then
-        ::cli::bash::emit::inline 'CLI_TYPE__*' 'CLI_SCOPE' "${arg_name}" "${arg_name}_*"
+        ::cli::bash::emit::inline 'CLI_TYPE_*' 'CLI_SCOPE' "${arg_name}" "${arg_name}_*"
     fi
 }
 
@@ -198,7 +198,7 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="0" )' \
-                'declare -A MY_MAP_OF_MAP__0=([k]="v" )'
+                'declare -A MY_MAP_OF_MAP_0=([k]="v" )'
 
         # map_of map_of map
         printf '%s\n' \
@@ -209,10 +209,10 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_META]="map_of map_of map" )' \
                 'declare -A MY_META=([default]="0" [allow]="1" )' \
-                'declare -A MY_META__0=([color]="0" )' \
-                'declare -A MY_META__0__0=([black]="" )' \
-                'declare -A MY_META__1=([color]="0" )' \
-                'declare -A MY_META__1__0=([black]="" [white]="" )'
+                'declare -A MY_META_0=([color]="0" )' \
+                'declare -A MY_META_0_0=([black]="" )' \
+                'declare -A MY_META_1=([color]="0" )' \
+                'declare -A MY_META_1_0=([black]="" [white]="" )'
 
         # name collision
         ${CLI_COMMAND} --name VAR --type 'map_of map_of string' \
@@ -222,10 +222,10 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([VAR]="map_of map_of string" )' \
                 'declare -A VAR=([foo]="0" [foo_bar]="1" )' \
-                'declare -A VAR__0=([bar_baz]="0" )' \
-                'declare -- VAR__0__0="x"' \
-                'declare -A VAR__1=([baz]="0" )' \
-                'declare -- VAR__1__0="y"'
+                'declare -A VAR_0=([bar_baz]="0" )' \
+                'declare -- VAR_0_0="x"' \
+                'declare -A VAR_1=([baz]="0" )' \
+                'declare -- VAR_1_0="y"'
     }
 
     builtin_default() {
@@ -304,7 +304,7 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="0" )' \
-                'declare -A MY_MAP_OF_MAP__0=([k]="v" )'
+                'declare -A MY_MAP_OF_MAP_0=([k]="v" )'
 
         # map_of map_of map
         ${CLI_COMMAND} --name MY_META --type "map_of map_of map" \
@@ -315,17 +315,17 @@ self_test() {
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE=([MY_META]="map_of map_of map" )' \
                 'declare -A MY_META=([default]="0" [allow]="1" )' \
-                'declare -A MY_META__0=([color]="0" )' \
-                'declare -A MY_META__0__0=([black]="" )' \
-                'declare -A MY_META__1=([color]="0" )' \
-                'declare -A MY_META__1__0=([black]="" [white]="" )'
+                'declare -A MY_META_0=([color]="0" )' \
+                'declare -A MY_META_0_0=([black]="" )' \
+                'declare -A MY_META_1=([color]="0" )' \
+                'declare -A MY_META_1_0=([black]="" [white]="" )'
     }
 
     user_defined() {
 
         # map_of udt
-        declare -A CLI_TYPE__VERSION=(['major']='integer' ['minor']='integer')
-        declare -p CLI_TYPE__VERSION \
+        declare -A CLI_TYPE_VERSION=(['major']='integer' ['minor']='integer')
+        declare -p CLI_TYPE_VERSION \
             | ${CLI_COMMAND} --source \
                 --name MY_MAP_OF_VERSION \
                 --type "map_of version" \
@@ -334,10 +334,10 @@ self_test() {
             | sort \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_VERSION]="map_of version" )' \
-                'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
+                'declare -A CLI_TYPE_VERSION=([minor]="integer" [major]="integer" )' \
                 'declare -A MY_MAP_OF_VERSION=([alpha]="0" )' \
-                'declare -i MY_MAP_OF_VERSION__0__MAJOR="1"' \
-                'declare -i MY_MAP_OF_VERSION__0__MINOR="0"'
+                'declare -i MY_MAP_OF_VERSION_0_MAJOR="1"' \
+                'declare -i MY_MAP_OF_VERSION_0_MINOR="0"'
 
         # defaults
         cli core struct define --name version \
@@ -354,17 +354,17 @@ self_test() {
             | ${CLI_COMMAND} --source --name KITCHEN_SINK --type kitchen_sink_type  \
             | ${CLI_COMMAND} --source --name KITCHEN_SINK --print \
             | assert::pipe_eq \
-                'declare -A CLI_TYPE__KITCHEN_SINK_TYPE=([boolean]="boolean" [version]="version" [map]="map" [map_of_map]="map_of map" [string]="string" [array]="array" [integer]="integer" )' \
-                'declare -A CLI_TYPE__VERSION=([minor]="integer" [major]="integer" )' \
+                'declare -A CLI_TYPE_KITCHEN_SINK_TYPE=([boolean]="boolean" [version]="version" [map]="map" [map_of_map]="map_of map" [string]="string" [array]="array" [integer]="integer" )' \
+                'declare -A CLI_TYPE_VERSION=([minor]="integer" [major]="integer" )' \
                 'declare -A CLI_SCOPE+=([KITCHEN_SINK]="kitchen_sink_type" )' \
-                'declare -a KITCHEN_SINK__ARRAY=()' \
-                'declare -- KITCHEN_SINK__BOOLEAN="false"' \
-                'declare -i KITCHEN_SINK__INTEGER="0"' \
-                'declare -A KITCHEN_SINK__MAP=()' \
-                'declare -A KITCHEN_SINK__MAP_OF_MAP=()' \
-                'declare -- KITCHEN_SINK__STRING=""' \
-                'declare -i KITCHEN_SINK__VERSION__MAJOR="0"' \
-                'declare -i KITCHEN_SINK__VERSION__MINOR="0"'
+                'declare -a KITCHEN_SINK_ARRAY=()' \
+                'declare -- KITCHEN_SINK_BOOLEAN="false"' \
+                'declare -i KITCHEN_SINK_INTEGER="0"' \
+                'declare -A KITCHEN_SINK_MAP=()' \
+                'declare -A KITCHEN_SINK_MAP_OF_MAP=()' \
+                'declare -- KITCHEN_SINK_STRING=""' \
+                'declare -i KITCHEN_SINK_VERSION_MAJOR="0"' \
+                'declare -i KITCHEN_SINK_VERSION_MINOR="0"'
 
         # motiviating scenario -- representation of parameter metadata
         cli core struct define --name my_meta \
@@ -387,16 +387,16 @@ self_test() {
             | ${CLI_COMMAND} --source --name MY_META --print \
             | sort \
             | assert::pipe_eq \
-                'declare -- MY_META__POSITIONAL="true"' \
+                'declare -- MY_META_POSITIONAL="true"' \
                 'declare -A CLI_SCOPE+=([MY_META]="my_meta" )' \
-                'declare -A CLI_TYPE__MY_META=([require]="map" [default]="map" [timeout]="integer" [positional]="boolean" [implicit_value]="map" [alias]="map" [allow]="map_of map" )' \
-                'declare -A MY_META__ALIAS=([h]="help" )' \
-                'declare -A MY_META__ALLOW=([help]="0" )' \
-                'declare -A MY_META__ALLOW__0=([false]="" [true]="" )' \
-                'declare -A MY_META__DEFAULT=([help]="false" )' \
-                'declare -A MY_META__IMPLICIT_VALUE=([help]="true" )' \
-                'declare -A MY_META__REQUIRE=([name]="" )' \
-                'declare -i MY_META__TIMEOUT="42"'
+                'declare -A CLI_TYPE_MY_META=([require]="map" [default]="map" [timeout]="integer" [positional]="boolean" [implicit_value]="map" [alias]="map" [allow]="map_of map" )' \
+                'declare -A MY_META_ALIAS=([h]="help" )' \
+                'declare -A MY_META_ALLOW=([help]="0" )' \
+                'declare -A MY_META_ALLOW_0=([false]="" [true]="" )' \
+                'declare -A MY_META_DEFAULT=([help]="false" )' \
+                'declare -A MY_META_IMPLICIT_VALUE=([help]="true" )' \
+                'declare -A MY_META_REQUIRE=([name]="" )' \
+                'declare -i MY_META_TIMEOUT="42"'
     }
 
     redeclare() {

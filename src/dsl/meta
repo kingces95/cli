@@ -7,6 +7,37 @@ help() {
 Command
     ${CLI_COMMAND}
 
+    Given a stream of command line productions produce a stream of
+    the following form:
+
+        struct meta {
+            map default
+            array require
+            map_of map allow
+            map alias
+            map implicit_value
+            boolean positional
+        }
+
+    'required' is an array of required options
+
+    'default' is an associative array of default values which are
+    assigned when the option is not present on the command line. All known
+    options must have a default.
+
+    'implicit_value' is an associatie array of implicit values which
+    are assigned when the option is present on the command line but no value
+    is supplied or the value is the empty string.
+
+    'alias' is an assoicative array of aliases, typically a single 
+    letter. 
+
+    'allow' is an associative array of space delimited allowed 
+    values for a given option. 
+
+    'positional' is a boolean and specifies if positional arguments 
+    are accepted.
+
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
