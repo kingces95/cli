@@ -19,22 +19,19 @@ Description
     metadata of the form:
 
         struct {
-            args args
-            map_of meta meta
-        }
+            {
+                map named
+                array positional
+            } args
 
-        args {
-            map named
-            array positional
-        }
-
-        meta {
-            map default
-            array require
-            map_of map allow
-            map alias
-            map implicit_value
-            boolean positional
+            map_of {
+                map default
+                array require
+                map_of map allow
+                map alias
+                map implicit_value
+                boolean positional
+            } meta
         }
 
     See 'cli dsl meta' for 'meta' field definitions.
@@ -67,15 +64,29 @@ inline() {
     local -n OPTIONAL_ARGS=${arg_args}_NAMED
 
     : ${arg_meta:='META'}
-    
-    local group=0
 
-    local -n ALIAS=${arg_meta}_ALIAS
-    local -n DEFAULT=${arg_meta}_DEFAULT
-    local -n IMPLICT_VALUE=${arg_meta}_IMPLICIT_VALUE
-    local -n REQUIRE=${arg_meta}_REQUIRE
-    local -n ALLOW=${arg_meta}_ALLOW
-    local -n POSITIONAL=${arg_meta}_POSITIONAL
+    # parameter groups
+    local -n groups=${arg_meta}
+    local found=false
+    for option in '*' "${!OPTIONAL_ARGS[@]}"; do
+        if [[ -n ${groups[${option}]+set} ]]; then
+            local group=${arg_meta}_${groups[${option}]}
+            found=true
+            break
+        fi
+    done
+
+    cli::check::condition ${found} \
+        "Optional arguments { ${!OPTIONAL_ARGS[@]} }" \
+        "missing a discrimiator { ${!groups[@]} }."
+
+    local -n ALIAS=${group}_ALIAS
+    local -n DEFAULT=${group}_DEFAULT
+    local -n IMPLICT_VALUE=${group}_IMPLICIT_VALUE
+    local -n REQUIRE=${group}_REQUIRE
+    local -n REGEX=${group}_REGEX
+    local -n ALLOW=${group}_ALLOW
+    local -n POSITIONAL=${group}_POSITIONAL
 
     # options
     for option in "${!OPTIONAL_ARGS[@]}"; do
@@ -111,7 +122,7 @@ inline() {
     done
 
     # required
-    for option in "${REQUIRE[@]}"; do
+    for option in "${!REQUIRE[@]}"; do
         if [[ -z "${OPTIONAL_ARGS[$option]-}" ]]; then
             cli::fail "Missing required argument '--${option}'."
         fi
@@ -124,7 +135,7 @@ inline() {
         local value=${OPTIONAL_ARGS[$option]?Option \"${option}\" missing valid default value.}
 
         # resolve name of set of allowed values
-        local -n allow=${arg_meta}_ALLOW_${ALLOW[${option}]}
+        local -n allow=${group}_ALLOW_${ALLOW[${option}]}
 
         # test set for allowed value
         if ! ${allow[$value]-false}; then
@@ -135,6 +146,22 @@ inline() {
     unset value 
     unset -n allow
 
+    # regex
+    for option in "${!REGEX[@]}"; do
+        local regex=${REGEX[${option}]}
+        if [[ -z ${REQUIRE[${option}]+set} ]]; then
+            regex="^$|${regex}"
+        fi
+        
+        local value=${OPTIONAL_ARGS[${option}]}
+        if [[ ! "${value}" =~ ${regex} ]]; then
+            cli::fail "Unexpected value '${value}' for argument '--${option}'." \
+                "Expected a value that matches regex '${regex}'."
+        fi
+    done
+    unset regex
+    unset value
+
     # positional
     if ! ${POSITIONAL} && (( ${#POSITIONAL_ARGS[@]} > 0 )); then
         cli::fail "Expected no positional arguments," \
@@ -144,16 +171,36 @@ inline() {
 
 main() {
 
+#     cli::eval << EOF
+#         struct {
+#             {
+#                 map named
+#                 array positional
+#             } args
+
+#             map_of {
+#                 map default
+#                 array require
+#                 map_of map allow
+#                 map alias
+#                 map implicit_value
+#                 boolean positional
+#             } meta
+
+#         } STRUCT
+# EOF
+
     cli::define args
     cli::define_field 'map' named args
     cli::define_field 'array' positional args
 
     cli::define meta
     cli::define_field 'map' default meta
-    cli::define_field 'array' require meta
+    cli::define_field 'map' require meta
     cli::define_field 'map_of map' allow meta
     cli::define_field 'map' alias meta
     cli::define_field 'map' implicit_value meta
+    cli::define_field 'map' regex meta
     cli::define_field 'boolean' positional meta
 
     cli::define
@@ -164,7 +211,7 @@ main() {
     cli::read
 
     arg_args=STRUCT_ARGS \
-    arg_meta=STRUCT_META_0 \
+    arg_meta=STRUCT_META \
         inline "$@"
 
     cli::write STRUCT_ARGS args
@@ -178,16 +225,16 @@ self_test() {
         | cli dsl meta \
         | cli dsl bgen \
         | sed s/^/meta\ /) \
-        <(cli args tokenize -- --f banana -h --header foo -- a0 a1 \
+        <(cli args tokenize -- -f banana -h --header Foo --id 42 -- a0 a1 \
         | sed s/^/args\ /) \
-    | cli args parse \
+    | ${CLI_COMMAND} \
     | sort \
     | assert::pipe_records_eq \
         'named display-args false' \
         'named fruit banana' \
-        'named header foo' \
+        'named header Foo' \
         'named help true' \
-        'named id ' \
+        'named id 42' \
         'named run-as ' \
         'named self-test false' \
         'positional a0' \
@@ -212,6 +259,59 @@ self_test() {
         cat <(meta) <(args $1) \
             | assert::fails "${CLI_COMMAND}" \
                 "${*:2}"
+    }
+
+    groups() {
+        meta() {
+            cat << EOF
+            meta id default id
+            meta name default name
+            meta name default namespace
+            meta name require namespace
+EOF
+        }
+
+        # provide required named argument (e.g. '--name Bob')
+        cat <(meta) <(args --name foo --namespace bar) \
+            | ${CLI_COMMAND} \
+            | assert::pipe_records_eq \
+                'named name foo' \
+                'named namespace bar'
+
+        # missing required named argument (e.g. missing '--name')
+        test_fails '--id 42 --namespace bar' \
+            "Unexpected unknown argument '--namespace'."
+    }
+
+    regex() {
+        meta() {
+            cat << EOF
+            meta * default value
+            meta * default color black
+            meta * require color
+            meta * regex value [0-9]+
+            meta * regex color [a-z]+
+EOF
+        }
+
+        # override default value (e.g. --color white)
+        cat <(meta) <(args --color white) \
+            | ${CLI_COMMAND} \
+            | assert::pipe_records_eq \
+                'named color white' \
+                'named value'
+
+        # override default value with alias (e.g. -c white)
+        cat <(meta) <(args --color white --value 42) \
+            | ${CLI_COMMAND} \
+            | assert::pipe_records_eq \
+                'named color white' \
+                'named value 42'
+
+        # set disallowed value
+        test_fails '--color 42' \
+            "Unexpected value '42' for argument '--color'." \
+            "Expected a value that matches regex '[a-z]+'."
     }
 
     allow() {
@@ -306,6 +406,8 @@ EOF
                 "Unexpected unknown argument '--unknown'."
     }
 
+    regex
+    groups
     allow
     flag
     default

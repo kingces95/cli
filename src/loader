@@ -415,10 +415,16 @@ cli::main() {
                 ;;
             '---metadata')
                 cli::loader::load::imports
-                cli::loader::cache::initialize
-                if [[ -f "${CLI_LOADER_METADATA_PATH}" ]]; then
-                    echo "${CLI_LOADER_METADATA_PATH}"
-                fi
+                help \
+                    | cli dsl tokenize \
+                    | cli dsl parse \
+                    | cli dsl meta \
+                    | cli dsl bgen --print
+
+                # cli::loader::cache::initialize
+                # if [[ -f "${CLI_LOADER_METADATA_PATH}" ]]; then
+                #     echo "${CLI_LOADER_METADATA_PATH}"
+                # fi
                 ;;
             '---dasm')
                 "$0" '---metadata' \

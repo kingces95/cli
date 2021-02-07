@@ -10,6 +10,9 @@ Command
 Description
     Like ngen, but for bash.
 
+Arguments
+    --print -p       [Flag] : Print the variables.
+
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
@@ -29,6 +32,7 @@ main() {
     cli::define_field 'map_of map' allow 
     cli::define_field 'map' alias 
     cli::define_field 'map' implicit_value 
+    cli::define_field 'map' regex 
     cli::define_field 'boolean' positional 
 
     cli::declare "map_of struct"
@@ -40,14 +44,26 @@ main() {
         | awk '$1 != "*"' \
         | cli::read
 
-    for group in "${!STRUCT[@]}"; do
+    if (( ${#STRUCT[@]} == 0 )); then
+        # no groups
         cli::load "${dir}" \
             | swap 1 2 \
-            | awk -v group=${group} '$1 == "*" { $1 = group; print; }' \
             | cli::read
-    done
+    else
+        # groups; merge universal metadata for with group
+        for group in "${!STRUCT[@]}"; do
+            cli::load "${dir}" \
+                | swap 1 2 \
+                | awk -v group=${group} '$1 == "*" { $1 = group; print; }' \
+                | cli::read
+        done
+    fi
 
-    cli::write
+    if ${arg_print}; then
+        cli::print
+    else
+        cli::write
+    fi
 
     rm -r "${dir}"
 }
@@ -57,7 +73,7 @@ self_test() {
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
-        | ${CLI_COMMAND}
+        | ${CLI_COMMAND} -p
 }
 
 cli::main "$@"

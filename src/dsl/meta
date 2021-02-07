@@ -51,6 +51,7 @@ main() {
     cli::define_field 'map_of map_of map' allow
     cli::define_field 'map_of map' alias
     cli::define_field 'map_of map' implicit_value
+    cli::define_field 'map_of map' regex
     cli::define_field 'map_of boolean' positional
 
     cli::declare
@@ -82,6 +83,10 @@ main() {
         # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
             cli::put STRUCT default "${group}" "${name}" "${identifier}"
+
+        # regex
+        elif (( production == CLI_DSL_PRODUCTION_REGEX )); then
+            cli::put STRUCT regex "${group}" "${name}" "${identifier}"
 
         # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
