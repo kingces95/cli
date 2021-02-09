@@ -2,7 +2,6 @@
 source $(cli loader)
 cli::import_group
 cli::import_inline cli bash emit
-cli::import_inline cli core variable put-builtin
 cli::import_inline cli core variable declare
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
@@ -27,9 +26,13 @@ Debug Arguments
     --source -s      [Flag] : Source stdin to provide 'CLI_TYPE_*' metadata.
 
 Global Arguments
-    ${CLI_GLOBAL_ARG_HELP}
-    ${CLI_GLOBAL_ARG_SELF_TEST}
+    ${CLI_GLOBAL_ARG_HELP_FLAG}
+    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+import() {
+    CLI_META_0_POSITIONAL="true"
 }
 
 ::cli::core::variable::put::inline() {
@@ -72,6 +75,7 @@ inline() {
 
         # map
         elif [[ ${type} == 'map' ]]; then
+
             cli::check::condition "(( $# < 3 ))" \
                 "Failed to assign value '${2:-}' to key '${1-}' in map '${arg_name}'." \
                 "Expected a record with two or fewer fields, but got '$@'."
@@ -114,6 +118,8 @@ inline() {
                 # declare variable
                 arg_name=${next_name} \
                 arg_type=${next_type} \
+                arg_print=false \
+                arg_read=false \
                     ::cli::core::variable::declare::inline
             fi
 
@@ -145,10 +151,10 @@ main() {
     fi
 
     arg_name=${arg_name} \
-    arg_type="${arg_type}"
+    arg_type="${arg_type}" \
         inline "$@"
 
-    ::cli::bash::emit::inline 'CLI_TYPE_*' "${arg_name^^}" "${arg_name^^}_*"
+    ::cli::bash::emit::inline 'CLI_TYPE_*' "${arg_name}" "${arg_name}_*"
 }
 
 self_test() {
@@ -159,6 +165,7 @@ self_test() {
         declare MY_STRING=""
         declare -p MY_STRING \
             | ${CLI_COMMAND} -s --name MY_STRING --type string -- 'Hello world!' \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_STRING="Hello world!"'
 
@@ -166,6 +173,7 @@ self_test() {
         declare -a MY_ARRAY
         declare -p MY_ARRAY \
             | ${CLI_COMMAND} -s --name MY_ARRAY --type array -- "a b c" \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -a MY_ARRAY=([0]="a b c")'
 
@@ -173,6 +181,7 @@ self_test() {
         declare -A MY_MAP
         declare -p MY_MAP \
             | ${CLI_COMMAND} -s --name MY_MAP --type map -- a "b c" \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP=([a]="b c" )'
     }
@@ -183,6 +192,7 @@ self_test() {
         declare MY_STRING=""
         declare -p MY_STRING \
             | ${CLI_COMMAND} -s --name MY_STRING --type string -- 'Hello' \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_STRING="Hello"'
 
@@ -190,6 +200,7 @@ self_test() {
         declare MY_BOOLEAN=false
         declare -p MY_BOOLEAN \
             | ${CLI_COMMAND} -s --name MY_BOOLEAN --type boolean -- true \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_BOOLEAN="true"'
 
@@ -197,6 +208,7 @@ self_test() {
         declare -i MY_INTEGER=0
         declare -p MY_INTEGER \
             | ${CLI_COMMAND} -s --name MY_INTEGER --type integer -- 42 \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -i MY_INTEGER="42"'
 
@@ -206,6 +218,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_ARRAY --type array -- a \
             | ${CLI_COMMAND} -s --name MY_ARRAY --type array -- b \
             | ${CLI_COMMAND} -s --name MY_ARRAY --type array -- c \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -a MY_ARRAY=([0]="a" [1]="b" [2]="c")'
 
@@ -215,6 +228,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP --type map -- a 0 \
             | ${CLI_COMMAND} -s --name MY_MAP --type map -- b 1 \
             | ${CLI_COMMAND} -s --name MY_MAP --type map -- c 2 \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP=([c]="2" [b]="1" [a]="0" )'
     }
@@ -226,6 +240,7 @@ self_test() {
         declare -p MY_STRING \
             | ${CLI_COMMAND} -s --name MY_STRING --type string -- 'Hello world!' \
             | ${CLI_COMMAND} -s --name MY_STRING --type string \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -- MY_STRING=\"\""
 
@@ -235,6 +250,7 @@ self_test() {
         declare -p MY_BOOLEAN \
             | ${CLI_COMMAND} -s --name MY_BOOLEAN --type boolean -- true \
             | ${CLI_COMMAND} -s --name MY_BOOLEAN --type boolean \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_BOOLEAN="false"'
 
@@ -243,6 +259,7 @@ self_test() {
         declare -p MY_INTEGER \
             | ${CLI_COMMAND} -s --name MY_INTEGER --type integer -- 42 \
             | ${CLI_COMMAND} -s --name MY_INTEGER --type integer \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -i MY_INTEGER="0"'
 
@@ -250,6 +267,7 @@ self_test() {
         declare -a MY_ARRAY=()
         declare -p MY_ARRAY \
             | ${CLI_COMMAND} -s --name MY_ARRAY --type array \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -a MY_ARRAY=()'
 
@@ -257,6 +275,7 @@ self_test() {
         declare -A MY_MAP=()
         declare -p MY_MAP \
             | ${CLI_COMMAND} -s --name MY_MAP --type map \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP=()'
     }
@@ -267,6 +286,7 @@ self_test() {
         declare -A MY_MAP_OF_STRING=()
         declare -p MY_MAP_OF_STRING \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_STRING --type 'map_of string' -- x 'Hello World' \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_STRING=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_STRING_0=\"Hello World\""
@@ -275,6 +295,7 @@ self_test() {
         declare -A MY_MAP_OF_BOOLEAN=()
         declare -p MY_MAP_OF_BOOLEAN \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_BOOLEAN --type 'map_of boolean' -- x true \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_BOOLEAN=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_BOOLEAN_0=\"true\""
@@ -283,6 +304,7 @@ self_test() {
         declare -A MY_MAP_OF_INTEGER=()
         declare -p MY_MAP_OF_INTEGER \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_INTEGER --type 'map_of integer' -- x 42 \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_INTEGER=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_INTEGER_0=\"42\""
@@ -291,6 +313,7 @@ self_test() {
         declare -A MY_MAP_OF_ARRAY=()
         declare -p MY_MAP_OF_ARRAY \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_ARRAY --type 'map_of array' -- x a b c \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_ARRAY=([x]=\"0\" )" \
                 "declare -a MY_MAP_OF_ARRAY_0=([0]=\"a\" [1]=\"b\" [2]=\"c\")"
@@ -302,6 +325,7 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_MAP_OF_MAP --type 'map_of map' -- x b 1 \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_MAP --type 'map_of map' -- y a 0 \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_MAP --type 'map_of map' -- y a \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP_OF_MAP=([y]="1" [x]="0" )' \
                 'declare -A MY_MAP_OF_MAP_0=([b]="1" [a]="0" )' \
@@ -314,6 +338,7 @@ self_test() {
         declare -A MY_MAP_OF_STRING=()
         declare -p MY_MAP_OF_STRING \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_STRING --type 'map_of string' -- x \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_STRING=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_STRING_0=\"\""
@@ -322,6 +347,7 @@ self_test() {
         declare -A MY_MAP_OF_BOOLEAN=()
         declare -p MY_MAP_OF_BOOLEAN \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_BOOLEAN --type 'map_of boolean' -- x \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_BOOLEAN=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_BOOLEAN_0=\"false\""
@@ -330,6 +356,7 @@ self_test() {
         declare -A MY_MAP_OF_INTEGER=()
         declare -p MY_MAP_OF_INTEGER \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_INTEGER --type 'map_of integer' -- x \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_INTEGER=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_INTEGER_0=\"0\""
@@ -338,6 +365,7 @@ self_test() {
         declare -A MY_MAP_OF_ARRAY=()
         declare -p MY_MAP_OF_ARRAY \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_ARRAY --type 'map_of array' -- x \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_ARRAY=([x]=\"0\" )" \
                 "declare -a MY_MAP_OF_ARRAY_0=()"
@@ -346,6 +374,7 @@ self_test() {
         declare -A MY_MAP_OF_MAP=()
         declare -p MY_MAP_OF_MAP \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_MAP --type 'map_of map' -- x \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP_OF_MAP=([x]="0" )' \
                 'declare -A MY_MAP_OF_MAP_0=()'
@@ -354,18 +383,18 @@ self_test() {
     set_udt() {
 
         # indirect
-        # declare -A CLI_TYPE_VERSION=(['major']='integer' ['minor']='integer')
-        # declare -A MY_MAP_OF_VERSION=()
-        # declare -p \
-        #     CLI_TYPE_VERSION \
-        #     MY_MAP_OF_VERSION \
-        #     | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major 1 \
-        #     | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x minor 2 \
-        #     | assert::pipe_eq \
-        #         "declare -A CLI_TYPE_VERSION=([minor]=\"integer\" [major]=\"integer\" )" \
-        #         "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
-        #         "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"1\"" \
-        #         "declare -i MY_MAP_OF_VERSION_0_MINOR=\"2\""
+        declare -A CLI_TYPE_VERSION=(['major']='integer' ['minor']='integer')
+        declare -A MY_MAP_OF_VERSION=()
+        declare -p \
+            CLI_TYPE_VERSION \
+            MY_MAP_OF_VERSION \
+            | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major 1 \
+            | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x minor 2 \
+            | cli bash emit --source -- 'MY_*' \
+            | assert::pipe_eq \
+                "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
+                "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"1\"" \
+                "declare -i MY_MAP_OF_VERSION_0_MINOR=\"2\""
 
         # indirect no key
         declare -A CLI_TYPE_VERSION=(['major']='integer' ['minor']='integer')
@@ -374,8 +403,8 @@ self_test() {
             CLI_TYPE_VERSION \
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
-                "declare -A CLI_TYPE_VERSION=([minor]=\"integer\" [major]=\"integer\" )" \
                 "declare -A MY_MAP_OF_VERSION=()" \
 
         # indirect key but no field
@@ -385,8 +414,8 @@ self_test() {
             CLI_TYPE_VERSION \
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
-                "declare -A CLI_TYPE_VERSION=([minor]=\"integer\" [major]=\"integer\" )" \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"0\"" \
                 "declare -i MY_MAP_OF_VERSION_0_MINOR=\"0\""
@@ -399,8 +428,8 @@ self_test() {
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major 1 \
             | ${CLI_COMMAND} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
-                "declare -A CLI_TYPE_VERSION=([minor]=\"integer\" [major]=\"integer\" )" \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"0\"" \
                 "declare -i MY_MAP_OF_VERSION_0_MINOR=\"0\""
@@ -423,9 +452,8 @@ self_test() {
             | ${CLI_COMMAND} -s --name MY_UDT --type udt -- version major 1 \
             | ${CLI_COMMAND} -s --name MY_UDT --type udt -- allow color white \
             | ${CLI_COMMAND} -s --name MY_UDT --type udt -- allow color black \
+            | cli bash emit --source -- 'MY_*' \
             | assert::pipe_eq \
-                'declare -A CLI_TYPE_UDT=([positional]="boolean" [version]="version" [allow]="map_of map" )' \
-                'declare -A CLI_TYPE_VERSION=([minor]="integer" [major]="integer" )' \
                 'declare -A MY_UDT_ALLOW=([color]="0" )' \
                 'declare -A MY_UDT_ALLOW_0=([black]="" [white]="" )' \
                 'declare -- MY_UDT_POSITIONAL="true"' \
@@ -499,18 +527,18 @@ self_test() {
         set -e
     }
 
-    # set_escaping
-    # set_builtin
-    # set_builtin_default
+    set_escaping
+    set_builtin
+    set_builtin_default
 
-    # set_indirect
-    # set_indirect_default
+    set_indirect
+    set_indirect_default
 
     set_udt
 
-    # test_bad_value
-    # test_too_many_values
-    # test_missing_field
+    test_bad_value
+    test_too_many_values
+    test_missing_field
 }
 
 cli::main "$@"

@@ -31,6 +31,14 @@ cli::export::functions() {
     done < <(declare -F)
 }
 
+cli::export::variable() {
+    while (( $# > 0 )); do
+        declare -p "$1" \
+            | sed 's/^declare/declare -g/'
+        shift
+    done
+}
+
 cli::export::variables() {
     local -u glob
 
@@ -39,9 +47,18 @@ cli::export::variables() {
     done
 
     for i in $(eval echo "\${!${glob}@}"); do
-        declare -p "${i}" \
-            | sed 's/^declare/declare -g/'
+        cli::export::variable "${i}"
     done
+}
+
+cli::export::variable::merge() {
+    cli::export::variable "$@" \
+        | sed 's/=/+=/'
+}
+
+cli::export() {
+    cli::export::variables "$@"
+    cli::export::functions "$@"
 }
 
 cli::export::import() {
@@ -62,16 +79,13 @@ cli::export::import_parent_group() {
     echo "cli::import ${parent_group} .group"
 }
 
-cli::export() {
-    cli::export::variables "$@"
-    cli::export::functions "$@"
-}
-
 main() {
     declare -f cli::export
     declare -f cli::export::import
     declare -f cli::export::import_group
     declare -f cli::export::import_parent_group
+    declare -f cli::export::variable
+    declare -f cli::export::variable::merge
     declare -f cli::export::variables
     declare -f cli::export::functions
 }

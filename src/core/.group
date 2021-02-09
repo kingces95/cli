@@ -22,6 +22,22 @@ export() {
 
     cli::export::import_parent_group
     cli::export cli core
+
+    declare -A CLI_SCOPE+=([CLI_META]='map_of cli_meta' )
+    cli::export::variable CLI_SCOPE
+
+    declare -A CLI_META=(["*"]="0" )
+    cli::export::variable CLI_META
+
+    declare -A CLI_META_0_ALIAS=([h]="help" )
+    declare -A CLI_META_0_ALLOW=([help]="0" [self-test]="0" )
+    declare -A CLI_META_0_ALLOW_0=([false]="" [true]="" )
+    declare -A CLI_META_0_DEFAULT=([self-test]="false" [help]="false" )
+    declare -A CLI_META_0_IMPLICIT_VALUE=([self-test]="true" [help]="true" )
+    declare -- CLI_META_0_POSITIONAL="false"
+    declare -A CLI_META_0_REGEX=()
+    declare -a CLI_META_0_REQUIRE=()
+    cli::export cli meta
 }
 
 cli::main "$@"

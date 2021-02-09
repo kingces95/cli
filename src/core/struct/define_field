@@ -50,9 +50,19 @@ Debug Arguments
     --source -s        [Flag] : Source stdin.
 
 Global Arguments
-    ${CLI_GLOBAL_ARG_HELP}
-    ${CLI_GLOBAL_ARG_SELF_TEST}
+    ${CLI_GLOBAL_ARG_HELP_FLAG}
+    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+cli::post_imports() {
+    CLI_META_0_ALIAS+=([n]="name" )
+    CLI_META_0_DEFAULT+=([name]="" )
+    CLI_META_0_REGEX+=([name]="${CLI_REGEX_STRUCT_FIELD_NAME}" )
+
+    CLI_META_0_ALIAS+=([t]="type" )
+    CLI_META_0_DEFAULT+=([type]="" )
+    CLI_META_0_REGEX+=([type]="${CLI_REGEX_TYPE_NAME}" )
 }
 
 inline() {

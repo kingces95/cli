@@ -26,8 +26,28 @@ declare CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 declare CLI_STRUCT_DEFAULT_NAME=struct
 declare CLI_STRUCT_DEFAULT_VARIABLE=STRUCT
 
-declare CLI_GLOBAL_ARG_HELP="--help -h        [Flag] : Show this message and exit."
-declare CLI_GLOBAL_ARG_SELF_TEST="--self-test      [Flag] : Runs a self test."
+declare CLI_GLOBAL_ARG_HELP_FLAG="--help -h        [Flag] : Show this message and exit."
+declare CLI_GLOBAL_ARG_SELF_TEST_FLAG="--self-test      [Flag] : Runs a self test."
+
+declare -A CLI_TYPE_CLI_META=( \
+    [require]="array" \
+    [default]="map" \
+    [regex]="map" \
+    [positional]="boolean" \
+    [implicit_value]="map" \
+    [alias]="map" \
+    [allow]="map_of map" \
+)
+
+declare -A CLI_TYPE_CLI_META_TABLES=(
+    [require]="map_of array" \
+    [default]="map_of map" \
+    [regex]="map_of map" \
+    [positional]="map_of boolean" \
+    [implicit_value]="map_of map" \
+    [alias]="map_of map" \
+    [allow]="map_of map_of map" \
+)
 
 export() {
     {
@@ -45,8 +65,11 @@ export() {
         declare -p CLI_STRUCT_DEFAULT_NAME
         declare -p CLI_STRUCT_DEFAULT_VARIABLE
 
-        declare -p CLI_GLOBAL_ARG_HELP
-        declare -p CLI_GLOBAL_ARG_SELF_TEST
+        declare -p CLI_GLOBAL_ARG_HELP_FLAG
+        declare -p CLI_GLOBAL_ARG_SELF_TEST_FLAG
+
+        declare -p CLI_TYPE_CLI_META
+        declare -p CLI_TYPE_CLI_META_TABLES
 
     } | sed 's/^declare/declare -g/'
 }

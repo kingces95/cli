@@ -2,7 +2,6 @@
 source $(cli loader)
 cli::import_group
 cli::import cli_assert
-cli::import cli util serialize
 
 help() {
     cat << EOF

@@ -32,8 +32,8 @@ Arguments
     ${CLI_CORE_TYPE_ARG_TYPE}
 
 Global Arguments
-    ${CLI_GLOBAL_ARG_HELP}
-    ${CLI_GLOBAL_ARG_SELF_TEST}
+    ${CLI_GLOBAL_ARG_HELP_FLAG}
+    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
 }
 

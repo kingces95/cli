@@ -62,8 +62,8 @@ Debug Arguments
     --source -s      [Flag] : Source stdin.
 
 Global Arguments
-    ${CLI_GLOBAL_ARG_HELP}
-    ${CLI_GLOBAL_ARG_SELF_TEST}
+    ${CLI_GLOBAL_ARG_HELP_FLAG}
+    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
 }
 
@@ -108,7 +108,7 @@ inline() {
     # read
     if ${arg_read}; then
         while read -a REPLY; do
-            arg_type= \
+            arg_type=${current_type} \
             arg_read=false \
             arg_print=false \
             arg_name=${arg_name} \
@@ -125,11 +125,17 @@ inline() {
 
     # print
     if ${arg_print}; then
+
+        # type (transitive)
         local -A visited=()
         arg_type=${current_type} \
         arg_visited=visited \
             ::cli::core::struct::emit::inline
+
+        # scope
         echo "declare -A CLI_SCOPE+=([${arg_name}]=\"${current_type}\" )"
+
+        # value
         ::cli::bash::emit::inline "${arg_name}" "${arg_name}_*"
     fi
 }

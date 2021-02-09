@@ -28,8 +28,8 @@ Debug Arguments
     --source -s      [Flag] : Source stdin to provide 'CLI_TYPE_*' metadata.
 
 Global Arguments
-    ${CLI_GLOBAL_ARG_HELP}
-    ${CLI_GLOBAL_ARG_SELF_TEST}
+    ${CLI_GLOBAL_ARG_HELP_FLAG}
+    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
 }
 

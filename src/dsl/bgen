@@ -11,7 +11,10 @@ Description
     Like ngen, but for bash.
 
 Arguments
-    --print -p       [Flag] : Print the variables.
+    --print -p       [Flag] : Print the variable.
+    --name -n     [Require] : The name of the variable.
+                              Default: CLI_META.
+                              Regex: ${CLI_REGEX_GLOBAL_NAME}.
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
@@ -25,44 +28,37 @@ swap() {
 
 main() {
     local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
+    local variable="${arg_name^^}"
+    local -n ref=${variable}
 
-    cli::define
-    cli::define_field 'map' default 
-    cli::define_field 'array' require 
-    cli::define_field 'map_of map' allow 
-    cli::define_field 'map' alias 
-    cli::define_field 'map' implicit_value 
-    cli::define_field 'map' regex 
-    cli::define_field 'boolean' positional 
-
-    cli::declare "map_of struct"
+    cli::declare "map_of cli_meta" "${variable}"
 
     cli::save "${dir}"
 
     cli::load "${dir}" \
         | swap 1 2 \
         | awk '$1 != "*"' \
-        | cli::read
+        | cli::read "${variable}"
 
-    if (( ${#STRUCT[@]} == 0 )); then
+    if (( ${#ref[@]} == 0 )); then
         # no groups
         cli::load "${dir}" \
             | swap 1 2 \
-            | cli::read
+            | cli::read "${variable}" 
     else
         # groups; merge universal metadata for with group
-        for group in "${!STRUCT[@]}"; do
+        for group in "${!ref[@]}"; do
             cli::load "${dir}" \
                 | swap 1 2 \
                 | awk -v group=${group} '$1 == "*" { $1 = group; print; }' \
-                | cli::read
+                | cli::read "${variable}"
         done
     fi
 
     if ${arg_print}; then
-        cli::print
+        cli::print "${variable}" 
     else
-        cli::write
+        cli::write "${variable}"
     fi
 
     rm -r "${dir}"
@@ -73,7 +69,7 @@ self_test() {
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
-        | ${CLI_COMMAND} -p
+        | ${CLI_COMMAND} --print
 }
 
 cli::main "$@"

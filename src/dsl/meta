@@ -38,6 +38,9 @@ Command
     'positional' is a boolean and specifies if positional arguments 
     are accepted.
 
+Arguments
+    --print -p       [Flag] : Print the meta tables.
+
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
@@ -103,17 +106,23 @@ main() {
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
             cli::put STRUCT allow "${group}" "${name}" "${identifier}"
         fi
+
     done
 
-    cli::write
+    if ${arg_print}; then  
+        cli::print
+    else
+        cli::write
+    fi
 }
 
 self_test() (
     cli dsl sample -h \
         | cli dsl tokenize \
         | cli dsl parse \
-        | cli dsl meta \
-        | sort -k1 
+        | cli dsl meta -p 
+        # \
+        # | sort -k1 
         # \
         # | cli core save --dir /tmp/meta
 )

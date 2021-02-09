@@ -2,9 +2,6 @@
 source $(cli loader)
 cli::import_group
 cli::import cli_assert
-cli::import cli util deserialize
-cli::import cli util serialize
-cli::import cli util readset
 
 help() {
     cat << EOF
@@ -170,25 +167,6 @@ inline() {
 }
 
 main() {
-
-#     cli::eval << EOF
-#         struct {
-#             {
-#                 map named
-#                 array positional
-#             } args
-
-#             map_of {
-#                 map default
-#                 array require
-#                 map_of map allow
-#                 map alias
-#                 map implicit_value
-#                 boolean positional
-#             } meta
-
-#         } STRUCT
-# EOF
 
     cli::define args
     cli::define_field 'map' named args

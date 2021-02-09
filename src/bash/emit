@@ -25,12 +25,20 @@ Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
 
+Debug Arguments
+    --source -s      [Flag] : Source stdin.
+
 Examples
     Emit the embedded variable 'MY_STRING'.
-        ${CLI_COMMAND} -- MY_STRING
+        declare MY_STRING='Hello World!'
+        declare -p MY_STRING \
+            | ${CLI_COMMAND} --source -- MY_STRING
 
     Emit the embedded variables that start with 'MY_'.
-        ${CLI_COMMAND} -- MY_*
+        declare MY_STRING='Hello World!'
+        declare -i MY_NUMBER=42
+        declare -p MY_STRING MY_NUMBER \
+            | ${CLI_COMMAND} -- MY_* \
 
     Emit nothing.
         ${CLI_COMMAND}
@@ -40,18 +48,13 @@ Examples
 EOF
 }
 
-declare MY_STRING='Hello world!'
-declare -i MY_NUMBER=42
-declare -A MY_MAP
-declare -a MY_ARRAY
-
 ::cli::bash::emit::inline() {
     inline "$@"
 }
 
 inline() {
     for name in "$@"; do
-        if [[ ${name} =~ ^.*[*]$ ]]; then
+        if [[ "${name}" =~ ^.*[*]$ ]]; then
             # declare -p \
             #     | grep "^declare [-A-Za-z]* ${name:0:-1}" \
             #     || true # grep fails on no match but we want it to succeed
@@ -63,36 +66,58 @@ inline() {
             # variables so we can use the faster one below.
             
             ::cli::bash::emit::inline $(eval "echo \${!${name}}")
-        elif [[ -z ${name} ]]; then
+        elif [[ -z "${name}" ]]; then
             continue
         else
             set +e
-            declare -p ${name} 2> /dev/null
+            declare -p "${name}" 2> /dev/null
             set -e
         fi
     done
 }
 
-self_test() {
-    inline MY_STRING MY_NUMBER MY_NOT_DEFINED \
-        | assert::pipe_eq \
-            "declare -- MY_STRING=\"Hello world!\"" \
-            "declare -i MY_NUMBER=\"42\""
+main() {
+    if ${arg_source}; then
+        source /dev/stdin
+    fi
 
-    inline 'MY_*' \
+    inline "$@"
+}
+
+self_test() {
+
+    local MY_STRING='Hello world!'
+    local -i MY_NUMBER=42
+    local -A MY_MAP
+    local -a MY_ARRAY
+
+    declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
+        | ${CLI_COMMAND} --source -- 'MY_STRING' \
         | assert::pipe_eq \
-            'declare -a MY_ARRAY' \
-            'declare -A MY_MAP' \
+            "declare -- MY_STRING=\"Hello world!\"" 
+
+    declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
+        | ${CLI_COMMAND} --source --  MY_STRING MY_NUMBER MY_NOT_DEFINED \
+        | sort -k3,3 \
+        | assert::pipe_eq \
+            "declare -i MY_NUMBER=\"42\"" \
+            "declare -- MY_STRING=\"Hello world!\""
+
+    declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
+        | ${CLI_COMMAND} --source -- 'MY_*' \
+        | sort -k3,3 \
+        | assert::pipe_eq \
             'declare -i MY_NUMBER="42"' \
             'declare -- MY_STRING="Hello world!"'
 
-    inline "NOOP_*" \
+    declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
+        | ${CLI_COMMAND} --source -- "NOOP_*" \
         | assert::pipe_eq
 
-    inline "" \
+    ${CLI_COMMAND} -- "" \
         | assert::pipe_eq
 
-    inline MY_NOT_DEFINED \
+    ${CLI_COMMAND} -- MY_NOT_DEFINED \
         | assert::pipe_eq
 }
 

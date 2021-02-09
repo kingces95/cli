@@ -22,12 +22,19 @@ Description
 
 Arguments
     ${CLI_CORE_TYPE_ARG_TYPE}
-    --recurse -r     [Flag] : Name
+    --recurse -r     [Flag] : Strip all modifiers. 
     
 Global Arguments
-    ${CLI_GLOBAL_ARG_HELP}
-    ${CLI_GLOBAL_ARG_SELF_TEST}
+    ${CLI_GLOBAL_ARG_HELP_FLAG}
+    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+cli::post_imports() {
+    CLI_META_0_ALIAS+=([r]="recurse" )
+    CLI_META_0_ALLOW+=([recurse]="0" )
+    CLI_META_0_DEFAULT+=([recurse]="false" )
+    CLI_META_0_IMPLICIT_VALUE+=([recurse]="true" )
 }
 
 inline() {

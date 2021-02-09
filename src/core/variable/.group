@@ -17,11 +17,25 @@ declare CLI_CORE_VARIABLE_ARG_NAME=
 declare CLI_CORE_VARIABLE_ARG_TYPE=
 
 export() {
+    cli::export::import_parent_group
+    
     CLI_CORE_VARIABLE_ARG_NAME="--name -n   [Required]  : The variable name. Regex: ${CLI_REGEX_GLOBAL_NAME}."
     CLI_CORE_VARIABLE_ARG_TYPE="--type -t   [Required]  : The variable type. Regex: ${CLI_REGEX_TYPE_NAME}."
-  
-    cli::export::import_parent_group
     cli::export cli core variable
+
+    declare -A CLI_META_0_ALIAS=([t]="type" [s]="source" [n]="name" )
+    declare -A CLI_META_0_ALLOW=([source]="0" )
+    declare -A CLI_META_0_DEFAULT=([source]="false" [type]="" [name]="" )
+    declare -A CLI_META_0_IMPLICIT_VALUE=([source]="true" )
+    declare -A CLI_META_0_REGEX=([type]="${CLI_REGEX_TYPE_NAME}" [name]="${CLI_REGEX_GLOBAL_NAME}" )
+    declare -a CLI_META_0_REQUIRE=([0]="name" [1]="type")
+    cli::export::variable::merge \
+        CLI_META_0_ALIAS \
+        CLI_META_0_ALLOW \
+        CLI_META_0_DEFAULT \
+        CLI_META_0_IMPLICIT_VALUE \
+        CLI_META_0_REGEX \
+        CLI_META_0_REQUIRE
 }
 
 cli::main "$@"

@@ -33,6 +33,7 @@ if [[ -f "${EXPORTS_PATH}" ]] \
     exit
 fi
 
+declare -A CLI_SCOPE=()
 declare -a CLI_LOADER_IMPORTS=()
 : ${CLI_COMMAND:=${BASH_SOURCE##*/}}
 
@@ -80,7 +81,6 @@ cli::loader::import_inline() {
     inline 'core::struct::define_field' 'core/struct/define_field'
     inline 'core::struct::emit' 'core/struct/emit'
    
-    inline 'core::type::initialize' 'core/type/initialize'
     inline 'core::type::is_builtin' 'core/type/is_builtin'
     inline 'core::type::is_modified' 'core/type/is_modified'
     inline 'core::type::is_scaler' 'core/type/is_scaler'
@@ -95,7 +95,6 @@ cli::loader::import_inline() {
 
     inline 'args::parse' 'args/parse'
     inline 'args::tokenize' 'args/tokenize'
-    inline 'args::parse' 'args/parse'
 
     inline 'run_as' 'run_as'
 }
@@ -174,6 +173,9 @@ cli::declare() {
 
 cli::put() {
     arg_name="${1:-${CLI_STRUCT_DEFAULT_VARIABLE}}" \
+    arg_read=false \
+    arg_print=false \
+    arg_type= \
         ::cli::core::declare::inline "${@:2}"
 }
 
@@ -215,6 +217,7 @@ cli::loader::cache::load() {
     declare -g CLI_LOADER_CACHE_DIR="$(arg_path="${CLI_LOADER_COMMAND_PATH}" \
         ::cli::cache::path::inline)"
     declare -g CLI_LOADER_INITIALIZE_PATH="${CLI_LOADER_CACHE_DIR}/initialize.sh"
+    declare -g CLI_LOADER_BGEN_PATH="${CLI_LOADER_CACHE_DIR}/bgen.sh"
     declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
     declare -g CLI_LOADER_METADATA_PATH="${CLI_LOADER_CACHE_DIR}/metadata.sh"
 }
@@ -261,13 +264,28 @@ cli::loader::cache::initialize() {
             | cli dsl emit \
             | arg_cache="${CLI_LOADER_INITIALIZE_PATH}" \
                 ::cli::cache::put::inline
+    fi
+}
 
-        # "$0" '--help' \
-        #     | cli dsl tokenize \
-        #     | cli dsl parse \
-        #     | cli dsl meta \
-        #     | arg_cache="${CLI_LOADER_METADATA_PATH}" \
-        #         ::cli::cache::put::inline
+cli::loader::cache::bgen() {
+
+    if [[ -n ${CLI_SCOPE[CLI_META]+set} ]]; then
+        cli::print CLI_META
+        return 
+    fi
+
+    # test cache 
+    if ! cli::cache::test "${CLI_LOADER_BGEN_PATH}"; then
+        echo "--- GENERATED ---"
+        # generate (like ngen)
+        "$0" '--help' \
+            | cli dsl tokenize \
+            | cli dsl parse \
+            | cli dsl meta \
+            | cli dsl bgen --print 
+            # \
+            # | arg_cache="${CLI_LOADER_BGEN_PATH}" \
+            #     ::cli::cache::put::inline
     fi
 }
 
@@ -277,6 +295,7 @@ cli::loader::load::imports() {
     local -a import=()
     local -A imported=()
     local -A base_path=()
+    local -a export_paths=()
 
     # foreach import
     for (( i=0; i < ${#CLI_LOADER_IMPORTS[@]}; i++ )); do
@@ -316,10 +335,25 @@ cli::loader::load::imports() {
             # refresh import codegen cache
             ${import[@]} '---exports' > /dev/null
         fi
-            
-        # source codegen
+
+        # source the exports to gather imports only (ignore declare)
+        declare() { return; }
         source "${exports_path}"
+        unset declare
+
+        export_paths+=( "${exports_path}" )
     done
+
+    # source exports in reverse order so that dependencies are sourced first
+    for (( i=1; i<=${#export_paths[@]}; i++ )); do
+        export_path="${export_paths[@]: -$i:1}"
+        source "${export_path}"
+    done
+
+    # manual imports
+    if arg_name=import ::cli::bash::is_function_declared::inline; then
+        import
+    fi
 }
 
 cli::loader::load::initialize() {
@@ -380,10 +414,6 @@ cli::loader::self_test() {
 }
 
 cli::main() {
-    declare -Ag CLI_META_DEFAULTS=()
-    declare -Ag CLI_META_ALIASES=()
-    declare -ag CLI_META_REQUIRED=()
-    declare -Ag CLI_META_ALLOWED_VALUES=()
 
     # implicit imports
     if arg_name=export ::cli::bash::is_function_declared::inline; then
@@ -413,33 +443,29 @@ cli::main() {
                     echo "${CLI_LOADER_INITIALIZE_PATH}"
                 fi
                 ;;
-            '---metadata')
+            '---tokenize')
                 cli::loader::load::imports
-                help \
-                    | cli dsl tokenize \
-                    | cli dsl parse \
-                    | cli dsl meta \
-                    | cli dsl bgen --print
-
-                # cli::loader::cache::initialize
-                # if [[ -f "${CLI_LOADER_METADATA_PATH}" ]]; then
-                #     echo "${CLI_LOADER_METADATA_PATH}"
-                # fi
+                help | cli dsl tokenize
                 ;;
-            '---dasm')
-                "$0" '---metadata' \
-                    | read; cat "${REPLY}" \
-                    | cli util serialize -s -- \
-                        CLI_META_DEFAULT \
-                        CLI_META_REQUIRED \
-                        CLI_META_ALIASES \
-                        CLI_META_ALLOWED_VALUES \
-                        CLI_META_IMPLICIT_VALUES \
-                        CLI_META_POSITIONAL
+            '---parse')
+                cli::loader::load::imports
+                help | cli dsl tokenize | cli dsl parse 
                 ;;
+            '---meta')
+                cli::loader::load::imports
+                help | cli dsl tokenize | cli dsl parse | cli dsl meta 
+                ;;
+            '---bgen')
+                cli::loader::load::imports
+                cli::loader::cache::bgen
+                if [[ -f "${CLI_LOADER_BGEN_PATH}" ]]; then
+                    echo "${CLI_LOADER_BGEN_PATH}"
+                fi
+                ;;
+            '---load')
+                "$0" '---bgen' | read; cat "${REPLY}" ;;
             '---emit')
-                "$0" '---exports' | read; cat "${REPLY}"
-                ;;
+                "$0" '---exports' | read; cat "${REPLY}" ;;
             '---exports')
                 cli::loader::cache::exports
                 echo "${CLI_LOADER_EXPORTS_PATH}"
@@ -499,12 +525,16 @@ main() {
     # If set, Bash allows filename patterns which match 
     # no files to expand to a null string, rather than themselves.
     echo 'shopt -s nullglob' 
+
+    # enables BASH_ARGC and BASH_ARGV
+    echo 'shopt -s extdebug'
     echo
 
     echo "help() { echo \"Unexpected missing 'help' in \${BASH_SOURCE[1]}.\"; }"
     echo "self_test() { return; }"
     echo
 
+    echo "declare -A CLI_SCOPE=()"
     echo "declare -a CLI_LOADER_IMPORTS=()"
     echo ": \${CLI_COMMAND:=\${BASH_SOURCE[1]##*/}}"
     echo
@@ -553,7 +583,6 @@ main() {
     declare -f ::cli::core::struct::emit::inline
     echo
 
-    declare -f ::cli::core::type::initialize::inline
     declare -f ::cli::core::type::is_builtin::inline
     declare -f ::cli::core::type::is_modified::inline
     declare -f ::cli::core::type::is_scaler::inline
@@ -614,6 +643,7 @@ main() {
 
         declare -f cli::loader::cache::load
         declare -f cli::loader::cache::initialize
+        declare -f cli::loader::cache::bgen
         declare -f cli::loader::cache::exports
         echo
 

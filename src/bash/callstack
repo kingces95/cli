@@ -22,11 +22,29 @@ EOF
 }
 
 inline() {
-    local i=0
-    while read line frame file < <(caller $i); do
-        printf '%-40s %-30s:%s\n' $frame $file $line
-        i=$(( i + 1 ))
-    done
+    local c=0
+    local v=0
+
+    echo $$
+
+    set ${BASH_ARGC[@]:1}
+    while read line subroutine file < <(caller $c); do
+        
+        local -a argv=()
+        for (( i=0; i<$1; i++ )); do
+            argv=( "${BASH_ARGV[${v}]}" "${argv[@]}" )
+            v=$(( v + 1 ))
+        done
+
+        printf '[%s] %-50s %-30s:%s\n' \
+            "${c}" \
+            "${subroutine} ${argv[*]}" \
+            "${file}" \
+            "${line}"
+
+        c=$(( c + 1 ))
+        shift
+    done | sed 's/^/  /'
 }
 
 self_test() {
