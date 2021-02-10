@@ -172,16 +172,12 @@ inline() {
 }
 
 main() {    
-    cli::define
-    cli::define_field 'array' path
-    cli::define_field 'map' named
-    cli::define_field 'array' positional
+    cli::declare cli_args STRUCT
 
-    cli::declare
+    arg_variable=STRUCT \
+        inline "$@"
 
-    inline "$@"
-
-    cli::write
+    cli::write STRUCT
 }
 
 self_test() {
@@ -240,6 +236,7 @@ self_test() {
         'positional a0' \
         'positional a1'
 
+exit
     # bad names
     assert::fails "${CLI_COMMAND} -- -!"
     assert::fails "${CLI_COMMAND} -- --!"

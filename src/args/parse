@@ -167,23 +167,9 @@ inline() {
 }
 
 main() {
-
-    cli::define args
-    cli::define_field 'map' named args
-    cli::define_field 'array' positional args
-
-    cli::define meta
-    cli::define_field 'map' default meta
-    cli::define_field 'map' require meta
-    cli::define_field 'map_of map' allow meta
-    cli::define_field 'map' alias meta
-    cli::define_field 'map' implicit_value meta
-    cli::define_field 'map' regex meta
-    cli::define_field 'boolean' positional meta
-
     cli::define
-    cli::define_field 'args' args
-    cli::define_field 'map_of meta' meta
+    cli::define_field 'cli_args' args
+    cli::define_field 'map_of cli_meta' meta
 
     cli::declare
     cli::read
@@ -192,7 +178,7 @@ main() {
     arg_meta=STRUCT_META \
         inline "$@"
 
-    cli::write STRUCT_ARGS args
+    cli::write STRUCT_ARGS cli_args
 }
 
 self_test() {

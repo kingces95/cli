@@ -29,8 +29,14 @@ declare CLI_STRUCT_DEFAULT_VARIABLE=STRUCT
 declare CLI_GLOBAL_ARG_HELP_FLAG="--help -h        [Flag] : Show this message and exit."
 declare CLI_GLOBAL_ARG_SELF_TEST_FLAG="--self-test      [Flag] : Runs a self test."
 
+declare -A CLI_TYPE_CLI_ARGS=( \
+    [path]="array" \
+    [named]="map" \
+    [positional]="array" \
+)
+
 declare -A CLI_TYPE_CLI_META=( \
-    [require]="array" \
+    [require]="map" \
     [default]="map" \
     [regex]="map" \
     [positional]="boolean" \
@@ -40,7 +46,7 @@ declare -A CLI_TYPE_CLI_META=( \
 )
 
 declare -A CLI_TYPE_CLI_META_TABLES=(
-    [require]="map_of array" \
+    [require]="map_of map" \
     [default]="map_of map" \
     [regex]="map_of map" \
     [positional]="map_of boolean" \
@@ -68,6 +74,7 @@ export() {
         declare -p CLI_GLOBAL_ARG_HELP_FLAG
         declare -p CLI_GLOBAL_ARG_SELF_TEST_FLAG
 
+        declare -p CLI_TYPE_CLI_ARGS
         declare -p CLI_TYPE_CLI_META
         declare -p CLI_TYPE_CLI_META_TABLES
 
