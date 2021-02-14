@@ -5,7 +5,7 @@ cli::import cli_assert
 cli::import_inline cli bash emit
 
 help() {
-cat << EOF
+    cat << EOF  | cli::core::variable::help
 Command
     ${CLI_COMMAND}
     
@@ -22,18 +22,11 @@ Description
         array       ()
 
     Indirect variables (e.g. map_of) are initialized same as maps.
-
-Arguments
-    ${CLI_CORE_VARIABLE_ARG_NAME}
-    ${CLI_CORE_VARIABLE_ARG_TYPE}
-
-Debug Arguments
-    --source -s      [Flag] : Source stdin to provide variable to initialize.
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+import() {
+    cli::core::variable::import
 }
 
 inline() {

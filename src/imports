@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -16,15 +17,21 @@ Arguments
     --resolve -r     [Flag] : Print the file to which the import 
                               resolves after printing the import.
     --                      : List of imports.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     Emit the unique sorted imports of 'cli dsl'
         cli imports -c "cli dsl"
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'cli'
+    cli::meta::add_flag 'tree'
+    cli::meta::add_flag 'unique'
+    cli::meta::add_flag 'resolve'
+    cli::meta::allow_positional
 }
 
 cli::imports::recurse() {

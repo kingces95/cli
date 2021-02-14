@@ -4,7 +4,7 @@ cli::import_group
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND}
     
@@ -22,14 +22,11 @@ Description
     of a variable whose type is the element type of the modified type.
     For example a 'map_of map_of string' is a map whose values point to
     yet another map whose values point to strings.
-
-Arguments
-    ${CLI_CORE_TYPE_ARG_TYPE}
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+import() {
+    cli::core::type::import
 }
 
 inline() {

@@ -5,13 +5,9 @@ cli::import cli emit initialize
 cli::import cli_emit
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
 }
 

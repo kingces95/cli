@@ -3,7 +3,7 @@ source $(cli loader)
 cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -16,11 +16,9 @@ Description
 
 Arguments
     --cli -c     [Required] : Name of the cli.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-
+EOF
+    cat << EOF
+    
 Exmaples
     Emit 'cli::find::define_initialize'
         cli find | cli emit define-initialize

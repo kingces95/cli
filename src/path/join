@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -17,14 +18,12 @@ Description
     period. Each dash is replaced with underbar during the join. 
 
 Arguments
-    --delimiter  [Required] : Default: /. Allowed values: /, ::.
-    --base                  : Base path. Value is simply prepended
+    --delimiter -d [Required] : Default: /. Allowed values: /, ::.
+    --base -b               : Base path. Value is simply prepended
                               to the joined segments. Default is the delimiter.
     --                      : Segments to join into a path.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+EOF
+    cat << EOF
 
 Examples
     Join segments 'foo' 'bar' into '/foo/bar'
@@ -40,6 +39,13 @@ Examples
         ${CLI_COMMAND} --base usr -- foo bar
 
 EOF
+}
+
+import() {
+    cli::meta::add_required 'delimiter' '/'
+    cli::meta::add_optional 'base'
+    cli::meta::allow_positional
+    # TODO: Allowed values: ...
 }
 
 inline() {

@@ -8,7 +8,7 @@ cli::import_inline cli core type is-modified
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF  | cli::core::variable::help
 Command
     ${CLI_COMMAND}
     
@@ -18,21 +18,13 @@ Summary
 Description
 
 Arguments
-    ${CLI_CORE_VARIABLE_ARG_NAME}
-    ${CLI_CORE_VARIABLE_ARG_TYPE}
     --                      : Record to put.
-
-Debug Arguments
-    --source -s      [Flag] : Source stdin to provide 'CLI_TYPE_*' metadata.
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
 }
 
 import() {
-    CLI_META_0_POSITIONAL="true"
+    cli::core::variable::import
+    cli::meta::allow_positional
 }
 
 ::cli::core::variable::put::inline() {

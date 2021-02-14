@@ -3,7 +3,7 @@ source $(cli loader)
 cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -12,11 +12,9 @@ Summary
 
 Arguments
     --name -n    [Required] : Name of the function. 
-                              Default: cli::shim::is_command. 
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+                              Default: cli::shim::is_command.
+EOF
+    cat << EOF
 
 Examples
     Emit a predicate that test if a path is a command.

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -12,15 +13,17 @@ Summary
 
 Arguments
     --name -n    [Required] : The name of the function.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     Test for the function 'inline'.
         ${CLI_COMMAND} --name inline
 EOF
+}
+
+import() {
+    cli::meta::add_required 'name'
 }
 
 inline() {

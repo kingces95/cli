@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -17,12 +18,12 @@ Description
     and then that temp file is moved to the cache path. 
 
 Arguments
-    --cache       [Required] : Path to the cache.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+    --cache -c    [Required] : Path to the cache.
 EOF
+}
+
+import() {
+    cli::meta::add_required 'cache'
 }
 
 inline() {

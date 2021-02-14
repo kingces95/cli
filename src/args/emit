@@ -6,7 +6,7 @@ cli::import_inline cli name to-bash
 cli::import_inline cli bash emit
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -29,11 +29,11 @@ Description
 
 Arguments
     --prefix -p             : The prefix of the declared variables. Default: arg.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'prefix' 'arg'
 }
 
 inline() {
@@ -79,7 +79,7 @@ main() {
 
     arg_prefix=${prefix} \
     arg_args=STRUCT \
-        inline "$@"
+        inline
 
     ::cli::bash::emit::inline "${prefix}_*"
 }
@@ -91,6 +91,12 @@ self_test() {
         | assert::pipe_records_eq \
             'declare -A arg__=()' \
             'declare -a arg_=()'
+
+    ${CLI_COMMAND} --prefix test < /dev/null \
+        | sort \
+        | assert::pipe_records_eq \
+            'declare -A test__=()' \
+            'declare -a test_=()'
 
     cat <(cli dsl sample -h \
             | cli dsl tokenize \

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -19,13 +20,14 @@ Description
     returns a failure code if the cache is stale or the arguments are bad.
 
 Arguments
-    --cache       [Required] : Path to the cache.
-    --source      [Required] : Path to the source file.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+    --cache -c    [Required] : Path to the cache.
+    --source -s   [Required] : Path to the source file.
 EOF
+}
+
+import() {
+    cli::meta::add_required 'cache'
+    cli::meta::add_required 'source'
 }
 
 inline() {
@@ -46,12 +48,12 @@ self_test() {
     fi
 
     touch "$source_path"
-    if ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}"; then
+    if ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
         assert::fail 'Stale cache reported fresh.'
     fi
 
     rm "${cache_path}"
-    if ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}"; then
+    if ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
         assert::fail 'Missing cache reported fresh.'
     fi
 

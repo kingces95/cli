@@ -10,7 +10,7 @@ cli::import_inline cli core type unmodify
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::sourceable | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -29,7 +29,7 @@ Description
 
     Maps have named children. An map's values are its children and the map's keys
     are the child names.
-.     
+
     Anonymous structs (i.e. a type modified by 'map_of') have named children. An 
     annonymous struct is represented by a bash map. Its children are its values 
     and each child's name is its associated keys.
@@ -45,13 +45,8 @@ Arguments
     ${CLI_CORE_ARG_NAME}
     ${CLI_CORE_ARG_TYPE}
     --                      : Names of the parents.
-
-Debug Arguments
-    --source -s      [Flag] : Source stdin.
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
+EOF
+    cat << EOF
 
 Examples
     For example, writing a type variable of type 'metadata' consisting of 
@@ -62,13 +57,13 @@ Examples
     where 'positional' is 'true' and 'allow' is has a key 'color' which points at a 
     map whose keys are 'black' and 'white' and whose values are empty:
 
-        cli core struct define --name metadata \
-            | cli core struct define-field --name positional --type boolean \
-            | cli core struct define-field --name allow --type 'map_of map' \
-            | cli core declare --source --name meta --type metadata \
-            | cli core declare --source --name meta -- allow color black \
-            | cli core declare --source --name meta -- allow color white \
-            | cli core declare --source --name meta -- positional true \
+        cli core struct define --name metadata \\
+            | cli core struct define-field --name positional --type boolean \\
+            | cli core struct define-field --name allow --type 'map_of map' \\
+            | cli core declare --source --name meta --type metadata \\
+            | cli core declare --source --name meta -- allow color black \\
+            | cli core declare --source --name meta -- allow color white \\
+            | cli core declare --source --name meta -- positional true \\
             | cli core write --source --name meta
 
     would produce the following records: 
@@ -77,6 +72,15 @@ Examples
         allow color white
         positional true
 EOF
+}
+
+import() {
+    cli::meta::add_flag 'source'
+
+    cli::meta::add_optional 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
+    cli::meta::add_optional 'type' '' "${CLI_REGEX_TYPE_NAME}"
+
+    cli::meta::allow_positional
 }
 
 ::cli::core::write::inline() {

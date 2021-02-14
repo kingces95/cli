@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -26,14 +27,14 @@ Description
 Arguments
     --                      : The fields of the table record.
 
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-
 Examples
     Write and read a record with fields 'x', space, tab, and backslash.
         ${CLI_COMMAND} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY
 EOF
+}
+
+import() {
+    cli::meta::allow_positional
 }
 
 inline() {

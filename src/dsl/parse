@@ -3,7 +3,7 @@ source $(cli loader)
 cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -23,17 +23,18 @@ Description
     otherwise it is unexpected.
 
 Arguments
-    --file                  : The file to report is being parsed if an error occurs.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-
+    --file -f               : The file to report is being parsed if an error occurs.
+EOF
+    cat << EOF
 
 Examples
     Parse the sample help.
         cli dsl help sample -h | cli dsl help tokenize | cli dsl help parse
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'file'
 }
 
 declare line
@@ -238,24 +239,6 @@ self_test() {
             'help 5 FLAG ' \
             'self-test 0 NAME self-test' \
             'self-test 5 FLAG '
-}
-
-initialize() {
-    : ${arg_help:=false}
-    : ${arg_self_test:=false}
-
-    while (( $# > 0 )); do
-        case $1 in
-            '-h') ;& '--help') arg_help=true ;;
-            '--self-test') arg_self_test=true ;;
-            '--file') arg_file=${2-}; shift; ;;
-            *) echo "Unexpected argument $1."; exit 1 ;;
-        esac
-
-        shift
-    done
-
-    : ${arg_file:='UNKNOWN'}
 }
 
 cli::main "$@"

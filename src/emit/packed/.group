@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
-
-Global Arguments
-    --help -h           [Flag] : Show this message and exit.
-    --self-test         [Flag] : Runs a self test.
 EOF
 }
 
@@ -18,6 +15,7 @@ cli::emit::library_name() {
 }
 
 export() {
+    cli::export::import_parent_group
     cli::export::import cli_emit
     cli::export cli emit
 }

@@ -5,7 +5,7 @@ cli::import_inline cli core type is-scaler
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND}
     
@@ -22,14 +22,11 @@ Description
         array
 
     otherwise false.
-
-Arguments
-    ${CLI_CORE_TYPE_ARG_TYPE}
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+import() {
+    cli::core::type::import
 }
 
 inline() {

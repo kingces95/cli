@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -16,15 +17,17 @@ Description
 
 Arguments
     --name -n               : The name of the associative array. Default: RESULT.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     Create the set { 'a' 'b' 'c' }.
         ${CLI_COMMAND} -emit <<< $'a\n\b\nc'
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'name' 'RESULT'
 }
 
 inline() {

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::sourceable | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -20,13 +21,8 @@ Description
 
 Arguments
     --                      : The variables to emit.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-
-Debug Arguments
-    --source -s      [Flag] : Source stdin.
+EOF
+    cat << EOF
 
 Examples
     Emit the embedded variable 'MY_STRING'.
@@ -46,6 +42,11 @@ Examples
     Emit nothing.
         ${CLI_COMMAND} -- ''
 EOF
+}
+
+import() {
+    cli::meta::add_flag 'source'
+    cli::meta::allow_positional
 }
 
 ::cli::bash::emit::inline() {

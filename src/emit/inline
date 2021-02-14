@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
+cli::import cli_assert
 
 help() {
     cat << EOF
 Command
-    ${CLI_COMMAND}
+    cat << EOF | cli::help::global
 
 Summary
     Emit a function whose body is the main function of a command.
@@ -16,16 +18,19 @@ Description
 Arguments
     --name   [Required] : The name of the inline function.
     --function          : The name of the function to inline. Default: inline.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+EOF
+    cat << EOF
 
 Examples
     Print the main function renmaed to 'say_hi'.
         ${CLI_COMMAND} --name say_hi \\
             <<< "source \\\$(cli loader); inline() { echo 'hi'; }; cli::main"
 EOF
+}
+
+import() {
+    cli::meta::add_required 'name'
+    cli::meta::add_optional 'function' 'inline'
 }
 
 inline() {
@@ -40,6 +45,7 @@ inline() {
         cli::main() { return; }
         cli::import() { return; }
         cli::import_group() { return; }
+        cli::import_parent_group() { return; }
 
         # capture imports upon which the inlined function depends
         cli::import_inline() {
@@ -61,25 +67,6 @@ inline() {
             cat
         }
     )
-}
-
-initialize() {
-    : ${arg_help:=false}
-    : ${arg_self_test:=false}
-    : ${arg_name:=}
-    : ${arg_function:='inline'}
-
-    while (( $# > 0 )); do
-        case $1 in
-            '--name') arg_name="${2:-}"; shift ;;
-            '--function') arg_function="${2:-}"; shift ;;
-            '-h') ;& '--help') arg_help=true ;;
-            '--self-test') arg_self_test=true ;;
-            *) echo "Unexpected argument '$1'."; exit 1 ;;
-        esac
-
-        shift
-    done
 }
 
 self_test() {

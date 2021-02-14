@@ -91,10 +91,13 @@ cli::loader::import_inline() {
     inline 'cache::test' 'cache/test'
     inline 'cache::path' 'cache/path'
 
+    inline 'name::to_bash' 'name/to_bash'
+
     inline 'path::join' 'path/join'
 
     inline 'args::parse' 'args/parse'
     inline 'args::tokenize' 'args/tokenize'
+    inline 'args::emit' 'args/emit'
 
     inline 'run_as' 'run_as'
 }
@@ -230,7 +233,6 @@ cli::cache::test() {
 
 cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
-
         # declarative; e.g. inline
         if arg_name=inline ::cli::bash::is_function_declared::inline; then
             cli emit inline \
@@ -363,6 +365,23 @@ cli::loader::load::initialize() {
     fi
 }
 
+cli::loader::initialize() {
+    cli::assert "[[ -n ${CLI_SCOPE[CLI_META]+set} ]]"
+
+    cli::declare cli_args CLI_ARGS
+
+    arg_args=CLI_ARGS \
+        ::cli::args::tokenize::inline "$@"
+    
+    arg_args=CLI_ARGS \
+    arg_meta=CLI_META \
+        ::cli::args::parse::inline
+    
+    arg_prefix='arg' \
+    arg_args=CLI_ARGS \
+        ::cli::args::emit::inline
+}
+
 cli::loader::execute() {
 
     # declare well known variables
@@ -370,7 +389,13 @@ cli::loader::execute() {
 
     # save and verify args, then define/initialize variables
     local -a args=( "$@" )
-    initialize "$@"
+
+    # initialize
+    if [[ -n ${CLI_SCOPE[CLI_META]+set} ]]; then
+        cli::loader::initialize "$@"
+    else
+        initialize "$@"
+    fi
 
     # implement well known features
     if [[ -n "${arg_run_as}" ]] && [[ ! "${arg_run_as}" == "$(whoami)" ]]; then
@@ -443,6 +468,15 @@ cli::main() {
                     echo "${CLI_LOADER_INITIALIZE_PATH}"
                 fi
                 ;;
+            '---bgen')
+                cli::loader::load::imports
+                # cli::loader::cache::bgen
+                declare -p CLI_SCOPE
+                cli::print CLI_META
+                # if [[ -f "${CLI_LOADER_BGEN_PATH}" ]]; then
+                #     echo "${CLI_LOADER_BGEN_PATH}"
+                # fi
+                ;;
             '---tokenize')
                 cli::loader::load::imports
                 help | cli dsl tokenize
@@ -454,13 +488,6 @@ cli::main() {
             '---meta')
                 cli::loader::load::imports
                 help | cli dsl tokenize | cli dsl parse | cli dsl meta 
-                ;;
-            '---bgen')
-                cli::loader::load::imports
-                cli::loader::cache::bgen
-                if [[ -f "${CLI_LOADER_BGEN_PATH}" ]]; then
-                    echo "${CLI_LOADER_BGEN_PATH}"
-                fi
                 ;;
             '---load')
                 "$0" '---bgen' | read; cat "${REPLY}" ;;
@@ -494,7 +521,11 @@ cli::main() {
         ;;
     esac 
 
-    cli::loader::load::initialize
+    if [[ -n ${CLI_SCOPE[CLI_META]+set} ]]; then
+        :
+    else
+        cli::loader::load::initialize
+    fi
 
     cli::loader::execute "$@"
 }
@@ -590,11 +621,15 @@ main() {
     declare -f ::cli::core::type::unmodify::inline
     echo
 
+    declare -f ::cli::name::to_bash::inline
+    echo
+
     declare -f ::cli::run_as::inline
     echo
 
     declare -f ::cli::args::tokenize::inline
     declare -f ::cli::args::parse::inline
+    declare -f ::cli::args::emit::inline
     echo
 
     declare -f ::cli::path::join::inline
@@ -649,6 +684,7 @@ main() {
 
         declare -f cli::loader::load::imports
         declare -f cli::loader::load::initialize
+        declare -f cli::loader::initialize
         echo
 
         # ${bash_source[0]} is '.cli/exports.sh' which is called by

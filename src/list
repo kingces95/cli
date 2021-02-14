@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -18,15 +19,17 @@ Description
 
 Arguments
     --dir -d            : The directory. Default is the current directory.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+EOF
+    cat << EOF
 
 Examples
     List commands in '/usr/bin'
         cli list --dir usr/bin
 EOF
+}
+
+import() {
+    cli::meta::add_optional dir
 }
 
 main() (

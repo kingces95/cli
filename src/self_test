@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -16,11 +17,11 @@ Description
 
 Arguments
     --dir                   : The directory to start searching for commands.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --dry-run        [Flag] : Show the commands that would be run.
 EOF
+}
+
+import() {
+    cli::meta::add_required 'dir'
 }
 
 report() {

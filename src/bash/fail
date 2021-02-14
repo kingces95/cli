@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
 cli::import cli_assert
 cli::import_inline cli bash callstack
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -14,11 +15,12 @@ Summary
 Arguments
     --exit-code -e          : The exit code to return. Default: 1.
     --message -m            : The error message message.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'exit-code' 1
+    cli::meta::add_optional 'message'
 }
 
 inline() {
@@ -26,22 +28,12 @@ inline() {
     : ${arg_message='Unexpected general failure. You found a bug!'}
 
     echo "${arg_message}" >&2
-
-    # {
-        # ::cli::bash::callstack::inline
-        # echo
-        # echo ARGS:
-        # for arg in ${!arg_*}; do
-        #     declare -p ${arg} 
-        # done
-    # } | sed 's/^/    /' >&2
-
     exit ${arg_exit_code}
 }
 
 self_test() {
     set +e
-    assert::fails "arg_message='failed' inline"
+    assert::fails "arg_message='failed' inline" "failed"
 }
 
 cli::main "$@"

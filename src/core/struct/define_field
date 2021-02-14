@@ -5,7 +5,7 @@ cli::import cli_assert
 cli::import_inline cli bash emit
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::sourceable | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -45,24 +45,12 @@ Description
 Arguments
     --name -n       [Require] : Name of the field. Regex: ${CLI_REGEX_STRUCT_FIELD_NAME}.
     --type -t       [Require] : Type of the field. Regex: ${CLI_REGEX_TYPE_NAME}.
-
-Debug Arguments
-    --source -s        [Flag] : Source stdin.
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
 }
 
-cli::post_imports() {
-    CLI_META_0_ALIAS+=([n]="name" )
-    CLI_META_0_DEFAULT+=([name]="" )
-    CLI_META_0_REGEX+=([name]="${CLI_REGEX_STRUCT_FIELD_NAME}" )
-
-    CLI_META_0_ALIAS+=([t]="type" )
-    CLI_META_0_DEFAULT+=([type]="" )
-    CLI_META_0_REGEX+=([type]="${CLI_REGEX_TYPE_NAME}" )
+import() {
+    cli::meta::add_required 'name' '' ${CLI_REGEX_STRUCT_NAME}
+    cli::meta::add_required 'type' '' ${CLI_REGEX_TYPE_NAME}
 }
 
 inline() {
@@ -78,34 +66,34 @@ inline() {
 main() {
     
     # read metadata (e.g # my_type)
-    read pound type
+    read pound struct
 
-    # source the type
+    # source the struct
     source /dev/stdin
 
-    # update fields associated with type
-    arg_struct=${type} \
+    # update fields associated with struct
+    arg_struct=${struct} \
     arg_name=${arg_name} \
     arg_type="${arg_type}" \
         inline 
 
     # echo metadata
-    echo ${pound} ${type}
+    echo ${pound} ${struct}
 
-    # emit type with the new field
+    # emit struct with the new field
     ::cli::bash::emit::inline 'CLI_TYPE_*'
 }
 
 self_test() {
-    cli core struct define --name version  \
+    cli core struct define --name my_version  \
         | ${CLI_COMMAND} --name major --type 'integer' \
         | ${CLI_COMMAND} --name minor --type 'integer' \
-        | cli core struct define -s --name table \
+        | cli core struct define --source --name my_table \
         | ${CLI_COMMAND} --name allow --type 'map_of map' \
+        | cli bash emit --source -- 'CLI_TYPE_MY_*' \
         | assert::pipe_eq \
-            '# table' \
-            'declare -A CLI_TYPE_TABLE=([allow]="map_of map" )' \
-            'declare -A CLI_TYPE_VERSION=([minor]="integer" [major]="integer" )'
+            'declare -A CLI_TYPE_MY_TABLE=([allow]="map_of map" )' \
+            'declare -A CLI_TYPE_MY_VERSION=([minor]="integer" [major]="integer" )'
 }
 
 cli::main "$@"

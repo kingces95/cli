@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
 cli::import_group
-cli::import cli emit initialize
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -35,10 +34,8 @@ Description
     followed by a comma or period respectively (e.g. a default 
     value and/or allowed value lists). CLI_DSL_TOKEN_EOF is emitted last 
     except if CLI_DSL_TOKEN_ERROR is emitted, in which case it's last.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     Parse this help.

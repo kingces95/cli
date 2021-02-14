@@ -4,7 +4,7 @@ cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -59,15 +59,17 @@ Description
 
 Arguments
     --                      : Command line arguments.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     Tokenize 'bin cli --k0 v0 --flag -xyz v1 -- a0 a1'.
         ${CLI_COMMAND} -- bin cli --k0 v0 --flag -xyz v1 -- a0 a1
 EOF
+}
+
+import() {
+    cli::meta::allow_positional
 }
 
 inline() {
@@ -76,7 +78,7 @@ inline() {
     local DASH_DASH_ARG_REGEX="^--([^-].*)$"
     local DASH_DASH_DASH_ARG_REGEX="^---([^-].*)$"
 
-    : ${arg_variable:=${CLI_STRUCT_DEFAULT_VARIABLE}}
+    : ${arg_args:=${CLI_STRUCT_DEFAULT_VARIABLE}}
 
     # path
     while (( $# > 0 )); do
@@ -84,7 +86,7 @@ inline() {
             break;
         fi
 
-        cli::put "${arg_variable}" 'path' "$1"
+        cli::put "${arg_args}" 'path' "$1"
         shift
     done
 
@@ -152,7 +154,7 @@ inline() {
             fi
 
             # publish
-            cli::put "${arg_variable}" 'named' "${key}" "${value}"
+            cli::put "${arg_args}" 'named' "${key}" "${value}"
             named[${key}]=
             continue
         fi
@@ -165,7 +167,7 @@ inline() {
         shift
 
         while (( $# > 0 )); do
-            cli::put "${arg_variable}" 'positional' "$1"
+            cli::put "${arg_args}" 'positional' "$1"
             shift
         done
     fi
@@ -174,7 +176,7 @@ inline() {
 main() {    
     cli::declare cli_args STRUCT
 
-    arg_variable=STRUCT \
+    arg_args=STRUCT \
         inline "$@"
 
     cli::write STRUCT

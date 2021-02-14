@@ -4,7 +4,7 @@ cli::import cli_assert
 cli::import_group
 
 help() {
-cat << EOF
+cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -15,14 +15,15 @@ Summary
     If no files are specified, then all files in the directory are loaded.
 
 Arguments
-    --dir                   : The directory to save files. Default is the
+    --dir -d                : The directory to save files. Default is the
                               the present working directory.
     --                      : The file names. Wild cards accepted.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'dir'
+    cli::meta::allow_positional
 }
 
 inline() {

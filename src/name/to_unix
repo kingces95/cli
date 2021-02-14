@@ -4,7 +4,7 @@ cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -17,16 +17,18 @@ Description
 
 Arguments
     --result -r             : Array to store command name. Default: RESULT.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+EOF
+    cat << EOF
 
 Examples
     Convert '.foo-bar' 'baz' to '.foo-bar' 'baz'
         ${CLI_COMMAND} <<< $'.foo-bar\nbaz'
 
 EOF
+}
+
+import() {
+    cli::meta::add_optional result 'RESULT'
 }
 
 inline() {

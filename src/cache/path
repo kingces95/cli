@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -11,16 +12,18 @@ Summary
     Print cache directory for an unpacked command.
 
 Arguments
-    --path    [Required] : Path to the command.
-
-Global Arguments
-    --help -h    [Flag] : Show this message and exit.
-    --self-test  [Flag] : Runs a self test over all commands.
+    --path -p  [Required] : Path to the command.
+EOF
+    cat << EOF
 
 Examples
     Print cache directory for '${CLI_COMMAND}'
         ${CLI_COMMAND} --path \$(${CLI_COMMAND} ---which)
 EOF
+}
+
+import() {
+    cli::meta::add_required 'path'
 }
 
 inline() {

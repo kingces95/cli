@@ -4,7 +4,7 @@ cli::import_group
 cli::import cli_assert
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -42,10 +42,8 @@ Description
     identifying a target resource: 'id' and 'name' + 'namespace'. In that case, 'id'
     and 'name' could be used as discriminating options, and only when 'name' is
     specified is 'namespace' allowed.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     Parse 'grp cmd --option value -hg -- a0 a1'.
@@ -176,7 +174,7 @@ main() {
 
     arg_args=STRUCT_ARGS \
     arg_meta=STRUCT_META \
-        inline "$@"
+        inline
 
     cli::write STRUCT_ARGS cli_args
 }

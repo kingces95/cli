@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_parent_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -10,10 +11,6 @@ Summary
     Emit functions for exporting functions, variables, and import statements.
     
 Description
-
-Global Arguments
-    --help -h       : Show this message and exit.
-    --self-test     : Runs a self test.
 EOF
 }
 

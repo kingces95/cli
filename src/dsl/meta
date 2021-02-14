@@ -3,7 +3,7 @@ source $(cli loader)
 cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -40,11 +40,18 @@ Command
 
 Arguments
     --print -p       [Flag] : Print the meta tables.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
+}
+
+import() {
+    cli::meta::add_flag 'print'
+}
+
+import() {
+    CLI_META_0_ALIAS+=([p]="print" )
+    CLI_META_0_ALLOW+=([print]="0" )
+    CLI_META_0_DEFAULT+=([print]="false" )
+    CLI_META_0_IMPLICIT_VALUE+=([print]="true" )
 }
 
 main() {

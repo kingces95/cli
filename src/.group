@@ -2,13 +2,28 @@
 source $(cli loader)
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
+EOF
+}
+
+cli::help::global() {
+    cat
+    cat << EOF
 
 Global Arguments
     --help -h        [Flag] : Show this message and exit.
     --self-test      [Flag] : Runs a self test.
+EOF
+}
+
+cli::help::sourceable() {
+    cat
+    cat << EOF
+
+Debug Arguments
+    --source -s      [Flag] : Source stdin.
 EOF
 }
 
@@ -55,7 +70,54 @@ declare -A CLI_TYPE_CLI_META_TABLES=(
     [allow]="map_of map_of map" \
 )
 
+cli::meta::add_alias() {
+    local arg_alias=${1:0:1}
+
+    CLI_META_0_ALIAS+=([${arg_alias}]="$1" )
+}
+
+cli::meta::add_flag() {
+    cli::meta::add_alias "$@"
+
+    CLI_META_0_ALLOW+=([$1]="0" )
+    CLI_META_0_DEFAULT+=([$1]="false" )
+    CLI_META_0_IMPLICIT_VALUE+=([$1]="true" )
+}
+
+cli::meta::add_optional() {
+    cli::meta::add_alias "$@"
+
+    CLI_META_0_DEFAULT+=([$1]="${2-}" )
+
+    if [[ -n "${3-}" ]]; then
+        CLI_META_0_REGEX+=([$1]="$3" )
+    fi
+}
+
+cli::meta::add_required() {
+    cli::meta::add_optional "$@"
+    
+    CLI_META_0_REQUIRE+=([$1]="" )    
+}
+
+cli::meta::allow_positional() {
+    CLI_META_0_POSITIONAL="true"
+}
+
 export() {
+
+    # global metadata defaults (e.g. help and self-test)
+    declare -A CLI_SCOPE=([CLI_META]='map_of cli_meta' )
+    declare -A CLI_META=(["*"]="0" )
+    declare -A CLI_META_0_ALIAS=([h]="help" )
+    declare -A CLI_META_0_ALLOW=([help]="0" [self-test]="0" )
+    declare -A CLI_META_0_ALLOW_0=([false]="" [true]="" )
+    declare -A CLI_META_0_DEFAULT=([self-test]="false" [help]="false" )
+    declare -A CLI_META_0_IMPLICIT_VALUE=([self-test]="true" [help]="true" )
+    declare -- CLI_META_0_POSITIONAL="false"
+    declare -A CLI_META_0_REGEX=()
+    declare -A CLI_META_0_REQUIRE=()
+
     {
         declare -p CLI_REGEX_NAME
         declare -p CLI_REGEX_FLAGS
@@ -78,7 +140,27 @@ export() {
         declare -p CLI_TYPE_CLI_META
         declare -p CLI_TYPE_CLI_META_TABLES
 
+        declare -p CLI_SCOPE
+        declare -p CLI_META
+        declare -p CLI_META_0_ALIAS
+        declare -p CLI_META_0_ALLOW
+        declare -p CLI_META_0_ALLOW_0
+        declare -p CLI_META_0_DEFAULT
+        declare -p CLI_META_0_IMPLICIT_VALUE
+        declare -p CLI_META_0_REGEX
+        declare -p CLI_META_0_REQUIRE
+        declare -p CLI_META_0_POSITIONAL
+
     } | sed 's/^declare/declare -g/'
+
+    declare -f cli::help::global
+    declare -f cli::help::sourceable
+
+    declare -f cli::meta::add_alias
+    declare -f cli::meta::add_flag
+    declare -f cli::meta::add_optional
+    declare -f cli::meta::add_required
+    declare -f cli::meta::allow_positional
 }
 
 cli::main "$@"

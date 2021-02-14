@@ -5,7 +5,7 @@ cli::import_group
 cli::import_inline cli bash write
 
 help() {
-cat << EOF
+cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -23,13 +23,13 @@ Description
     The directory will be created if it does not already exist.
 
 Arguments
-    --dir                   : The directory to save files. Default is the
+    --dir -d                : The directory to save files. Default is the
                               the present working directory.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
+}
+
+import() {
+    cli::meta::add_optional 'dir'
 }
 
 inline() {

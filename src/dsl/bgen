@@ -3,7 +3,7 @@ source $(cli loader)
 cli::import_group
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -15,11 +15,12 @@ Arguments
     --name -n     [Require] : The name of the variable.
                               Default: CLI_META.
                               Regex: ${CLI_REGEX_GLOBAL_NAME}.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
+}
+
+import() {
+    cli::meta::add_flag 'print'
+    cli::meta::add_required 'name' 'CLI_META' "${CLI_REGEX_GLOBAL_NAME}"
 }
 
 swap() {
@@ -50,7 +51,7 @@ main() {
         for group in "${!ref[@]}"; do
             cli::load "${dir}" \
                 | swap 1 2 \
-                | awk -v group=${group} '$1 == "*" { $1 = group; print; }' \
+                | awk -v group="${group}" '$1 == "*" { $1 = group; print; }' \
                 | cli::read "${variable}"
         done
     fi

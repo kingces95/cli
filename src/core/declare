@@ -9,7 +9,7 @@ cli::import_inline cli core variable put
 cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::sourceable | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -57,14 +57,18 @@ Arguments
                               that it might be sourced.
     --read -r        [Flag] : Read records from stdin into the variable.
     --                      : A record to put into the variable.
-
-Debug Arguments
-    --source -s      [Flag] : Source stdin.
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
+}
+
+import() {
+    cli::meta::add_flag 'read'
+    cli::meta::add_flag 'print'
+    cli::meta::add_flag 'source'
+
+    cli::meta::add_optional 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
+    cli::meta::add_optional 'type' '' "${CLI_REGEX_TYPE_NAME}"
+
+    cli::meta::allow_positional
 }
 
 ::cli::core::declare::inline() {
@@ -237,78 +241,78 @@ self_test() {
     builtin_default() {
 
         # string
-        ${CLI_COMMAND} --name MY_STRING --type string \
+        ${CLI_COMMAND} --name MY_STRING --type string --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_STRING]="string" )' \
+                'declare -A CLI_SCOPE+=([MY_STRING]="string" )' \
                 'declare -- MY_STRING=""'
 
         # integer
-        ${CLI_COMMAND} --name MY_INTEGER --type integer \
+        ${CLI_COMMAND} --name MY_INTEGER --type integer --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_INTEGER]="integer" )' \
+                'declare -A CLI_SCOPE+=([MY_INTEGER]="integer" )' \
                 'declare -i MY_INTEGER="0"'
 
         # boolean
-        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean \
+        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_BOOLEAN]="boolean" )' \
+                'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="false"'
 
         # array
-        ${CLI_COMMAND} --name MY_ARRAY --type array \
+        ${CLI_COMMAND} --name MY_ARRAY --type array --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_ARRAY]="array" )' \
+                'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=()'
 
         # map
-        ${CLI_COMMAND} --name MY_MAP --type map \
+        ${CLI_COMMAND} --name MY_MAP --type map --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_MAP]="map" )' \
+                'declare -A CLI_SCOPE+=([MY_MAP]="map" )' \
                 'declare -A MY_MAP=()'
 
         # map_of
-        ${CLI_COMMAND} --name MY_MAP_OF_STRING --type "map_of string" \
+        ${CLI_COMMAND} --name MY_MAP_OF_STRING --type "map_of string" --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_MAP_OF_STRING]="map_of string" )' \
+                'declare -A CLI_SCOPE+=([MY_MAP_OF_STRING]="map_of string" )' \
                 'declare -A MY_MAP_OF_STRING=()'
     }
 
     builtin_assign() {
 
         # string
-        ${CLI_COMMAND} --name MY_STRING --type string -- hi \
+        ${CLI_COMMAND} --name MY_STRING --type string --print -- hi \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_STRING]="string" )' \
+                'declare -A CLI_SCOPE+=([MY_STRING]="string" )' \
                 'declare -- MY_STRING="hi"'
 
         # integer
-        ${CLI_COMMAND} --name MY_INTEGER --type integer -- 42 \
+        ${CLI_COMMAND} --name MY_INTEGER --type integer --print -- 42 \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_INTEGER]="integer" )' \
+                'declare -A CLI_SCOPE+=([MY_INTEGER]="integer" )' \
                 'declare -i MY_INTEGER="42"'
 
         # boolean
-        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean -- true \
+        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean --print -- true \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_BOOLEAN]="boolean" )' \
+                'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="true"'
 
         # array
-        ${CLI_COMMAND} --name MY_ARRAY --type array -- a b c \
+        ${CLI_COMMAND} --name MY_ARRAY --type array --print -- a b c \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_ARRAY]="array" )' \
+                'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=([0]="a" [1]="b" [2]="c")'
 
         # map
-        ${CLI_COMMAND} --name MY_MAP --type map -- k v \
+        ${CLI_COMMAND} --name MY_MAP --type map --print -- k v \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_MAP]="map" )' \
+                'declare -A CLI_SCOPE+=([MY_MAP]="map" )' \
                 'declare -A MY_MAP=([k]="v" )'
 
         # map_of builtin
-        ${CLI_COMMAND} --name MY_MAP_OF_MAP --type "map_of map" -- n k v \
+        ${CLI_COMMAND} --name MY_MAP_OF_MAP --type "map_of map" --print -- n k v \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_MAP_OF_MAP]="map_of map" )' \
+                'declare -A CLI_SCOPE+=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="0" )' \
                 'declare -A MY_MAP_OF_MAP_0=([k]="v" )'
 
@@ -316,10 +320,10 @@ self_test() {
         ${CLI_COMMAND} --name MY_META --type "map_of map_of map" \
             | ${CLI_COMMAND} --source --name MY_META -- default color black \
             | ${CLI_COMMAND} --source --name MY_META -- allow color black \
-            | ${CLI_COMMAND} --source --name MY_META -- allow color white \
+            | ${CLI_COMMAND} --source --name MY_META --print -- allow color white \
             | sort \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_META]="map_of map_of map" )' \
+                'declare -A CLI_SCOPE+=([MY_META]="map_of map_of map" )' \
                 'declare -A MY_META=([default]="0" [allow]="1" )' \
                 'declare -A MY_META_0=([color]="0" )' \
                 'declare -A MY_META_0_0=([black]="" )' \
@@ -410,17 +414,17 @@ self_test() {
         # array
         ${CLI_COMMAND} --name MY_ARRAY --type array \
             | ${CLI_COMMAND} --source --name MY_ARRAY -- a \
-            | ${CLI_COMMAND} --source --name MY_ARRAY --type array \
+            | ${CLI_COMMAND} --source --name MY_ARRAY --type array --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_ARRAY]="array" )' \
+                'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=([0]="a")'
 
         # boolean
         ${CLI_COMMAND} --name MY_BOOLEAN --type boolean \
             | ${CLI_COMMAND} --source --name MY_BOOLEAN -- true \
-            | ${CLI_COMMAND} --source --name MY_BOOLEAN --type boolean \
+            | ${CLI_COMMAND} --source --name MY_BOOLEAN --type boolean --print \
             | assert::pipe_eq \
-                'declare -A CLI_SCOPE=([MY_BOOLEAN]="boolean" )' \
+                'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="true"'
 
         # switch

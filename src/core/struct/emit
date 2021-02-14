@@ -7,7 +7,7 @@ cli::import_inline cli core type is-builtin
 cli::import_inline cli core type unmodify
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::sourceable | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -20,20 +20,11 @@ Description
 
 Arguments
     --type -t     [Require] : The type to emit. Regex: ${CLI_REGEX_TYPE_NAME}.
-
-Debug Arguments
-    --source -s      [Flag] : Source stdin.
-
-Global Arguments
-    ${CLI_GLOBAL_ARG_HELP_FLAG}
-    ${CLI_GLOBAL_ARG_SELF_TEST_FLAG}
 EOF
 }
 
-cli::post_imports() {
-    CLI_META_0_ALIAS+=([t]="type" )
-    CLI_META_0_DEFAULT+=([type]="" )
-    CLI_META_0_REGEX+=([type]="${CLI_REGEX_TYPE_NAME}" )
+import() {
+    cli::meta::add_required 'type' '' ${CLI_REGEX_TYPE_NAME}
 }
 
 ::cli::core::struct::emit::inline() {
@@ -83,7 +74,6 @@ main() {
 
 self_test() {
     ${CLI_COMMAND} --type string | assert::pipe_eq
- exit
     ${CLI_COMMAND} --type boolean | assert::pipe_eq
     ${CLI_COMMAND} --type integer | assert::pipe_eq
     ${CLI_COMMAND} --type map | assert::pipe_eq

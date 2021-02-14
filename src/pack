@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 cli::import cli_emit
 
 help() {
-    cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 
@@ -84,13 +85,14 @@ Description
 
 Arguments
     --cli -c        [Required] : Name of the cli.
-
-Global Arguments
-    --help -h           [Flag] : Show this message and exit.
-    --self-test         [Flag] : Runs a self test.
     --dry-run           [Flag] : Show a table of content of the commands and
                                  libraries that would be packed.
 EOF
+}
+
+import() {
+    cli::meta::add_required 'cli'
+    cli::meta::add_flag 'dry-run'
 }
 
 # shim functions abstracting paths

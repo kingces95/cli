@@ -10,17 +10,19 @@ Summary
 
 Description
     Bind to and invoke a command. The path to the command is constructed by
-    joining a base path with the first non-option arguments. Positional arguments
-    to this command are passed through to the target command.
+    joining a base path with the first non-option arguments. Named arguments and
+    positional arguments are passed to the target command.
 
     The variable CLI_COMMAND is exported to the target command. Its value is
     a space delimited list consisting of 'name' followed by the first non-option 
-    arguments to this command. CLI_COMMAND serves the same purpose as BASH_COMMAND.
+    arguments to this command. 
+    
+    CLI_COMMAND serves the same purpose as BASH_COMMAND.
 
 Arguments
     --name    : Name of the root group of the CLI.
-    --base    : The absolute path to the root directory of the unpacked commands.
-    --        : Options to pass to the bound command.
+    --base    : The absolute path to the root directory of the commands.
+    --        : Arguments that conform to [path] [named] [positional].
 
 Global Arguments
     --help -h    [Flag] : Show this message and exit.
@@ -48,6 +50,11 @@ Examples
 EOF
 }
 
+# To prevent duplicate code the shim harvests logic from other commands.
+# As everything depends on the shim, the shim must harvest and cache this 
+# code manually. The harvest and cache logic emulates functionality that
+# is later built upon using the shim. That emulation is maintained manually.
+
 # copied from 'loader'
 set +m
 set -e
@@ -57,19 +64,21 @@ shopt -s globstar
 shopt -s extglob
 shopt -s nullglob
 
-# To prevent duplicate code the shim harvests logic from other commands.
-# As everything depends on the shim, the shim must harvest and cache this 
-# code manually. The harvest and cache logic emulates functionality that
-# is later built upon using the shim. That emulation is maintained manually.
-
 # Build cache path (e.g. '/cli/src/.cli/shim/inline.sh')
 # This logic duplicated in 'cli cache path'. It's too hot to harvest.
 declare BASH_DIR="${BASH_SOURCE%/*}"
 declare BASH_NAME="${BASH_SOURCE##*/}"
 declare CACHE_PATH="${BASH_DIR}/.cli/${BASH_NAME}/inline.sh"
 
+# cli::import cli emit inline
+# cli::import cli cache put
+# cli::import name to_unix
+# cli::import bash callstack
+# cli::import bash fail
 cli::shim::import_inline() {
+
     # Refresh cache if the shim changed since it was last generated.
+    
     # This logic duplicated in 'cli cache test'.
     if [[ ! -f "${CACHE_PATH}" ]] \
         || [[ "${CACHE_PATH}" -ot "${BASH_SOURCE}" ]]; then
@@ -79,6 +88,7 @@ cli::shim::import_inline() {
             | "${BASH_DIR}/emit/inline" --name ::cli::emit::inline::inline \
             | source /dev/stdin
 
+        # wrap ::cli::emit::inline::inline as cli::shim::inline
         cli::shim::inline() {
             arg_name="::cli::$1::inline" ::cli::emit::inline::inline \
                 < "${BASH_DIR}/$2"
@@ -90,8 +100,7 @@ cli::shim::import_inline() {
 
         # refresh 'inline.sh'
         cat \
-            <(cat ${BASH_DIR}/.group | grep ^declare | sed 's/^declare/declare -g/') \
-            <(cli::shim::inline "args::tokenize" "args/tokenize") \
+            <(cat ${BASH_DIR}/.group | grep 'CLI_REGEX_NAME=' | sed 's/^declare/declare -g/') \
             <(cli::shim::inline "name::to_unix" "name/to_unix") \
             <(cli::shim::inline "bash::callstack" "bash/callstack") \
             <(cli::shim::inline "bash::fail" "bash/fail") \
@@ -123,25 +132,25 @@ main() {
 
     cli::shim::import_inline
 
-    # pluck cli names from args (e.g. name to-unix)
-    local -a cli_names=()
-    arg_result=cli_names \
-        ::cli::args::tokenize::inline "$@"
+    # pull segments from args; logic harvested from cli args tokenzie
+    local -a cli_segments=()
+    while (( $# > 0 )); do
+        if [[ ! "$1" =~ ${CLI_REGEX_NAME} ]]; then
+            break;
+        fi
 
-    # add cli name to list of cli names (e.g. cli name to-unix)
-    local -a cli_path=( "${arg_name}" "${cli_names[@]}" )
+        cli_segments+=( "$1" )
+        shift
+    done
 
-    # convert cli names to unix names (e.g. cli name to_unix)
-    local -a unix_names=()
-    arg_result=unix_names \
-        ::cli::name::to_unix::inline "${cli_names[@]}"
+    # convert cli segments to unix directories (e.g. cli name to_unix)
+    local -a unix_segments=()
+    arg_result=unix_segments \
+        ::cli::name::to_unix::inline "${cli_segments[@]}"
 
     # build unix path (e.g. /git/cli/src/name/to_unix)
-    local join=( "${arg_base}" "${unix_names[@]}" )
+    local join=( "${arg_base}" "${unix_segments[@]}" )
     local unix_path="$(IFS=/; echo "${join[*]}")"
-
-    # shift so remaining args are options and positional, if any
-    shift ${#cli_names[@]}
 
     # file
     if cli::shim::is_command "${unix_path}"; then
@@ -153,6 +162,7 @@ main() {
             '---which')
                 echo "${unix_path}" ;; 
             *)
+                local -a cli_path=( "${arg_name}" "${cli_segments[@]}" )
                 declare -x CLI_COMMAND="${cli_path[@]}"
                 "${unix_path}" "$@"
                 ;;
@@ -176,6 +186,26 @@ main() {
         echo "Command \"${unix_path}\" not found."
         exit 1
     fi
+}
+
+self_test() {
+    diff \
+        <("$0" --name bin --base /usr/bin -- base64 --help) \
+        <(/usr/bin/base64 --help)
+
+    diff \
+        <("$0" --name usr --base /usr -- bin base64 --help) \
+        <(/usr/bin/base64 --help)
+
+    diff \
+        <(echo "Hello World!" \
+            | "$0" --name bin --base /usr/bin -- base64 -i -) \
+        <(echo SGVsbG8gV29ybGQhCg==)
+
+    diff \
+        <(echo "Hello World!" \
+            | "$0" --name does-not-matter --base /usr -- bin base64 -i -) \
+        <(echo SGVsbG8gV29ybGQhCg==)
 }
 
 initialize() {  
@@ -222,7 +252,7 @@ case ${1-} in
         initialize "$@"
 
         if ${arg_help}; then help; exit; fi
-        if ${arg_self_test}; then exit; fi
+        if ${arg_self_test}; then self_test; exit; fi
 
         main "${arg_[@]}" 
     ;;

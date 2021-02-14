@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 source $(cli loader)
+cli::import_group
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -21,10 +22,8 @@ Primary Arguments
                               examined matches the pattern.
     --ls             [Flag] : True. Prints out the type (either 'c' or 'g') 
                               followed by the entry.
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
+EOF
+    cat << EOF
 
 Examples
     List commands and groups of 'cli' in post-order
@@ -36,6 +35,14 @@ Examples
     List emit commands of 'cli'
         ${CLI_COMMAND} --cli "cli emit" --type c
 EOF
+}
+
+import() {
+    cli::meta::add_required 'cli'
+    cli::meta::add_optional 'traversal'
+    cli::meta::add_optional 'type' # TODO add allowed
+    cli::meta::add_optional 'name'
+    cli::meta::add_flag 'ls'
 }
 
 find() {

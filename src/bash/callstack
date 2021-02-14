@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader)
-#cli::import cli_assert
+cli::import_parent_group
+cli::import cli_assert
 
 help() {
-cat << EOF
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -14,10 +15,6 @@ Description
     Print the callstack where each record is composed of:
 
         frame file line
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
 EOF
 }
 
@@ -48,8 +45,7 @@ inline() {
 }
 
 self_test() {
-    set +e
-    assert::fails "arg_message='failed' inline"
+    inline
 }
 
 cli::main "$@"
