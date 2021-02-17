@@ -10,13 +10,15 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Define a type.
+    Define a struct.
 
 Description
-    A type is declared by declaring a global variable as an associative array with
+    A struct is a global an associative array whose which maps field names to types.
+    
+     with
     a well known name and then initializing it with an empty map. That variable is
-    emitted preceeded by a comment consisting of the type name. For example, to 
-    declare a type 'table', a map 'CLI_TYPE_TABLE' will be declared and the following
+    emitted preceeded by a comment consisting of the struct name. For example, to 
+    declare a struct 'table', a map 'CLI_TYPE_TABLE' will be declared and the following
     emitted:
 
         # table

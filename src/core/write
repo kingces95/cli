@@ -10,7 +10,7 @@ cli::import_inline cli core type unmodify
 cli::import cli_assert
 
 help() {
-    cat << EOF | cli::help::sourceable | cli::help::global
+    cat << EOF | cli::core::help
 Command
     ${CLI_COMMAND}
     
@@ -42,8 +42,6 @@ Description
     the scaler value.
 
 Arguments
-    ${CLI_CORE_ARG_NAME}
-    ${CLI_CORE_ARG_TYPE}
     --                      : Names of the parents.
 EOF
     cat << EOF
@@ -75,11 +73,7 @@ EOF
 }
 
 import() {
-    cli::meta::add_flag 'source'
-
-    cli::meta::add_optional 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
-    cli::meta::add_optional 'type' '' "${CLI_REGEX_TYPE_NAME}"
-
+    cli::core::import
     cli::meta::allow_positional
 }
 

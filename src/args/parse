@@ -97,7 +97,8 @@ inline() {
 
         # trap for unknown arguments
         if [[ -z ${DEFAULT[$option]+set} ]]; then
-            cli::fail "Unexpected unknown argument '--${option}'."
+            cli::fail "Unexpected unknown argument '--${option}'" \
+                "passed to command '${CLI_COMMAND}'."
         fi
 
         # trap for empty value and assign implicit value
@@ -119,7 +120,8 @@ inline() {
     # required
     for option in "${!REQUIRE[@]}"; do
         if [[ -z "${OPTIONAL_ARGS[$option]-}" ]]; then
-            cli::fail "Missing required argument '--${option}'."
+            cli::fail "Missing required argument '--${option}'" \
+                "passed to command '${CLI_COMMAND}'."
         fi
     done
 
@@ -134,7 +136,8 @@ inline() {
 
         # test set for allowed value
         if ! ${allow[$value]-false}; then
-            cli::fail "Unexpected value '${value}' for argument '--${option}'." \
+            cli::fail "Unexpected value '${value}' for argument '--${option}'" \
+                "passed to command '${CLI_COMMAND}'." \
                 "Expected a value in the set { "${!allow[@]}" }."
         fi
     done
@@ -150,7 +153,8 @@ inline() {
         
         local value=${OPTIONAL_ARGS[${option}]}
         if [[ ! "${value}" =~ ${regex} ]]; then
-            cli::fail "Unexpected value '${value}' for argument '--${option}'." \
+            cli::fail "Unexpected value '${value}' for argument '--${option}'" \
+                "passed to command '${CLI_COMMAND}'." \
                 "Expected a value that matches regex '${regex}'."
         fi
     done
@@ -159,7 +163,7 @@ inline() {
 
     # positional
     if ! ${POSITIONAL} && (( ${#POSITIONAL_ARGS[@]} > 0 )); then
-        cli::fail "Expected no positional arguments," \
+        cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND}'," \
             "but got ${#POSITIONAL_ARGS[@]}: '${POSITIONAL_ARGS[@]}'."
     fi
 }

@@ -9,7 +9,7 @@ cli::import_inline cli core variable put
 cli::import cli_assert
 
 help() {
-    cat << EOF | cli::help::sourceable | cli::help::global
+    cat << EOF | cli::core::help
 Command
     ${CLI_COMMAND}
     
@@ -51,8 +51,6 @@ Redefinition
     in all cases by declare.
 
 Arguments
-    ${CLI_CORE_ARG_NAME}
-    ${CLI_CORE_ARG_TYPE}
     --print -p       [Flag] : Emit the type, scope, and variable recursively so
                               that it might be sourced.
     --read -r        [Flag] : Read records from stdin into the variable.
@@ -61,13 +59,10 @@ EOF
 }
 
 import() {
+    cli::core::import
+
     cli::meta::add_flag 'read'
     cli::meta::add_flag 'print'
-    cli::meta::add_flag 'source'
-
-    cli::meta::add_optional 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
-    cli::meta::add_optional 'type' '' "${CLI_REGEX_TYPE_NAME}"
-
     cli::meta::allow_positional
 }
 

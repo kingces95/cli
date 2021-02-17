@@ -32,6 +32,7 @@ initialize() {
 }
 
 main() {
+    echo foo > /dev/stderr
     declare -f initialize
 }
 

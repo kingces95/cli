@@ -8,6 +8,19 @@ Command
 EOF
 }
 
+declare -A CLI_SCOPE=([CLI_META]='map_of cli_meta' )
+
+# global metadata defaults (e.g. help and self-test)
+declare -A CLI_META=(["*"]="0" )
+declare -A CLI_META_0_ALIAS=([h]="help" )
+declare -A CLI_META_0_ALLOW=([help]="0" [self-test]="0" )
+declare -A CLI_META_0_ALLOW_0=([false]="" [true]="" )
+declare -A CLI_META_0_DEFAULT=([self-test]="false" [help]="false" )
+declare -A CLI_META_0_IMPLICIT_VALUE=([self-test]="true" [help]="true" )
+declare -- CLI_META_0_POSITIONAL="false"
+declare -A CLI_META_0_REGEX=()
+declare -A CLI_META_0_REQUIRE=()
+
 cli::help::global() {
     cat
     cat << EOF
@@ -27,28 +40,8 @@ Debug Arguments
 EOF
 }
 
-declare CLI_REGEX_NAME="^[a-z.][a-z0-9-]*$"
-declare CLI_REGEX_FLAGS="^[a-z]+$"
-declare CLI_REGEX_BASH_NAME="^[a-z_][a-z0-9_]*$"
-declare CLI_REGEX_UNIX_NAME="^[a-z.][a-z0-9_]*$"
-
-declare CLI_REGEX_VARIABLE_NAME="^[a-z][a-z0-9_]*$"
-declare CLI_REGEX_STRUCT_NAME=${CLI_REGEX_VARIABLE_NAME}
-declare CLI_REGEX_STRUCT_FIELD_NAME=${CLI_REGEX_VARIABLE_NAME}
-declare CLI_REGEX_TYPE_NAME="^(map_of[[:space:]])*[a-z][a-z0-9_]*$"
-declare CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
-
 declare CLI_STRUCT_DEFAULT_NAME=struct
 declare CLI_STRUCT_DEFAULT_VARIABLE=STRUCT
-
-declare CLI_GLOBAL_ARG_HELP_FLAG="--help -h        [Flag] : Show this message and exit."
-declare CLI_GLOBAL_ARG_SELF_TEST_FLAG="--self-test      [Flag] : Runs a self test."
-
-declare -A CLI_TYPE_CLI_ARGS=( \
-    [path]="array" \
-    [named]="map" \
-    [positional]="array" \
-)
 
 declare -A CLI_TYPE_CLI_META=( \
     [require]="map" \
@@ -104,43 +97,21 @@ cli::meta::allow_positional() {
     CLI_META_0_POSITIONAL="true"
 }
 
-export() {
-
-    # global metadata defaults (e.g. help and self-test)
+main() {
     declare -A CLI_SCOPE=([CLI_META]='map_of cli_meta' )
-    declare -A CLI_META=(["*"]="0" )
-    declare -A CLI_META_0_ALIAS=([h]="help" )
-    declare -A CLI_META_0_ALLOW=([help]="0" [self-test]="0" )
-    declare -A CLI_META_0_ALLOW_0=([false]="" [true]="" )
-    declare -A CLI_META_0_DEFAULT=([self-test]="false" [help]="false" )
-    declare -A CLI_META_0_IMPLICIT_VALUE=([self-test]="true" [help]="true" )
-    declare -- CLI_META_0_POSITIONAL="false"
-    declare -A CLI_META_0_REGEX=()
-    declare -A CLI_META_0_REQUIRE=()
 
     {
-        declare -p CLI_REGEX_NAME
-        declare -p CLI_REGEX_FLAGS
-        declare -p CLI_REGEX_BASH_NAME
-        declare -p CLI_REGEX_UNIX_NAME
-
-        declare -p CLI_REGEX_VARIABLE_NAME
-        declare -p CLI_REGEX_STRUCT_NAME
-        declare -p CLI_REGEX_STRUCT_FIELD_NAME
-        declare -p CLI_REGEX_TYPE_NAME
-        declare -p CLI_REGEX_GLOBAL_NAME
-
         declare -p CLI_STRUCT_DEFAULT_NAME
         declare -p CLI_STRUCT_DEFAULT_VARIABLE
+        echo
 
-        declare -p CLI_GLOBAL_ARG_HELP_FLAG
-        declare -p CLI_GLOBAL_ARG_SELF_TEST_FLAG
-
-        declare -p CLI_TYPE_CLI_ARGS
         declare -p CLI_TYPE_CLI_META
         declare -p CLI_TYPE_CLI_META_TABLES
+        echo
 
         declare -p CLI_SCOPE
+        echo
+
         declare -p CLI_META
         declare -p CLI_META_0_ALIAS
         declare -p CLI_META_0_ALLOW
@@ -150,11 +121,13 @@ export() {
         declare -p CLI_META_0_REGEX
         declare -p CLI_META_0_REQUIRE
         declare -p CLI_META_0_POSITIONAL
+        echo
 
     } | sed 's/^declare/declare -g/'
 
     declare -f cli::help::global
     declare -f cli::help::sourceable
+    echo
 
     declare -f cli::meta::add_alias
     declare -f cli::meta::add_flag
