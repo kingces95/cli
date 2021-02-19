@@ -48,32 +48,49 @@ declare -A CLI_TYPE_CLI_ARGS=( \
     [named]="map" \
     [positional]="array" \
 )
-declare -A CLI_SCOPE=()
-declare -a CLI_LOADER_IMPORTS=()
 : ${CLI_COMMAND:=${BASH_SOURCE##*/}}
 
+
+cli::loader::inline() {
+    : ${arg_name?'Unexpected lack of inline function name.'}
+    : ${arg_function:='inline'}
+
+    (
+        local -a imports=()
+
+        # disable loader
+        cli() { echo '/dev/null'; }
+        cli::main() { return; }
+        cli::import() { return; }
+        cli::import_group() { return; }
+        cli::import_parent_group() { return; }
+
+        # capture imports upon which the inlined function depends
+        cli::import_inline() {
+            imports+=( "$*" )
+        }
+
+        # source file
+        source '/dev/stdin'
+
+        # emit dependencies
+        if (( ${#imports[@]} > 0 )); then
+            printf 'cli::import %s\n' "${imports[@]}"
+        fi
+
+        # emit and rename function
+        declare -f ${arg_function} | { 
+            read
+            echo "${arg_name} ()"
+            cat
+        }
+    )
+}
+
 cli::loader::import_inline() {
-    cat "${BASH_SOURCE%/*}/emit/inline" \
-        | {
-            while true; do
-                read -r
-                if [[ "${REPLY}" == 'inline() {' ]]; then
-                    echo "::cli::inline::inline() {"
-                    while true; do 
-                        read -r
-                        echo "${REPLY}"
-                        if [[ ${REPLY} == '}' ]]; then
-                            exit
-                        fi
-                    done
-                fi
-            done
-        } \
-        | source /dev/stdin
-            
     inline() {
         arg_name="::cli::$1::inline" \
-            ::cli::inline::inline < "${BASH_DIR}/$2" \
+            cli::loader::inline < "${BASH_DIR}/$2" \
             | source /dev/stdin
     }
 
@@ -318,9 +335,9 @@ cli::loader::cache::exports() {
     if ! cli::cache::test "${CLI_LOADER_EXPORTS_PATH}"; then
         # declarative; e.g. inline
         if arg_name=inline ::cli::bash::is_function_declared::inline; then
-            cli emit inline \
-                --name "$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
-                --function 'inline' \
+            arg_name="$(cli path join --delimiter '::' -- ${CLI_COMMAND})::inline" \
+            arg_function='inline' \
+                cli::loader::inline \
                 < "${CLI_LOADER_COMMAND_PATH}"
         
         # procedural; e.g library
@@ -530,6 +547,8 @@ cli::main() {
                         help | cli dsl tokenize | cli dsl parse ;;
                     '---meta')
                         help | cli dsl tokenize | cli dsl parse | cli dsl meta ;;
+                    '---foo')
+                        help | cli dsl tokenize | cli dsl parse | cli dsl meta | cli dsl bgen ;;
                     *) cli::fail "Unexpected internal option \"$1\"."
                 esac 
             esac 
@@ -741,6 +760,7 @@ main() {
 
         declare -f cli::loader::load::imports
         declare -f cli::loader::initialize
+        declare -f cli::loader::inline
         echo
 
         # ${bash_source[0]} is '.cli/exports.sh' which is called by
@@ -768,10 +788,22 @@ initialize() {
     done
 }
 
+self_test() {
+    diff \
+        <(arg_name=say_hi \
+            cli::loader::inline \
+            <<< "source \$(cli loader); inline() { echo 'hi'; }; cli::main") \
+        <(echo $'say_hi ()\n{ \n    echo \'hi\'\n}')
+}
+
+declare -A CLI_SCOPE=()
+declare -a CLI_LOADER_IMPORTS=()
 cli::loader::import_inline
+CLI_LOADER_IMPORTS=()
+
 cli::loader::cache::load ${BASH_SOURCE}
 
-# refresh cache
+# common case
 if (( $# == 0 )); then
     : ${arg_pack:=false}
     main | arg_cache="${CLI_LOADER_EXPORTS_PATH}" \

@@ -47,13 +47,6 @@ import() {
     cli::meta::add_flag 'print'
 }
 
-import() {
-    CLI_META_0_ALIAS+=([p]="print" )
-    CLI_META_0_ALLOW+=([print]="0" )
-    CLI_META_0_DEFAULT+=([print]="false" )
-    CLI_META_0_IMPLICIT_VALUE+=([print]="true" )
-}
-
 main() {
     cli::define
     cli::define_field 'map_of map' default
