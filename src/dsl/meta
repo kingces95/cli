@@ -48,16 +48,7 @@ import() {
 }
 
 main() {
-    cli::define
-    cli::define_field 'map_of map' default
-    cli::define_field 'map_of array' require
-    cli::define_field 'map_of map_of map' allow
-    cli::define_field 'map_of map' alias
-    cli::define_field 'map_of map' implicit_value
-    cli::define_field 'map_of map' regex
-    cli::define_field 'map_of boolean' positional
-
-    cli::declare
+    cli::declare 'cli_meta_tables' STRUCT
 
     local group
     local name

@@ -20,6 +20,7 @@ declare -A CLI_META_0_IMPLICIT_VALUE=([self-test]="true" [help]="true" )
 declare -- CLI_META_0_POSITIONAL="false"
 declare -A CLI_META_0_REGEX=()
 declare -A CLI_META_0_REQUIRE=()
+declare -A CLI_META_0_TYPE=()
 
 cli::help::global() {
     cat
@@ -43,26 +44,6 @@ EOF
 declare CLI_STRUCT_DEFAULT_NAME=struct
 declare CLI_STRUCT_DEFAULT_VARIABLE=STRUCT
 
-declare -A CLI_TYPE_CLI_META=( \
-    [require]="map" \
-    [default]="map" \
-    [regex]="map" \
-    [positional]="boolean" \
-    [implicit_value]="map" \
-    [alias]="map" \
-    [allow]="map_of map" \
-)
-
-declare -A CLI_TYPE_CLI_META_TABLES=(
-    [require]="map_of map" \
-    [default]="map_of map" \
-    [regex]="map_of map" \
-    [positional]="map_of boolean" \
-    [implicit_value]="map_of map" \
-    [alias]="map_of map" \
-    [allow]="map_of map_of map" \
-)
-
 cli::meta::add_alias() {
     local arg_alias=${1:0:1}
 
@@ -72,6 +53,7 @@ cli::meta::add_alias() {
 cli::meta::add_flag() {
     cli::meta::add_alias "$@"
 
+    CLI_META_0_TYPE+=([$1]="boolean" )
     CLI_META_0_ALLOW+=([$1]="0" )
     CLI_META_0_DEFAULT+=([$1]="false" )
     CLI_META_0_IMPLICIT_VALUE+=([$1]="true" )
@@ -105,10 +87,6 @@ main() {
         declare -p CLI_STRUCT_DEFAULT_VARIABLE
         echo
 
-        declare -p CLI_TYPE_CLI_META
-        declare -p CLI_TYPE_CLI_META_TABLES
-        echo
-
         declare -p CLI_SCOPE
         echo
 
@@ -121,6 +99,7 @@ main() {
         declare -p CLI_META_0_REGEX
         declare -p CLI_META_0_REQUIRE
         declare -p CLI_META_0_POSITIONAL
+        declare -p CLI_META_0_TYPE
         echo
 
     } | sed 's/^declare/declare -g/'

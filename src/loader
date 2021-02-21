@@ -43,6 +43,26 @@ declare CLI_REGEX_STRUCT_FIELD_NAME=${CLI_REGEX_VARIABLE_NAME}
 declare CLI_REGEX_TYPE_NAME="^(map_of[[:space:]])*[a-z][a-z0-9_]*$"
 declare CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 
+declare -A CLI_TYPE_CLI_META=( \
+    [require]="map" \
+    [default]="map" \
+    [regex]="map" \
+    [positional]="boolean" \
+    [implicit_value]="map" \
+    [alias]="map" \
+    [allow]="map_of map" \
+    [type]="map" \
+)
+declare -A CLI_TYPE_CLI_META_TABLES=(
+    [require]="map_of map" \
+    [default]="map_of map" \
+    [regex]="map_of map" \
+    [positional]="map_of boolean" \
+    [implicit_value]="map_of map" \
+    [alias]="map_of map" \
+    [allow]="map_of map_of map" \
+    [type]="map_of map" \
+)
 declare -A CLI_TYPE_CLI_ARGS=( \
     [path]="array" \
     [named]="map" \
@@ -632,6 +652,8 @@ main() {
     declare -p CLI_REGEX_GLOBAL_NAME
     echo
 
+    declare -p CLI_TYPE_CLI_META
+    declare -p CLI_TYPE_CLI_META_TABLES
     declare -p CLI_TYPE_CLI_ARGS
     echo
 

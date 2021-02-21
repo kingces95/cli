@@ -246,7 +246,7 @@ EOF
 
         # missing required named argument (e.g. missing '--name')
         test_fails '--id 42 --namespace bar' \
-            "Unexpected unknown argument '--namespace'."
+            "Unexpected unknown argument '--namespace' passed to command 'cli args parse'."
     }
 
     regex() {
@@ -276,7 +276,7 @@ EOF
 
         # set disallowed value
         test_fails '--color 42' \
-            "Unexpected value '42' for argument '--color'." \
+            "Unexpected value '42' for argument '--color' passed to command 'cli args parse'." \
             "Expected a value that matches regex '[a-z]+'."
     }
 
@@ -302,7 +302,7 @@ EOF
 
         # set disallowed value
         test_fails '--color green' \
-            "Unexpected value 'green' for argument '--color'." \
+            "Unexpected value 'green' for argument '--color' passed to command 'cli args parse'." \
             "Expected a value in the set { black white }."
     }
 
@@ -331,7 +331,7 @@ EOF
 
         # flag is boolean (e.g. '--help maybe' disallowed)
         test_fails '--help maybe' \
-            "Unexpected value 'maybe' for argument '--help'." \
+            "Unexpected value 'maybe' for argument '--help' passed to command 'cli args parse'." \
             "Expected a value in the set { false true }."
     }
 
@@ -348,7 +348,7 @@ EOF
 
         # missing required named argument (e.g. missing '--name')
         test_fails '' \
-            "Missing required argument '--name'."
+            "Missing required argument '--name' passed to command 'cli args parse'."
     }
 
     positional() {
@@ -362,14 +362,14 @@ EOF
         # positional arguments disallowed (e.g. '-- a0')
         cat <(echo 'meta * positional false') <(args -- a0) \
             | assert::fails "${CLI_COMMAND}" \
-                "Expected no positional arguments, but got 1: 'a0'."
+                "Expected no positional arguments passed to command 'cli args parse', but got 1: 'a0'."
     }
 
     unknown() {
         # no default values implies option is unknown (e.g. '--unknown')
         cat <(echo 'meta * ') <(args --unknown) \
             | assert::fails "${CLI_COMMAND}" \
-                "Unexpected unknown argument '--unknown'."
+                "Unexpected unknown argument '--unknown' passed to command 'cli args parse'."
     }
 
     regex

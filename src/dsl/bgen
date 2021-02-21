@@ -13,14 +13,14 @@ Description
 Arguments
     --print -p       [Flag] : Print the variable.
     --name -n     [Require] : The name of the variable.
-                              Default: CLI_META.
+                              Default: MY_META.
                               Regex: ${CLI_REGEX_GLOBAL_NAME}.
 EOF
 }
 
 import() {
     cli::meta::add_flag 'print'
-    cli::meta::add_required 'name' 'CLI_META' "${CLI_REGEX_GLOBAL_NAME}"
+    cli::meta::add_required 'name' 'MY_META' "${CLI_REGEX_GLOBAL_NAME}"
 }
 
 swap() {
@@ -47,7 +47,7 @@ main() {
             | swap 1 2 \
             | cli::read "${variable}" 
     else
-        # groups; merge universal metadata for with group
+        # groups; merge universal metadata for 'with' group
         for group in "${!ref[@]}"; do
             cli::load "${dir}" \
                 | swap 1 2 \
