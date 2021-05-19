@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 cli::import cli emit initialize
 cli::import cli_emit
@@ -9,6 +9,10 @@ help() {
 Command
     ${CLI_COMMAND}
 EOF
+}
+
+cli::meta::declare() {
+    :
 }
 
 # name of function which declares variables and verifies/assigns values

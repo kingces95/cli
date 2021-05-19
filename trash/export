@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 # WARNING: This logic used to import 'cli .group' which contains the helpers
 # for manually generating metadata. As those helpers cannot be used here,
 # the metadata will have to be crafted by hand. 
@@ -19,8 +19,8 @@ Global Arguments
 EOF
 }
 
-import() {
-    declare -gA CLI_SCOPE=([CLI_META]='map_of cli_meta' )
+cli::meta::declare() {
+    declare -gA CLI_SCOPE=([CLI_META]='cli_meta' )
     declare -gA CLI_META=(["*"]="0" )
     declare -gA CLI_META_0_ALIAS=([h]="help" )
     declare -gA CLI_META_0_ALLOW=([help]="0" [self-test]="0" )
@@ -71,12 +71,12 @@ cli::export::variable::merge() {
         | sed 's/=/+=/'
 }
 
-cli::export() {
+cli::main() {
     cli::export::variables "$@"
     cli::export::functions "$@"
 }
 
-cli::export::import() {
+cli::export::cli::meta::declare() {
     echo "cli::import $@"
 }
 

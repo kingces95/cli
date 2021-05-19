@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -37,14 +38,11 @@ Command
 
     'positional' is a boolean and specifies if positional arguments 
     are accepted.
-
-Arguments
-    --print -p       [Flag] : Print the meta tables.
 EOF
 }
 
-import() {
-    cli::meta::add_flag 'print'
+cli::meta::declare() {
+    :
 }
 
 main() {
@@ -52,9 +50,12 @@ main() {
 
     local group
     local name
+    local production
 
     # productions are sorted by group + key
-    while read group key production production_name identifier; do
+    while read group key production_name identifier; do
+        production="CLI_DSL_PRODUCTION_${production_name}"
+        production=${!production}
 
         # argument group
         if (( production == CLI_DSL_PRODUCTION_ARGUMENTS )); then
@@ -64,7 +65,7 @@ main() {
         # arguments
         elif (( production == CLI_DSL_PRODUCTION_NAME )); then
             name="${identifier}"
-            cli::put STRUCT default "${group}" "${name}"
+            # cli::put STRUCT named "${group}" "${name}"
 
         # anyargs
         elif (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
@@ -72,7 +73,7 @@ main() {
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
-            cli::put STRUCT alias "${group}" "${identifier}" "${name}"
+            cli::put STRUCT alias "${identifier}" "${name}"
 
         # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
@@ -82,16 +83,20 @@ main() {
         elif (( production == CLI_DSL_PRODUCTION_REGEX )); then
             cli::put STRUCT regex "${group}" "${name}" "${identifier}"
 
+        # type
+        elif (( production == CLI_DSL_PRODUCTION_TYPE )); then
+            cli::put STRUCT type "${group}" "${name}" "${identifier}"
+
         # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
             cli::put STRUCT require "${group}" "${name}"
 
         # flag
-        elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
-            cli::put STRUCT default "${group}" "${name}" false
-            cli::put STRUCT implicit_value "${group}" "${name}" true
-            cli::put STRUCT allow "${group}" "${name}" true
-            cli::put STRUCT allow "${group}" "${name}" false
+        # elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
+        #     cli::put STRUCT default "${group}" "${name}" false
+        #     cli::put STRUCT implicit_value "${group}" "${name}" true
+        #     cli::put STRUCT allow "${group}" "${name}" true
+        #     cli::put STRUCT allow "${group}" "${name}" false
 
         # allow
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
@@ -100,22 +105,38 @@ main() {
 
     done
 
-    if ${arg_print}; then  
-        cli::print
-    else
-        cli::write
-    fi
+    cli::write STRUCT
 }
 
 self_test() (
     cli dsl sample -h \
         | cli dsl tokenize \
         | cli dsl parse \
-        | cli dsl meta -p 
-        # \
-        # | sort -k1 
-        # \
-        # | cli core save --dir /tmp/meta
+        | cli dsl meta \
+        | assert::pipe_eq \
+            'require * header ' \
+            'default * fruit banana' \
+            'regex * header ^[A-Z][A-Za-z0-9_]*$' \
+            'positional * true' \
+            'alias p my-props' \
+            'alias l my-list' \
+            'alias i id' \
+            'alias h help' \
+            'alias f fruit' \
+            'alias d dump' \
+            'type id id string' \
+            'type * my-list array' \
+            'type * run-as string' \
+            'type * fruit string' \
+            'type * my-props map' \
+            'type * self-test boolean' \
+            'type * help boolean' \
+            'type * header string' \
+            'type * dump boolean' \
+            'type name name string' \
+            'type name namespace string' \
+            'allow * fruit orange ' \
+            'allow * fruit banana ' \
 )
 
 cli::main "$@"

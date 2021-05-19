@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core struct emit
 cli::import_inline cli core variable declare
 cli::import_inline cli core variable put
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::help
@@ -58,7 +58,7 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::import
 
     cli::meta::add_flag 'read'
@@ -67,10 +67,6 @@ import() {
 }
 
 ::cli::core::declare::inline() {
-    inline "$@"
-}
-
-inline() {
     : ${arg_name:?}
     : ${arg_type=}
     : ${arg_read=false}
@@ -86,13 +82,17 @@ inline() {
         # no previous declaration
         if [[ -z ${current_type} ]]; then
 
-            # update current type
+            # declare variable
             CLI_SCOPE+=( [${arg_name}]=${arg_type} )
             current_type=${arg_type}
 
-            # initialize variable 
-            arg_name=${arg_name} \
-            arg_type=${arg_type} \
+            # TODO: Every variable of a UDT should be added to CLI_SCOPE
+            # not just the root variable. Once done, cli dsl load can be
+            # simplified
+
+            # initialize variable
+            ARG_NAME=${arg_name} \
+            ARG_TYPE=${arg_type} \
                 ::cli::core::variable::declare::inline
         fi
 
@@ -102,7 +102,9 @@ inline() {
             "type from '${current_type}' to '${arg_type}'."
     fi
 
-    : ${current_type:?"Unexpected failure to find type for variable '${arg_name}'."}
+    if [[ -z "${current_type}" ]]; then
+        cli::fail "Unexpected failure to find type for variable '${arg_name}' in CLI_SCOPE."
+    fi
 
     # read
     if ${arg_read}; then
@@ -117,8 +119,8 @@ inline() {
 
     # put
     if (( $# > 0 )); then
-        arg_name=${arg_name} \
-        arg_type=${current_type} \
+        ARG_NAME=${arg_name} \
+        ARG_TYPE=${current_type} \
             ::cli::core::variable::put::inline "$@"
     fi
 
@@ -126,10 +128,10 @@ inline() {
     if ${arg_print}; then
 
         # type (transitive)
-        local -A visited=()
-        arg_type=${current_type} \
-        arg_visited=visited \
-            ::cli::core::struct::emit::inline
+        # local -A visited=()
+        # arg_type=${current_type} \
+        # arg_visited=visited \
+        #     ::cli::core::struct::emit::inline
 
         # scope
         echo "declare -A CLI_SCOPE+=([${arg_name}]=\"${current_type}\" )"

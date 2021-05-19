@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 
 help() {
@@ -16,12 +16,9 @@ Description
     If all test succeed, the exit code is 0, otherwise 1.
 
 Arguments
-    --dir                   : The directory to start searching for commands.
+    --cli -c                : The group to search for commands.
+    --dry-run -d     [Flag] : Shows what tests would be run.
 EOF
-}
-
-import() {
-    cli::meta::add_required 'dir'
 }
 
 report() {
@@ -35,25 +32,25 @@ report() {
     # interpret any output as a failure
     exit_code=1
     echo "${command}"
-    cat <(echo ${result}) - | sed 's/^/>   /'
+    # cat <(echo ${result}) - | sed 's/^/>   /'
 }
 
 main() {
     local exit_code=0
 
-    cd "${arg_dir}"
-
     # search for commands starting at --dir
-    cli find commands --recursive | {
+    cli find --cli "${ARG_CLI}" -t c | {
         while read command; do 
 
-            if $arg_dry_run; then
+            if $ARG_DRY_RUN; then
                 echo "${command} --self-test"
                 continue
             fi
 
             # execute each command's self test
-            "${command}" --self-test 2>&1 | report "${command}"
+            set +e
+            ${command} --self-test 2>&1 | report "${command}"
+            set -e
         done
     }
 

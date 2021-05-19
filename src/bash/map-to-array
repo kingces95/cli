@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Converts a map into an array.
+
+Description
+    Given the name of a soure map and a target array, for each key/value pair in
+    the map, push an array element of the form "\${key}=\${value}".
+
+Arguments
+    --                      : name of map, name of array.
+
+Examples
+    declare -A my_map=( [a]=0 [b]=1 ); \\
+        declare -p my_map | ${CLI_COMMAND} -- my_map my_array
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    : ${1:?'Missing map name.'}
+    : ${2:?'Missing array name.'}
+
+    source /dev/stdin
+    declare -ag $2
+    ::cli::bash::map_to_array::inline $1 $2
+    declare -p $2
+}
+
+::cli::bash::map_to_array::inline() {
+    declare -n MAP_REF=$1
+    declare -n ARRAY_REF=$2
+
+    for key in ${!MAP_REF[@]}; do
+        ARRAY_REF+=( "${key}=${MAP_REF[${key}]}" )
+    done
+}
+
+self_test() {
+    declare -A map=( [a]=0 [b]=1 )
+
+    declare -p map | ${CLI_COMMAND} -- map array \
+    | assert::pipe_eq_exact \
+        "declare -a array=([0]=\"b=1\" [1]=\"a=0\")"
+}
+
+cli::main "$@"

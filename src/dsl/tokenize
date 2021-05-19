@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -44,6 +45,10 @@ Examples
     Parse the sample help.
         cli dsl help sample -h | cli dsl help tokenize
 EOF
+}
+
+cli::meta::declare() { 
+    : 
 }
 
 main() {  
@@ -128,6 +133,14 @@ main() {
             elif [[ "${word}" == "${CLI_DSL_LITERAL_FLAG}" ]]; then
                 yield ${CLI_DSL_TOKEN_FLAG}
 
+            # "[List]"
+            elif [[ "${word}" == "${CLI_DSL_LITERAL_LIST}" ]]; then
+                yield ${CLI_DSL_TOKEN_LIST}
+
+            # "[Properties]"
+            elif [[ "${word}" == "${CLI_DSL_LITERAL_PROPERTIES}" ]]; then
+                yield ${CLI_DSL_TOKEN_PROPERTIES}
+
             # "Regex:"
             elif [[ "${word}" == "${CLI_DSL_LITERAL_REGEX}" ]]; then
                 in_argument_copy=false
@@ -164,35 +177,46 @@ main() {
     yield $CLI_DSL_TOKEN_EOF
 }
 
-self_test() (
-    source /dev/stdin < <(cli_assert)
-    
-    cd "$(dirname ${BASH_SOURCE})"
-
-    "./sample" -h \
-        | "./tokenize" \
+self_test() (    
+    cli dsl sample -h \
+        | cli dsl tokenize \
         | assert::pipe_eq \
-            'NAME 8 1 run-as' \
-            'NAME 10 1 fruit' \
-            'ALIAS 10 2 f' \
-            'DEFAULT 10 6 ' \
-            'VALUE_PERIOD 10 7 banana' \
-            'ALLOWED_VALUES 11 1 ' \
-            'VALUE_COMMA 11 2 orange' \
-            'VALUE_PERIOD 11 3 banana' \
-            'NAME 12 1 header' \
-            'REQUIRED 12 2 ' \
-            'REGEX 12 5 ' \
-            'VALUE_PERIOD 12 6 ^[A-Z][A-Za-z0-9_]*$' \
-            'NAME 13 1 display-args' \
-            'FLAG 13 2 ' \
-            'DASHDASH 14 1 ' \
-            'NAME 17 1 help' \
-            'ALIAS 17 2 h' \
-            'FLAG 17 3 ' \
-            'NAME 18 1 self-test' \
-            'FLAG 18 2 ' \
-            'EOF 22 6 ' 
+            'ARGUMENTS 7 1 id' \
+            'NAME 8 1 id' \
+            'ALIAS 8 2 i' \
+            'ARGUMENTS 10 1 name' \
+            'NAME 11 1 name' \
+            'NAME 12 1 namespace' \
+            'ARGUMENTS 14 1 ' \
+            'NAME 15 1 run-as' \
+            'NAME 17 1 fruit' \
+            'ALIAS 17 2 f' \
+            'DEFAULT 17 6 ' \
+            'VALUE_PERIOD 17 7 banana' \
+            'ALLOWED_VALUES 18 1 ' \
+            'VALUE_COMMA 18 2 orange' \
+            'VALUE_PERIOD 18 3 banana' \
+            'NAME 19 1 header' \
+            'REQUIRED 19 2 ' \
+            'REGEX 19 5 ' \
+            'VALUE_PERIOD 19 6 ^[A-Z][A-Za-z0-9_]*$' \
+            'NAME 20 1 dump' \
+            'ALIAS 20 2 d' \
+            'FLAG 20 3 ' \
+            'NAME 21 1 my-list' \
+            'ALIAS 21 2 l' \
+            'LIST 21 3 ' \
+            'NAME 22 1 my-props' \
+            'ALIAS 22 2 p' \
+            'PROPERTIES 22 3 ' \
+            'DASHDASH 23 1 ' \
+            'ARGUMENTS 25 1 ' \
+            'NAME 26 1 help' \
+            'ALIAS 26 2 h' \
+            'FLAG 26 3 ' \
+            'NAME 27 1 self-test' \
+            'FLAG 27 2 ' \
+            'EOF 31 6 '
 )
 
 cli::main "$@"

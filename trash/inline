@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF
@@ -28,7 +28,7 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'name'
     cli::meta::add_optional 'function' 'inline'
 }
@@ -43,7 +43,7 @@ inline() {
         # disable loader
         cli() { echo '/dev/null'; }
         cli::main() { return; }
-        cli::import() { return; }
+        cli::cli::meta::declare() { return; }
         cli::import_group() { return; }
         cli::import_parent_group() { return; }
 

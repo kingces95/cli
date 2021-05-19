@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 
 help() {
@@ -26,28 +26,20 @@ Examples
 EOF
 }
 
-import() {
-    cli::meta::add_optional 'cli'
-    cli::meta::add_flag 'tree'
-    cli::meta::add_flag 'unique'
-    cli::meta::add_flag 'resolve'
-    cli::meta::allow_positional
-}
-
 cli::imports::recurse() {
 
     while (( $# > 0 )); do
         local import=$1
         shift
 
-        if ${arg_unique} && ${seen[$import]-false}; then
+        if ${ARG_UNIQUE} && ${seen[$import]-false}; then
             continue
         fi
 
         echo "${prefix}${import}"
         seen["${import}"]=true
 
-        if ${arg_resolve}; then
+        if ${ARG_RESOLVE}; then
             echo "${prefix}$(${import} ---which)"
         fi
 
@@ -66,14 +58,14 @@ cli::imports::recurse() {
 
 cli::imports::command() {
     $1 '---imports' | mapfile -t
-    if ${arg_tree}; then
+    if ${ARG_TREE}; then
         echo $1
     fi
     prefix="${prefix}${indent}" cli::imports::recurse "${MAPFILE[@]}"
 }
 
 cli::imports::group() {
-    cli find --cli "${arg_cli}" --type 'c' \
+    cli find --cli "${ARG_CLI}" --type 'c' \
         | while read; do cli::imports::command "${REPLY}"; done
 }
 
@@ -82,15 +74,15 @@ main() {
     local indent=
     local -A seen=
 
-    if ${arg_tree}; then
+    if ${ARG_TREE}; then
         indent='  '
     fi
 
     cli::imports::recurse "$@"
 
-    if [[ -n "${arg_cli}" ]]; then
-        case $(${arg_cli} '---type') in
-            'command') cli::imports::command "${arg_cli}" ;;
+    if [[ -n "${ARG_CLI}" ]]; then
+        case $(${ARG_CLI} '---type') in
+            'command') cli::imports::command "${ARG_CLI}" ;;
             'group') cli::imports::group ;;
         esac
     fi

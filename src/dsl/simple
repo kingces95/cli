@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND} 
+
+Summary    
+    Sample command to test Domain Specific Language.
+
+Arguments
+    --run-as                    : Run as the specified user.
+                                    --ignore-me -i.
+    --fruit -f                  : Run elevated. Default: banana. Allowed
+                                    values: orange, banana. Stuff. Allowed ish.
+    --header         [Required] : Header. Regex: ^[A-Z][A-Za-z0-9_]*$.
+    --dump -d            [Flag] : Dump parameters.
+    --my-list -l         [List] : A list.
+    --my-props -p  [Properties] : A map.
+    --                          : Arbitrary arguments.
+
+Global Arguments
+    --help -h            [Flag] : Show this message and exit.
+    --self-test          [Flag] : Runs a self test.
+
+Examples
+    --ignore-me -i   [Required] : Default 10.
+EOF
+}
+
+main() {
+    echo "${ARG_HEADER}"
+    if [[ "${ARG_DUMP}" == 'true' ]]; then
+        declare -p
+    else
+        echo "whoami=$(whoami)"
+        echo "\$0 -- $0"
+        echo "\$@ -- $@"
+        cli::dump 'ARG_*'
+    fi
+}
+
+self_test() {
+    return
+}   
+
+cli::main "$@"

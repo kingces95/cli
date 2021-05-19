@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_assert
+cli::import cli-assert
 cli::import_inline cli bash callstack
 
 help() {
@@ -18,12 +18,12 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_optional 'exit-code' 1
     cli::meta::add_optional 'message'
 }
 
-inline() {
+::cli::bash::fail::inline() {
     : ${arg_exit_code=1}
     : ${arg_message='Unexpected general failure. You found a bug!'}
 

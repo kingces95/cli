@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -9,7 +9,7 @@ Command
     ${CLI_COMMAND}
     
 Summary
-    Writes a record. Approximate opposite of 'read'.
+    Writes a record escaping default IFS characters; Opposite of 'read'.
 
 Description
     Tables consist of records which are lines containing fields separated by
@@ -19,10 +19,6 @@ Description
 
     This operationn is the inverse of 'read' with default IFS; A record written
     with 'write' can be read with 'read' using the default value of IFS. 
-    For example, for any MESSAGE declared as a string, integer, array, or map,
-    the following will write, and then read the value into REPLY. 
-
-        read < <(write "\${MESSAGE}")
 
 Arguments
     --                      : The fields of the table record.
@@ -33,11 +29,15 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-inline() {
+main() {
+    ::cli::bash::write::inline "$@"
+}
+
+::cli::bash::write::inline() {
     while (( $# > 0 )); do
         local field="$1"
         field="${field//\\/\\\\}"
@@ -59,6 +59,10 @@ self_test() {
     ${CLI_COMMAND} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY \
     | assert::pipe_eq_exact \
         "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")"
+
+    ${CLI_COMMAND} -- $'\a' | read -a ARRAY; declare -p ARRAY \
+    | assert::pipe_eq_exact \
+        "declare -a ARRAY=([0]=\$'\a')"
 
     ${CLI_COMMAND} -- 'a b' | read -a ARRAY; declare -p ARRAY \
     | assert::pipe_eq_exact \

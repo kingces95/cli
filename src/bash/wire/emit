@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import_inline cli bash declare
+cli::import_inline cli bash wire verify
+cli::import cli-assert
+cli::import cli-emit
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Read records representing bash variables and declare them.
+
+Description
+    ...
+EOF
+}
+
+cli::meta::declare() {
+    :
+}
+
+main() {
+    local -A names=()
+
+    cli bash group -- 2 < /dev/stdin | \
+        while read name type pipe; do
+            local flags=g
+            case ${type} in
+                'map') flags+=A ;; 
+                'array') flags+=a ;; 
+                'integer') flags+=i ;;
+            esac
+
+            case ${type} in
+                'map') emit::declare::map ;; 
+                'array') emit::declare::array ;; 
+                *) emit::declare::scaler ;;
+            esac < "${pipe}" \
+                | emit::decl ${flags} ${name}
+        done
+}
+
+self_test() {
+    { 
+        ${CLI_COMMAND} "$@" << EOF
+            MY_STRING string Hello\ world!
+            MY_INTEGER integer 42
+            MY_ARRAY array element_0
+            MY_ARRAY array element_1
+            MY_MAP map key_0 value_0
+            MY_MAP map key_1 value_1
+EOF
+    } | assert::pipe_eq \
+        'declare -g MY_STRING="Hello world!"' \
+        'declare -gi MY_INTEGER="42"' \
+        'declare -ga MY_ARRAY=(' \
+        '    "element_0"' \
+        '    "element_1"' \
+        ')' \
+        'declare -gA MY_MAP=(' \
+        '    [key_0]="value_0"' \
+        '    [key_1]="value_1"' \
+        ')'
+
+    ${CLI_COMMAND} "$@" <<< $'MY_BELL string \a' \
+        | assert::pipe_eq_exact \
+            "declare -g MY_BELL=$'\\a'"
+}
+
+cli::main "$@"

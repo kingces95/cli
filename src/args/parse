@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -12,373 +12,185 @@ Summary
     Parse a command line.
 
 Description
-    Consume a stream of tokenized command line arguments and parsed help
-    metadata of the form:
+    Consume a stream of tokens produced via 'cli args tokenize' and produce a
+    serialized stream of 'cli_args'. Accept as the first positional argument
+    a serialized stream of 'map' of aliases. Aliases will be resolved.
 
-        struct {
-            {
-                map named
-                array positional
-            } args
-
-            map_of {
-                map default
-                array require
-                map_of map allow
-                map alias
-                map implicit_value
-                boolean positional
-            } meta
-        }
-
-    See 'cli dsl meta' for 'meta' field definitions.
-
-    See 'cli args tokenize' for 'args' field definitions.
-
-    'STRUCT_META' either has a single key '*' in which case there is only a single
-    valid set of 'meta' to be used to parse a command line, or it has many keys
-    each of which is a discriminating option name which determines the 'meta' to be
-    used to parse all remaining arguments. For example, many CLI accept two ways of
-    identifying a target resource: 'id' and 'name' + 'namespace'. In that case, 'id'
-    and 'name' could be used as discriminating options, and only when 'name' is
-    specified is 'namespace' allowed.
+Arguments
+    --                      : Metadata stream.
 EOF
     cat << EOF
 
 Examples
-    Parse 'grp cmd --option value -hg -- a0 a1'.
-        cli args tokenize -- --header foo \
-        | ${CLI_COMMAND}
+    Parse 'grp cmd --option value -hg -- a0 a1'
+        cli args tokenize -- grp cmd --option value -h --param/key value -- a0 a1 \\
+        | ${CLI_COMMAND} -- <( echo 'h help' )
+
+    Produces:
+        path grp
+        path cmd
+        property param key value
+        positional a0
+        positional a1
+        named help 
+        named option value
 EOF
-}
-
-inline() {
-
-    : ${arg_args:='ARGS'}
-    local -n POSITIONAL_ARGS=${arg_args}_POSITIONAL
-    local -n OPTIONAL_ARGS=${arg_args}_NAMED
-
-    : ${arg_meta:='META'}
-
-    # parameter groups
-    local -n groups=${arg_meta}
-    local found=false
-    for option in '*' "${!OPTIONAL_ARGS[@]}"; do
-        if [[ -n ${groups[${option}]+set} ]]; then
-            local group=${arg_meta}_${groups[${option}]}
-            found=true
-            break
-        fi
-    done
-
-    cli::check::condition ${found} \
-        "Optional arguments { ${!OPTIONAL_ARGS[@]} }" \
-        "missing a discrimiator { ${!groups[@]} }."
-
-    local -n ALIAS=${group}_ALIAS
-    local -n DEFAULT=${group}_DEFAULT
-    local -n IMPLICT_VALUE=${group}_IMPLICIT_VALUE
-    local -n REQUIRE=${group}_REQUIRE
-    local -n REGEX=${group}_REGEX
-    local -n ALLOW=${group}_ALLOW
-    local -n POSITIONAL=${group}_POSITIONAL
-
-    # options
-    for option in "${!OPTIONAL_ARGS[@]}"; do
-        local value="${OPTIONAL_ARGS[$option]}"
-        local alias=${ALIAS[$option]-}
-
-        # resolve aliases
-        if [[ -n ${alias} ]]; then
-            unset 'OPTIONAL_ARGS[$option]'
-            option=${alias}
-            OPTIONAL_ARGS[$option]="${value}"
-        fi
-
-        # trap for unknown arguments
-        if [[ -z ${DEFAULT[$option]+set} ]]; then
-            cli::fail "Unexpected unknown argument '--${option}'" \
-                "passed to command '${CLI_COMMAND}'."
-        fi
-
-        # trap for empty value and assign implicit value
-        if [[ -z "${value}" && -n ${IMPLICT_VALUE[$option]+set} ]]; then
-            OPTIONAL_ARGS+=( [$option]="${IMPLICT_VALUE[$option]}" )
-        fi
-    done
-    unset alias
-    unset value
-
-    # default values
-    for option in ${!DEFAULT[@]}; do
-        # assign defaults to options not supplied on the command line
-        if [[ -z ${OPTIONAL_ARGS[$option]+set} ]]; then
-            OPTIONAL_ARGS+=( [$option]="${DEFAULT[$option]}" )
-        fi
-    done
-
-    # required
-    for option in "${!REQUIRE[@]}"; do
-        if [[ -z "${OPTIONAL_ARGS[$option]-}" ]]; then
-            cli::fail "Missing required argument '--${option}'" \
-                "passed to command '${CLI_COMMAND}'."
-        fi
-    done
-
-    # allowed values
-    for option in "${!ALLOW[@]}"; do
-
-        # args with restricted values must have been assigned an explicit or default value 
-        local value=${OPTIONAL_ARGS[$option]?Option \"${option}\" missing valid default value.}
-
-        # resolve name of set of allowed values
-        local -n allow=${group}_ALLOW_${ALLOW[${option}]}
-
-        # test set for allowed value
-        if ! ${allow[$value]-false}; then
-            cli::fail "Unexpected value '${value}' for argument '--${option}'" \
-                "passed to command '${CLI_COMMAND}'." \
-                "Expected a value in the set { "${!allow[@]}" }."
-        fi
-    done
-    unset value 
-    unset -n allow
-
-    # regex
-    for option in "${!REGEX[@]}"; do
-        local regex=${REGEX[${option}]}
-        if [[ -z ${REQUIRE[${option}]+set} ]]; then
-            regex="^$|${regex}"
-        fi
-        
-        local value=${OPTIONAL_ARGS[${option}]}
-        if [[ ! "${value}" =~ ${regex} ]]; then
-            cli::fail "Unexpected value '${value}' for argument '--${option}'" \
-                "passed to command '${CLI_COMMAND}'." \
-                "Expected a value that matches regex '${regex}'."
-        fi
-    done
-    unset regex
-    unset value
-
-    # positional
-    if ! ${POSITIONAL} && (( ${#POSITIONAL_ARGS[@]} > 0 )); then
-        cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND}'," \
-            "but got ${#POSITIONAL_ARGS[@]}: '${POSITIONAL_ARGS[@]}'."
-    fi
 }
 
 main() {
-    cli::define
-    cli::define_field 'cli_args' args
-    cli::define_field 'map_of cli_meta' meta
+    cli::declare 'map' ALIAS
+    cli::read ALIAS < "${1-/dev/null}"
 
-    cli::declare
-    cli::read
+    cli::declare 'cli_args' ARGS
 
-    arg_args=STRUCT_ARGS \
-    arg_meta=STRUCT_META \
-        inline
+    cli::declare 'cli_tokens' TOKENS
+    while read token_name identifier; do
+        local token="CLI_ARG_TOKEN_${token_name}"
 
-    cli::write STRUCT_ARGS cli_args
+        TOKENS_ID+=( "${!token}" )
+        TOKENS_IDENTIFIER+=( "${identifier}" )
+    done
+
+    ARG_ALIAS=ALIAS \
+    ARG_ARGS=ARGS \
+    ARG_TOKENS=TOKENS \
+        ::cli::args::parse::inline
+
+    cli::write ARGS 'cli_args'
+}
+
+::cli::args::parse::inline() {
+    : ${ARG_ARGS?}
+    local -n ALIAS_REF=${ARG_ALIAS}
+    local -n TOKEN_REF="${ARG_TOKENS}_ID"
+    local -n IDENTIFIER_REF="${ARG_TOKENS}_IDENTIFIER"
+    
+    local -i named_count=0
+    local -i current=0
+    local token_name=
+    local identifier=
+    local token=
+
+    read_token() {
+        token=${TOKEN_REF[$current]}
+        token_name=${CLI_ARG_TOKEN[$token]}
+        identifier=${IDENTIFIER_REF[$current]}
+
+        # if (( $# > 0 )); then
+        #     assert_token_is "$@"
+        # fi
+        current=$(( current + 1 ))
+    }
+
+    START() {
+        read_token
+
+        while (( token != CLI_ARG_TOKEN_EOF )); do
+
+            if (( token == CLI_ARG_TOKEN_PATH )); then
+                SEGMENT
+            elif (( token == CLI_ARG_TOKEN_DASH )); then
+                FLAG
+            elif (( token == CLI_ARG_TOKEN_DASH_DASH )); then
+                OPTION
+            elif (( token == CLI_ARG_TOKEN_DASH_DASH_DASH )); then
+                INTERNAL_OPTION
+            elif (( token == CLI_ARG_TOKEN_END_OPTIONS )); then
+                POSITIONAL
+            else
+                cli::fail "Unexpected arg '${identifier}' (token type ${token_name})" \
+                    "encountered while parsing cli."
+            fi
+        done
+    }
+
+    POSITIONAL() {
+        read_token
+
+        while (( token != CLI_ARG_TOKEN_EOF )); do
+            # assert_token_is TOKEN_VALUE
+            cli::put ${ARG_ARGS} positional "${identifier}"
+            read_token
+        done
+    }
+
+    FLAG() {
+
+        # trap for unknown arguments
+        local alias="${ALIAS_REF[$identifier]-}"
+        if [[ -z "${alias}" ]]; then
+            cli::fail "Unexpected unknown alias \"-${identifier}\"" \
+                "passed as argument ? to command '${CLI_COMMAND}'."
+        fi
+
+        identifier="${alias}"
+        OPTION
+    }
+
+    INTERNAL_OPTION() {
+        local option="${identifier}"
+        read_token
+
+        # list of values (typically only one but could be array or properties)
+        while (( token == CLI_ARG_TOKEN_VALUE )); do
+            read_token 
+        done
+    }
+
+    OPTION() {
+        local option="${identifier}"
+        read_token
+
+        if (( named_count == 0 )); then
+            cli::put ${ARG_ARGS} first_named "${option}"
+        fi
+        named_count=$(( named_count + 1 ))
+        
+        # flags
+        if (( token != CLI_ARG_TOKEN_VALUE )); then
+            cli::put ${ARG_ARGS} named "${option}" ''
+            return
+        fi
+
+        # list of values (typically only one but could be array or properties)
+        while (( token == CLI_ARG_TOKEN_VALUE )); do
+            cli::put ${ARG_ARGS} named "${option}" "${identifier}"
+            read_token 
+        done
+    }
+
+    SEGMENT() {
+        cli::put ${ARG_ARGS} path "${identifier}"
+        read_token
+    }
+
+    START
 }
 
 self_test() {
+    cli args tokenize -- --myarr a b c --myprops a=0 b=1 c=2 \
+        | ${CLI_COMMAND} \
+        | assert::pipe_eq \
+            'first_named myarr' \
+            'named myprops a=0' \
+            'named myprops b=1' \
+            'named myprops c=2' \
+            'named myarr a' \
+            'named myarr b' \
+            'named myarr c'
 
-    cat <(cli dsl sample -h \
-        | cli dsl tokenize \
-        | cli dsl parse \
-        | cli dsl meta \
-        | cli dsl bgen \
-        | sed s/^/meta\ /) \
-        <(cli args tokenize -- -f banana -h --header Foo --id 42 -- a0 a1 \
-        | sed s/^/args\ /) \
-    | ${CLI_COMMAND} \
-    | sort \
-    | assert::pipe_records_eq \
-        'named display-args false' \
-        'named fruit banana' \
-        'named header Foo' \
-        'named help true' \
-        'named id 42' \
-        'named run-as ' \
-        'named self-test false' \
-        'positional a0' \
-        'positional a1'
-
-    args() {
-        cli args tokenize -- "$@" \
-            | sed s/^/'args '/
-    }
-
-    test() {
-        local -a expected=()
-        while read; do expected+=( "${REPLY}" ); done
-
-        cat <(meta) <(args "$@") \
-            | ${CLI_COMMAND} \
-            | assert::pipe_records_eq \
-                "${expected[@]}"
-    }
-
-    test_fails() {
-        cat <(meta) <(args $1) \
-            | assert::fails "${CLI_COMMAND}" \
-                "${*:2}"
-    }
-
-    groups() {
-        meta() {
-            cat << EOF
-            meta id default id
-            meta name default name
-            meta name default namespace
-            meta name require namespace
-EOF
-        }
-
-        # provide required named argument (e.g. '--name Bob')
-        cat <(meta) <(args --name foo --namespace bar) \
-            | ${CLI_COMMAND} \
-            | assert::pipe_records_eq \
-                'named name foo' \
-                'named namespace bar'
-
-        # missing required named argument (e.g. missing '--name')
-        test_fails '--id 42 --namespace bar' \
-            "Unexpected unknown argument '--namespace' passed to command 'cli args parse'."
-    }
-
-    regex() {
-        meta() {
-            cat << EOF
-            meta * default value
-            meta * default color black
-            meta * require color
-            meta * regex value [0-9]+
-            meta * regex color [a-z]+
-EOF
-        }
-
-        # override default value (e.g. --color white)
-        cat <(meta) <(args --color white) \
-            | ${CLI_COMMAND} \
-            | assert::pipe_records_eq \
-                'named color white' \
-                'named value'
-
-        # override default value with alias (e.g. -c white)
-        cat <(meta) <(args --color white --value 42) \
-            | ${CLI_COMMAND} \
-            | assert::pipe_records_eq \
-                'named color white' \
-                'named value 42'
-
-        # set disallowed value
-        test_fails '--color 42' \
-            "Unexpected value '42' for argument '--color' passed to command 'cli args parse'." \
-            "Expected a value that matches regex '[a-z]+'."
-    }
-
-    allow() {
-        meta() {
-            cat << EOF
-            meta * default color black
-            meta * require color
-            meta * alias c color
-            meta * allow color black
-            meta * allow color white
-EOF
-        }
-
-        # default value (e.g. no --color)
-        test <<< 'named color black'
-
-        # override default value (e.g. --color white)
-        test --color white <<< 'named color white'
-
-        # override default value with alias (e.g. -c white)
-        test -c white <<< 'named color white'
-
-        # set disallowed value
-        test_fails '--color green' \
-            "Unexpected value 'green' for argument '--color' passed to command 'cli args parse'." \
-            "Expected a value in the set { black white }."
-    }
-
-    flag() {
-        meta() {
-            cat << EOF
-            meta * default help false
-            meta * implicit_value help true
-            meta * alias h help
-            meta * allow help true
-            meta * allow help false
-EOF
-        }
-
-        # add flag (e.g. help is 'false')
-        test <<< 'named help false'
-
-        # set flag (e.g. '--help' -> help is 'true')
-        test --help <<< 'named help true'
-
-        # set flag with explicit value (e.g. '--help false' -> help is 'false')
-        test --help false <<< 'named help false'
-
-        # set flag via alias (e.g. '-h' -> help is 'true')
-        test -h <<< 'named help true'
-
-        # flag is boolean (e.g. '--help maybe' disallowed)
-        test_fails '--help maybe' \
-            "Unexpected value 'maybe' for argument '--help' passed to command 'cli args parse'." \
-            "Expected a value in the set { false true }."
-    }
-
-    default() {
-        meta() {
-            cat << EOF
-            meta * default name
-            meta * require name
-EOF
-        }
-
-        # provide required named argument (e.g. '--name Bob')
-        test --name Bob <<< 'named name Bob'
-
-        # missing required named argument (e.g. missing '--name')
-        test_fails '' \
-            "Missing required argument '--name' passed to command 'cli args parse'."
-    }
-
-    positional() {
-        # positional argument allowed
-        cat <(echo 'meta * positional true') <(args -- a0 a1) \
-            | ${CLI_COMMAND} \
-            | assert::pipe_records_eq \
+    cli args tokenize -- x y z -h --help opt --help key=value -- a0 a1 \
+        | ${CLI_COMMAND} -- <( echo $'h help\nt test\n' ) \
+        | assert::pipe_eq \
+            'first_named help' \
+            'path x' \
+            'path y' \
+            'path z' \
             'positional a0' \
-            'positional a1'
-
-        # positional arguments disallowed (e.g. '-- a0')
-        cat <(echo 'meta * positional false') <(args -- a0) \
-            | assert::fails "${CLI_COMMAND}" \
-                "Expected no positional arguments passed to command 'cli args parse', but got 1: 'a0'."
-    }
-
-    unknown() {
-        # no default values implies option is unknown (e.g. '--unknown')
-        cat <(echo 'meta * ') <(args --unknown) \
-            | assert::fails "${CLI_COMMAND}" \
-                "Unexpected unknown argument '--unknown' passed to command 'cli args parse'."
-    }
-
-    regex
-    groups
-    allow
-    flag
-    default
-    positional
-    unknown
+            'positional a1' \
+            'named help ' \
+            'named help opt' \
+            'named help key=value'
 }
 
 cli::main "$@"

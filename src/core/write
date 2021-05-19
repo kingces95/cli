@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 cli::import_inline cli bash write
 cli::import_inline cli core type is-scaler
@@ -7,7 +7,7 @@ cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
 cli::import_inline cli core type is-user-defined
 cli::import_inline cli core type unmodify
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::help
@@ -47,7 +47,7 @@ EOF
     cat << EOF
 
 Examples
-    For example, writing a type variable of type 'metadata' consisting of 
+    For example, writing a variable of type 'metadata' consisting of 
     
         a field 'positional' of type 'boolean' and 
         a field 'allow' of type 'map_of map' 
@@ -72,16 +72,12 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::import
     cli::meta::allow_positional
 }
 
 ::cli::core::write::inline() {
-    inline "$@"
-}
-
-inline() {
     : ${arg_name?}    
     : ${arg_type:=${CLI_SCOPE[${arg_name}]}}
 

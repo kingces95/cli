@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
+cli::import cli-emit
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -9,60 +11,76 @@ Command
 
 Description
     Like ngen, but for bash.
-
-Arguments
-    --print -p       [Flag] : Print the variable.
-    --name -n     [Require] : The name of the variable.
-                              Default: MY_META.
-                              Regex: ${CLI_REGEX_GLOBAL_NAME}.
 EOF
 }
 
-import() {
-    cli::meta::add_flag 'print'
-    cli::meta::add_required 'name' 'MY_META' "${CLI_REGEX_GLOBAL_NAME}"
-}
-
-swap() {
-    awk "{ t = \$$1; \$$1 = \$$2; \$$2 = t; print }"
+cli::meta::declare() {
+    :
 }
 
 main() {
-    local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
-    local variable="${arg_name^^}"
-    local -n ref=${variable}
+    emit "$@" 
+    # \
+    #     | sed 's/__CLI_/CLI_/g' \
+    #     | sed 's/__cli::/cli::/' 
 
-    cli::declare "map_of cli_meta" "${variable}"
+    # emit::map_set CLI_SCOPE 'CLI_META' 'cli_meta'
+    # echo "CLI_SCOPE+=([CLI_META]=\"cli_meta\" )"
+    # cli::print "${META_PREFIX}" 
+}
 
-    cli::save "${dir}"
+emit() {
+ 
+    # local CLI_PREFIX=__CLI
+    local META_PREFIX=REFLECT_META
+    local -n META_GROUP_REF=${META_PREFIX}_GROUP
+    # local -n META_BASH_NAME_REF=${META_PREFIX}_BASH_NAME
 
-    cli::load "${dir}" \
-        | swap 1 2 \
-        | awk '$1 != "*"' \
-        | cli::read "${variable}"
+    cli::declare cli_meta ${META_PREFIX}
+    cli::read ${META_PREFIX}
 
-    if (( ${#ref[@]} == 0 )); then
-        # no groups
-        cli::load "${dir}" \
-            | swap 1 2 \
-            | cli::read "${variable}" 
-    else
-        # groups; merge universal metadata for 'with' group
-        for group in "${!ref[@]}"; do
-            cli::load "${dir}" \
-                | swap 1 2 \
-                | awk -v group="${group}" '$1 == "*" { $1 = group; print; }' \
-                | cli::read "${variable}"
-        done
-    fi
+    # cli::write ${META_PREFIX}_GROUP map \
+    #     | cli::eval_many "cli::write ${META_PREFIX}_GROUP_\${2}_BASH_TYPE map \
+    #         | cli core emit -- CLI_ARG cli::declare::type::cli_meta_group_\${2}" > /dev/stderr
 
-    if ${arg_print}; then
-        cli::print "${variable}" 
-    else
-        cli::write "${variable}"
-    fi
+    # declare declare function (e.g. cli::declare::type::group_0)
+    for i in ${META_GROUP_REF[@]}; do
+        cli::write ${META_PREFIX}_GROUP_${i}_BASH_TYPE map \
+            | cli core emit -- 'CLI_ARG' "cli::declare::type::cli_meta_group_${i}"
+    done
 
-    rm -r "${dir}"
+    cli::write ${META_PREFIX} \
+        | cli core wire load -- CLI_META cli_meta | sort -u \
+        | cli core wire read | sort -u \
+        | sort -u \
+        | cli bash wire emit
+
+    # cli::write ${META_PREFIX}
+
+        # local -n META_GROUP_N_BASH_TYPE_REF=${META_PREFIX}_GROUP_${i}_BASH_TYPE
+        # declare -p META_GROUP_N_BASH_TYPE_REF REFLECT_META_GROUP_0_BASH_TYPE
+        
+
+        # cli::write META_GROUP_N_BASH_TYPE_REF
+        # declare fields (e.g. self_test=boolean)
+        # for name in "${!META_GROUP_N_BASH_TYPE_REF[@]}"; do
+        #     # echo bash_name type
+        #     echo "${META_BASH_NAME_REF[${name}]^^} ${META_GROUP_N_BASH_TYPE_REF[${name}]}"
+        # done | cli core emit -- 'CLI_ARG' "__cli::declare::type::group_${i}"
+
+        # declare type (e.g. map __CLI_TYPE_CLI_GROUP_N)
+        # local TYPE=__CLI_TYPE_CLI_GROUP_${i}
+        # declare -A ${TYPE}
+        # local -n TYPE_REF=${TYPE}
+
+        # emit::map_set \
+        #     ${CLI_PREFIX}_BGEN_DECLARE \
+        #     ${TYPE} \
+        #     ${FUNCTION_NAME}
+    # done
+
+    # TODO: cli::delcare should encapsulate this behavior (with optional -r -g)
+    # cli::export::variables "${CLI_PREFIX}"
 }
 
 self_test() {
@@ -70,7 +88,8 @@ self_test() {
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
-        | ${CLI_COMMAND} --print
+        | cli dsl load \
+        | ${CLI_COMMAND} > /dev/null
 }
 
 cli::main "$@"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 cli::import_inline cli bash emit
 
 help() {
@@ -29,11 +29,11 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required name '' ${CLI_REGEX_STRUCT_NAME}
 }
 
-inline() {
+::cli::core::struct::define::inline() {
     : ${arg_name?}
     cli::check::regex "${arg_name}" "${CLI_REGEX_STRUCT_NAME}"
 

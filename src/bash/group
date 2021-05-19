@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::sourceable | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Group records into pipes.
+
+Arguments
+    --                      : The variables to emit.
+EOF
+    cat << EOF
+Examples
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::group::inline "$@"
+}
+
+::cli::bash::group::inline() {
+    local ARG_KEYS=${1-1}
+
+    local current_key=
+    local -a groups=()
+    local -a keys=()
+    local key=
+
+    # while read -a REPLY; do
+    while read -a reply; do
+        cli::check::condition "(( ${#reply[@]} > 0 ))" "Records must contain a key."
+
+        key="${reply[*]:0:${ARG_KEYS}}"
+
+        if [[ ! "${key}" == "${current_key}" ]]; then
+
+            # activate ith group
+            local group=GROUP_${#keys[@]}
+            local -a "${group}=()"
+            local -n group_ref=${group}
+
+            # push new key
+            keys+=( "${key}" )
+
+            # update current
+            current_key="${key}"
+        fi
+
+        # record group member
+        group_ref+=( "${reply[*]:${ARG_KEYS}}" )
+    done
+
+    # publish groups
+    for (( i=0; i<${#keys[@]}; i++ )); do
+
+        # activate pipe
+        local fifo=$(mktemp -u)
+        mkfifo "${fifo}"
+
+        # publish group
+        echo "${keys[$i]}" "${fifo}"
+
+        # publish members
+        local -n group_ref=GROUP_${i}
+        printf '%s\n' "${group_ref[@]}" > "${fifo}"
+    
+        # delete pipe
+        rm "${fifo}"
+    done
+}
+
+self_test() {
+    {
+        echo a 0 x
+        echo a 1 y
+        echo b 2 z
+    } | ${CLI_COMMAND} | {
+        while read -a reply; do
+            echo group ${reply}
+            cat ${reply[1]}
+        done
+    } | assert::pipe_eq \
+        'group a' \
+        '0 x' \
+        '1 y' \
+        'group b' \
+        '2 z' 
+        
+    {
+        echo a 0 x
+        echo a 0 y
+        echo a 1 z
+    } | ${CLI_COMMAND} -- 2 | {
+        while read -a reply; do
+            echo group ${reply[@]:0:2}
+            cat ${reply[2]}
+        done
+    } | assert::pipe_eq \
+        'group a 0' \
+        'x' \
+        'y' \
+        'group a 1' \
+        'z' 
+}
+
+cli::main "$@"
+

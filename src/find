@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 
 help() {
@@ -17,7 +17,7 @@ Arguments
 
 Primary Arguments
     --type -t               : True if type of entry is of the specified type.
-                              Allowed values: 'c', 'g', ''.
+                              Allowed values: c, g.
     --name -n               : True if the last component of the path name being
                               examined matches the pattern.
     --ls             [Flag] : True. Prints out the type (either 'c' or 'g') 
@@ -37,26 +37,18 @@ Examples
 EOF
 }
 
-import() {
-    cli::meta::add_required 'cli'
-    cli::meta::add_optional 'traversal'
-    cli::meta::add_optional 'type' # TODO add allowed
-    cli::meta::add_optional 'name'
-    cli::meta::add_flag 'ls'
-}
-
 find() {
     local node="$*"
 
     # post-order traversal
-    if [[ ${arg_traversal} == 'post' ]]; then
+    if [[ ${ARG_TRAVERSAL} == 'post' ]]; then
         visit_children "${node}"
     fi
 
     visit 'g' "${node}"
 
     # pre-order traversal
-    if [[ ${arg_traversal} == 'pre' ]]; then
+    if [[ ${ARG_TRAVERSAL} == 'pre' ]]; then
         visit_children "${node}"
     fi
 }
@@ -84,7 +76,7 @@ visit() {
     if predicate "${type}" "${name}"; then
         
         # select type
-        if $arg_ls; then 
+        if ${ARG_LS}; then 
             echo -n "${type} "
         fi
 
@@ -98,22 +90,22 @@ predicate() {
     local name=$2
 
     # filter by type
-    if [[ ! "${arg_type}" == '' ]]; then
-        if [[ ! "${arg_type}" == "${type}" ]]; then 
+    if [[ ! "${ARG_TYPE}" == '' ]]; then
+        if [[ ! "${ARG_TYPE}" == "${type}" ]]; then 
             return 1
         fi
     fi
 
     # filter by name
-    if [[ -n "${arg_name}" ]]; then
-        if [[ ! "${name}" == ${arg_name} ]]; then 
+    if [[ -n "${ARG_NAME}" ]]; then
+        if [[ ! "${name}" == ${ARG_NAME} ]]; then 
             return 1
         fi
     fi
 }
 
 main() {
-    find "${arg_cli}"
+    find "${ARG_CLI}"
 }
 
 cli::main "$@"

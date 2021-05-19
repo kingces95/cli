@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -23,7 +24,7 @@ Description
     otherwise it is unexpected.
 
 Arguments
-    --file -f               : The file to report is being parsed if an error occurs.
+    --               : The file to report is being parsed if an error occurs.
 EOF
     cat << EOF
 
@@ -33,20 +34,12 @@ Examples
 EOF
 }
 
-import() {
-    cli::meta::add_optional 'file'
+cli::meta::declare() {
+    cli::meta::allow_positional
 }
 
-declare line
-declare word
-declare token
-declare token_name
-declare identifier
-declare arg_group
-declare arg_name
-
 yield() {
-    echo "${arg_group}" "${arg_name}" "$1" "${CLI_DSL_PRODUCTION[$1]}" "${2-}"
+    echo "${arg_group}" "${arg_name}" "${CLI_DSL_PRODUCTION[$1]}" "${2-}"
 }
 
 error() {
@@ -64,7 +57,7 @@ bad_token() {
         expected+=( ${CLI_DSL_TOKEN[$i]} )
     done
     
-    message="Error parsing help of '${arg_file:="<unknown>"}' at
+    message="Error parsing help of '${ARG_FILE:="<unknown>"}' at
          line ${line}, word ${word}: Expected token in { ${expected[@]} }, 
         but got ${token_name}, identifier='${identifier}'"
 
@@ -95,6 +88,15 @@ read_token() {
 }
 
 main() {
+    local ARG_FILE=${1-'UNKNOWN'}
+
+    declare line
+    declare word
+    declare token
+    declare token_name
+    declare identifier
+    declare arg_group
+    declare arg_name
 
     START() {
         ARGUMENTS_GROUP
@@ -134,16 +136,14 @@ main() {
         yield ${CLI_DSL_PRODUCTION_NAME} "${identifier}"
         read_token
 
-        if (( token == CLI_DSL_TOKEN_ALIAS )); then
-            ALIAS
-        fi
+        if (( token == CLI_DSL_TOKEN_ALIAS )); then ALIAS; fi
+        if (( token == CLI_DSL_TOKEN_REQUIRED )); then REQUIRED; fi
 
-        if (( token == CLI_DSL_TOKEN_REQUIRED )); then
-            REQUIRED
-        fi
-
-        if (( token == CLI_DSL_TOKEN_FLAG )); then
-            FLAG
+        if (( token == CLI_DSL_TOKEN_FLAG )); then FLAG;
+        elif (( token == CLI_DSL_TOKEN_LIST )); then LIST;
+        elif (( token == CLI_DSL_TOKEN_PROPERTIES )); then PROPERTIES; 
+        else 
+            yield ${CLI_DSL_PRODUCTION_TYPE} 'string'
         fi
 
         ATTRIBUES
@@ -175,6 +175,17 @@ main() {
 
     FLAG() {
         yield ${CLI_DSL_PRODUCTION_FLAG}
+        yield ${CLI_DSL_PRODUCTION_TYPE} 'boolean'
+        read_token
+    }
+
+    LIST() {
+        yield ${CLI_DSL_PRODUCTION_TYPE} 'array'
+        read_token
+    }
+
+    PROPERTIES() {
+        yield ${CLI_DSL_PRODUCTION_TYPE} 'map'
         read_token
     }
 
@@ -212,33 +223,53 @@ main() {
 }
 
 self_test() {
-    source /dev/stdin < <(cli_assert)
-
-    cd "$(dirname ${BASH_SOURCE})"
-
-    "./sample" -h \
-        | "./tokenize" \
-        | "./parse" \
+    cli dsl sample -h \
+        | cli dsl tokenize \
+        | cli dsl parse \
         | assert::pipe_eq \
-            'run-as 0 NAME run-as' \
-            'fruit 0 NAME fruit' \
-            'fruit 1 ALIAS f' \
-            'fruit 2 DEFAULT banana' \
-            'fruit 6 ALLOWED ' \
-            'fruit 7 ALLOWED_VALUE orange' \
-            'fruit 7 ALLOWED_VALUE banana' \
-            'fruit 8 ALLOWED_END ' \
-            'header 0 NAME header' \
-            'header 4 REQUIRED ' \
-            'header 3 REGEX ^[A-Z][A-Za-z0-9_]*$' \
-            'display-args 0 NAME display-args' \
-            'display-args 5 FLAG ' \
-            'display-args 10 ANYARGS ' \
-            'help 0 NAME help' \
-            'help 1 ALIAS h' \
-            'help 5 FLAG ' \
-            'self-test 0 NAME self-test' \
-            'self-test 5 FLAG '
+            'id . ARGUMENTS id' \
+            'id id NAME id' \
+            'id id ALIAS i' \
+            'id id TYPE string' \
+            'name . ARGUMENTS name' \
+            'name name NAME name' \
+            'name name TYPE string' \
+            'name namespace NAME namespace' \
+            'name namespace TYPE string' \
+            '* . ARGUMENTS *' \
+            '* run-as NAME run-as' \
+            '* run-as TYPE string' \
+            '* fruit NAME fruit' \
+            '* fruit ALIAS f' \
+            '* fruit TYPE string' \
+            '* fruit DEFAULT banana' \
+            '* fruit ALLOWED ' \
+            '* fruit ALLOWED_VALUE orange' \
+            '* fruit ALLOWED_VALUE banana' \
+            '* fruit ALLOWED_END ' \
+            '* header NAME header' \
+            '* header REQUIRED ' \
+            '* header TYPE string' \
+            '* header REGEX ^[A-Z][A-Za-z0-9_]*$' \
+            '* dump NAME dump' \
+            '* dump ALIAS d' \
+            '* dump FLAG ' \
+            '* dump TYPE boolean' \
+            '* my-list NAME my-list' \
+            '* my-list ALIAS l' \
+            '* my-list TYPE array' \
+            '* my-props NAME my-props' \
+            '* my-props ALIAS p' \
+            '* my-props TYPE map' \
+            '* my-props ANYARGS ' \
+            '* . ARGUMENTS *' \
+            '* help NAME help' \
+            '* help ALIAS h' \
+            '* help FLAG ' \
+            '* help TYPE boolean' \
+            '* self-test NAME self-test' \
+            '* self-test FLAG ' \
+            '* self-test TYPE boolean'
 }
 
 cli::main "$@"

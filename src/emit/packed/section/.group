@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
 
 help() {
@@ -17,7 +17,7 @@ cli::emit::section() {
     echo
 }
 
-export() {
+main() {
     cli::export::import_parent_group
     cli::export::import cli_emit
     cli::export cli emit

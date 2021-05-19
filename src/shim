@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# echo [shim] $* > /dev/stderr
 
 help() {
     cat << EOF
@@ -62,7 +63,7 @@ shopt -s nullglob
 declare BASH_DIR="${BASH_SOURCE%/*}"
 declare CLI_REGEX_NAME="^[a-z.][a-z0-9-]*$"
 
-cli::import() { return; }
+cli::cli::meta::declare() { return; }
 cli::shim::is_command() { test -f "$1" && test -x "$1"; }
 cli::shim::is_group() { test -d "$1" && test -x "$1"; }
 cli::shim::list() { cli list --dir "$1"; }

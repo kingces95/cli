@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::type::help
@@ -25,11 +25,11 @@ Description
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::type::import
 }
 
-inline() {
+::cli::core::type::is_modified::inline() {
     local -a type=( ${arg_type} )
 
     if (( ${#type[@]} > 1 )); then

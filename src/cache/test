@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -25,12 +25,12 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'cache'
     cli::meta::add_required 'source'
 }
 
-inline() {
+cli::cache::test::inline() {
     if [[ ! -f "${arg_cache}" ]] \
         || [[ "${arg_cache}" -ot "${arg_source}" ]]; then
         false

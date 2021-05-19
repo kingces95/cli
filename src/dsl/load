@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+
+Description
+    Loads metadata into a structure more suitable for consumption at runtime.
+EOF
+}
+
+cli::meta::declare() {
+    :
+}
+
+swap() {
+    awk "{ t = \$$1; \$$1 = \$$2; \$$2 = t; print }"
+}
+
+transform() {
+    local INDEX=$(( $1 - 1 ))
+    while read -a FIELDS; do
+        FIELDS[${INDEX}]=$($2 <<< ${FIELDS[${INDEX}]})
+        echo "${FIELDS[@]}"
+    done
+}
+
+main() {
+    ARG_META='MY_META' \
+        ::cli::dsl::load::inline
+}
+
+::cli::dsl::load::inline() {
+    # local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
+    # cli::save "${dir}"
+    # rm -r "${dir}"
+
+    cli::declare cli_meta_tables META_TABLES
+    cli::read META_TABLES
+    CLI_SCOPE+=( [META_TABLES_TYPE]='map_of map' ) # TODO: Hack
+    CLI_SCOPE+=( [META_TABLES_ALIAS]='map' ) # TODO: Hack
+
+    # local -n ARG_META_REF=${ARG_META}
+
+    local ARG_META_GROUP="${ARG_META}_GROUP"
+    CLI_SCOPE+=( [${ARG_META}_GROUP]='map_of cli_meta_group' ) # TODO: Hack
+    CLI_SCOPE+=( [${ARG_META}_ALIAS]='map' ) # TODO: Hack
+    CLI_SCOPE+=( [${ARG_META}_BASH_NAME]='map' ) # TODO: Hack
+
+    cli::declare cli_meta ${ARG_META}
+
+    # name -> bash_name
+    cli::write META_TABLES_TYPE \
+        | awk '{ print $2, $2 }' \
+        | transform 2 cli::loader::to_bash \
+        | cli::read ${ARG_META}_BASH_NAME
+
+    # alias
+    cli::write META_TABLES_ALIAS \
+        | cli::read ${ARG_META}_ALIAS
+
+    # load only group specific metadata
+    cli::write META_TABLES \
+        | awk '$1 != "alias"' \
+        | swap 1 2 \
+        | awk '$1 != "*"' \
+        | cli::read "${ARG_META_GROUP}"
+
+    local -n ARG_META_GROUP_REF="${ARG_META_GROUP}"
+   
+    # no groups
+    if (( ${#ARG_META_GROUP_REF[@]} == 0 )); then
+        cli::write META_TABLES \
+            | awk '$1 != "alias"' \
+            | swap 1 2 \
+            | cli::read "${ARG_META_GROUP}" 
+
+    # groups
+    else
+
+        # merge universal metadata with each group
+        for group in "${!ARG_META_GROUP_REF[@]}"; do
+
+            cli::write META_TABLES \
+                | awk '$1 != "alias"' \
+                | swap 1 2 \
+                | awk -v group="${group}" '$1 == "*" { $1 = group; print; }' \
+                | cli::read "${ARG_META_GROUP}"
+
+            # join name->bash_name name->type on name to get bash_name->type
+            join -1 2 -2 4 -o "2.2 1.3 2.5" \
+                <(cli::write "${ARG_META}" | grep "bash_name" | sort) \
+                <(cli::write "${ARG_META}" | grep "group ${group} type" | sort) \
+                | awk '{ print $1, "bash_type", $2, $3 }' \
+                | cli::read "${ARG_META_GROUP}"
+        done
+    fi
+
+    cli::write "${ARG_META}"
+}
+
+self_test() {
+    cli dsl sample -h \
+        | cli dsl tokenize \
+        | cli dsl parse \
+        | cli dsl meta \
+        | ${CLI_COMMAND} \
+        | assert::pipe_eq \
+            'bash_name my-list my_list' \
+            'bash_name run-as run_as' \
+            'bash_name fruit fruit' \
+            'bash_name my-props my_props' \
+            'bash_name id id' \
+            'bash_name self-test self_test' \
+            'bash_name help help' \
+            'bash_name header header' \
+            'bash_name dump dump' \
+            'bash_name name name' \
+            'bash_name namespace namespace' \
+            'alias p my-props' \
+            'alias l my-list' \
+            'alias i id' \
+            'alias h help' \
+            'alias f fruit' \
+            'alias d dump' \
+            'group id require header ' \
+            'group id default fruit banana' \
+            'group id regex header ^[A-Z][A-Za-z0-9_]*$' \
+            'group id positional true' \
+            'group id type my-list array' \
+            'group id type run-as string' \
+            'group id type fruit string' \
+            'group id type my-props map' \
+            'group id type id string' \
+            'group id type self-test boolean' \
+            'group id type help boolean' \
+            'group id type header string' \
+            'group id type dump boolean' \
+            'group id allow fruit orange ' \
+            'group id allow fruit banana ' \
+            'group name require header ' \
+            'group name default fruit banana' \
+            'group name regex header ^[A-Z][A-Za-z0-9_]*$' \
+            'group name positional true' \
+            'group name type my-list array' \
+            'group name type run-as string' \
+            'group name type fruit string' \
+            'group name type my-props map' \
+            'group name type self-test boolean' \
+            'group name type help boolean' \
+            'group name type header string' \
+            'group name type dump boolean' \
+            'group name type name string' \
+            'group name type namespace string' \
+            'group name allow fruit orange ' \
+            'group name allow fruit banana '
+}
+
+cli::main "$@"

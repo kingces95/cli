@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import_inline cli bash declare
+cli::import_inline cli bash wire verify
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Read records representing bash variables and declare them.
+
+Description
+    ...
+EOF
+}
+
+cli::meta::declare() {
+    :
+}
+
+main() {
+    local -A names=()
+
+    while read -a REPLY; do
+        ::cli::bash::wire::read::inline "${REPLY[@]}"
+        names[${REPLY}]=${REPLY}
+    done
+
+    for name in ${names[@]}; do
+        declare -p ${name} 
+    done | sort -k 3
+}
+
+::cli::bash::wire::read::inline() {
+    ::cli::bash::wire::verify::inline "$@"
+
+    local ARG_NAME=$1; shift
+    local ARG_TYPE=$1; shift
+
+    # declare bash variable
+    ::cli::bash::declare::inline ${ARG_NAME} ${ARG_TYPE}
+
+    # reference variable
+    local -n REF=${ARG_NAME}
+
+    case ${ARG_TYPE} in
+        'map') REF+=( [$1]="${2-}" ) ;;
+        'array' ) REF+=( "$1" ) ;;
+        * ) REF="$1" 
+    esac
+}
+
+self_test() {
+    { 
+        ${CLI_COMMAND} "$@" << EOF
+            MY_STRING string 'Hello\ world!'
+            MY_INTEGER integer 42
+            MY_ARRAY array element_0
+            MY_ARRAY array element_1
+            MY_MAP map key_0 value_0
+            MY_MAP map key_1 value_1
+EOF
+    } | assert::pipe_eq \
+        "declare -a MY_ARRAY=([0]=\"element_0\" [1]=\"element_1\")" \
+        "declare -i MY_INTEGER=\"42\"" \
+        "declare -A MY_MAP=([key_1]=\"value_1\" [key_0]=\"value_0\" )" \
+        "declare -- MY_STRING=\"'Hello world!'\""
+}
+
+cli::main "$@"

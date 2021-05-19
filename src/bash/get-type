@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -22,7 +22,7 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::allow_positional
 }
 

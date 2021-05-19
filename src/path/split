@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -41,7 +41,7 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'path'
     cli::meta::add_required 'delimiter' '/'
     cli::meta::add_optional 'base'

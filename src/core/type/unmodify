@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::type::help
@@ -25,12 +25,12 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::type::import
     cli::meta::add_flag 'recurse'
 }
 
-inline() {
+::cli::core::type::unmodify::inline() {
     : ${arg_type?}
     : ${arg_recurse:=false}
 

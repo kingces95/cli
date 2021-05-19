@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -18,28 +18,37 @@ Description
 EOF
 }
 
-inline() {
-    local c=0
+cli::meta::declare() {
+    :
+}
+
+::cli::bash::callstack::inline() {
+    local frame=0
     local v=0
 
-    echo $$
+    # process id
+    echo "${BASH_COMMAND} ($$ -> ${PPID})"
 
-    set ${BASH_ARGC[@]:1}
-    while read line subroutine file < <(caller $c); do
+    # argument counts by frame
+    set ${BASH_ARGC[@]:1} 0
+
+    # walk stack
+    while read line subroutine file < <(caller ${frame}); do
         
         local -a argv=()
-        for (( i=0; i<$1; i++ )); do
+        for (( i=0; i<${1-0}; i++ )); do
             argv=( "${BASH_ARGV[${v}]}" "${argv[@]}" )
             v=$(( v + 1 ))
         done
 
-        printf '[%s] %-50s %-30s:%s\n' \
-            "${c}" \
+        printf '[%s] %-50s %s:%s\n' \
+            "${frame}" \
             "${subroutine} ${argv[*]}" \
             "${file}" \
             "${line}"
 
-        c=$(( c + 1 ))
+        # next frame
+        frame=$(( frame + 1 ))
         shift
     done | sed 's/^/  /'
 }

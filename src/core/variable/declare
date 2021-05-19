@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import_inline cli bash emit
 cli::import_inline cli core variable initialize
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-user-defined
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF |  cli::core::variable::help
@@ -22,23 +21,28 @@ Description
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::variable::import
 }
 
-::cli::core::variable::declare::inline() {
-    inline
+main() {
+    source /dev/stdin
+
+    ARG_NAME=${ARG_NAME} \
+        ::cli::core::variable::declare::inline ${ARG_TYPE}
+
+    cli::dump "${ARG_NAME}" "${ARG_NAME}_*"
 }
 
-inline() {
-    : ${arg_type:?}
-    : ${arg_name:?}
+::cli::core::variable::declare::inline() {
+    : ${ARG_TYPE:?}
+    : ${ARG_NAME:?}
 
-    local -a type=( ${arg_type} )
+    local -a type=( ${ARG_TYPE} )
 
     # builtin type
-    if arg_type=${arg_type} ::cli::core::type::is_builtin::inline ||
-        arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
+    if arg_type=${ARG_TYPE} ::cli::core::type::is_builtin::inline ||
+        arg_type=${ARG_TYPE} ::cli::core::type::is_modified::inline; then
 
         # initialize declare flags
         local declare_flag=g
@@ -50,40 +54,39 @@ inline() {
         esac
 
         # declare the bash variable
-        declare -${declare_flag} ${arg_name}
+        declare -${declare_flag} ${ARG_NAME}
 
         # initialize the bash variable
-        arg_type=${arg_type} \
-        arg_name=${arg_name} \
+        ARG_TYPE=${ARG_TYPE} \
+        ARG_NAME=${ARG_NAME} \
             ::cli::core::variable::initialize::inline
 
     # user defined type
     else
-        cli::assert arg_type=${arg_type} ::cli::core::type::is_user_defined::inline
+
+        # bgen optimization
+        local bgen=${CLI_BGEN_DECLARE[CLI_TYPE_${ARG_TYPE^^}]-}
+        if [[ -n ${bgen} ]]; then
+            ${bgen} ${ARG_NAME}
+            return
+        fi
+        # echo "--- MISSING BGEN FOR CLI_TYPE_${ARG_TYPE^^} ---" > /dev/stderr
+
+        cli::assert arg_type=${ARG_TYPE} ::cli::core::type::is_user_defined::inline
   
-        local -n type_ref=CLI_TYPE_${arg_type^^}
+        local -n type_ref=CLI_TYPE_${ARG_TYPE^^}
 
         # layout fields
+        local field
         for field in ${!type_ref[@]}; do
             local field_type=${type_ref[$field]}
 
             # recursively declare fields
-            arg_name=${arg_name}_${field^^} \
-            arg_type=${field_type} \
+            ARG_NAME=${ARG_NAME}_${field^^} \
+            ARG_TYPE=${field_type} \
                 ::cli::core::variable::declare::inline 
         done
     fi
-}
-
-main() {
-    if ${arg_source}; then
-        source /dev/stdin
-    fi
-
-    arg_name=${arg_name} \
-        inline ${arg_type}
-
-    ::cli::bash::emit::inline "${arg_name}" "${arg_name}_*"
 }
 
 self_test() {

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import_inline cli core variable initialize
+cli::import_inline cli core type is-scaler
+cli::import_inline cli core type is-builtin
+cli::import_inline cli core type is-user-defined
+cli::import cli-assert
+
+help() {
+    cat << EOF |  cli::core::variable::help
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Declare a bash variable or variables for a given type. 
+
+Description
+    Declares a global bash variable of the provided type. Valid types are
+
+        string
+        integer
+        map
+        array
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::declare::inline "$@"
+    declare -p $1
+}
+
+::cli::bash::declare::inline() {
+    local -a ARG_NAME=${1?'Missing variable name.'}
+    local -a ARG_TYPE=${2-'string'}
+
+    # initialize declare flags
+    local flags=g
+    case ${ARG_TYPE} in
+        'integer') flags+=i ;;
+        'array') flags+=a ;;
+        'map') flags+=A ;;
+        'string') ;;
+        *) cli::fail "Cannot declare variable of unknown type '${ARG_TYPE}'."
+    esac
+
+    # declare the bash variable
+    declare -${flags} ${ARG_NAME}
+}
+
+self_test() {
+
+    # string
+    ${CLI_COMMAND} -- VAR string \
+        | assert::pipe_eq \
+            'declare -- VAR'
+
+    # integer
+    ${CLI_COMMAND} -- VAR integer \
+        | assert::pipe_eq \
+            'declare -i VAR'
+
+    # array
+    ${CLI_COMMAND} -- VAR array \
+        | assert::pipe_eq \
+            'declare -a VAR'
+
+    # map
+    ${CLI_COMMAND} -- VAR map \
+        | assert::pipe_eq \
+            'declare -A VAR'
+}
+
+cli::main "$@"

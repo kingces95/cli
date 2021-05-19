@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 cli::import_inline cli core type is-scaler
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::type::help
@@ -25,11 +25,11 @@ Description
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::type::import
 }
 
-inline() {
+::cli::core::type::is_builtin::inline() {
     : ${arg_type?}
     
     local -a type=( ${arg_type} )

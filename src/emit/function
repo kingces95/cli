@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+EOF
+}
+
+main() {
+    emit::global_variable() {
+        sed 's/^declare/declare -g/'
+    }
+}
+
+
+emit::function() {
+    echo "$1() {"
+    emit::indent
+    echo "}"
+}
+
+cli::main "$@"

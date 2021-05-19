@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
 cli::import cli_emit
 
@@ -35,7 +35,7 @@ Description
     The remaining files must all start with the following:
 
         #!/usr/bin/env bash
-        source $(cli loader)
+        source $(cli loader ---exports)
 
     This will define 'cli::import' and 'cli::export' and 'cli::export_import'.
     Commands must use 'cli::import' instead of 'source' to reference libraries.
@@ -46,7 +46,7 @@ Description
     'INTEGRATE_PI' like this:
 
         #!/usr/bin/env bash
-        source $(cli loader)
+        source $(cli loader ---exports)
         main() { cli::export 'integrate'; }
         INTEGRATE_PI='3.14159'
         integrate::multiply() { IFS='*' expr=\$*; echo "\$expr" | bc -l; }
@@ -56,7 +56,7 @@ Description
     define and export 'integrate::area::square':
 
         #!/usr/bin/env bash
-        source $(cli loader)
+        source $(cli loader ---exports)
         main() {
             cli::export_import integrate .group
             cli::export integrate area
@@ -67,7 +67,7 @@ Description
      finally 'circle' could reference 'src/area/.group' like this:
 
         #!/usr/bin/env bash
-        source $(cli loader)
+        source $(cli loader ---exports)
         source /dev/stdin < <(cli::import integrate area .group)
         help() {
             echo "Arguments"
@@ -90,7 +90,7 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'cli'
     cli::meta::add_flag 'dry-run'
 }

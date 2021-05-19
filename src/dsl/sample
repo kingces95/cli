@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 
 help() {
     cat << EOF
@@ -10,7 +10,7 @@ Summary
     Sample command to test Domain Specific Language.
 
 Arguments when --id
-    --id                        : Id of the thing.
+    --id -i                     : Id of the thing.
 
 Arguments when --name
     --name                      : Name of the thing.
@@ -22,7 +22,9 @@ Arguments
     --fruit -f                  : Run elevated. Default: banana. Allowed
                                     values: orange, banana. Stuff. Allowed ish.
     --header         [Required] : Header. Regex: ^[A-Z][A-Za-z0-9_]*$.
-    --display-args       [Flag] : Display args.
+    --dump -d            [Flag] : Dump parameters.
+    --my-list -l         [List] : A list.
+    --my-props -p  [Properties] : A map.
     --                          : Arbitrary arguments.
 
 Global Arguments
@@ -35,14 +37,15 @@ EOF
 }
 
 main() {
-    echo "${arg_header}"
-    echo "whoami=$(whoami)"
-    if [[ "${arg_display_args}" == 'true' ]]; then
+    echo "${ARG_HEADER}"
+    if [[ "${ARG_DUMP}" == 'true' ]]; then
+        declare -p
+    else
+        echo "whoami=$(whoami)"
         echo "\$0 -- $0"
         echo "\$@ -- $@"
-        declare -p | grep arg_
+        cli::dump 'ARG_*'
     fi
-    # while read; do echo "${REPLY}"; done
 }
 
 self_test() {

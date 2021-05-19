@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import_inline cli bash emit
 cli::import_inline cli core variable declare
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF  | cli::core::variable::help
@@ -22,46 +21,54 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::variable::import
     cli::meta::allow_positional
 }
 
-::cli::core::variable::put::inline() {
-    inline "$@"
+main() {
+    if ${arg_source}; then
+        source /dev/stdin
+    fi
+
+    ARG_NAME=${ARG_NAME} \
+    ARG_TYPE="${ARG_TYPE}" \
+        ::cli::core::variable::put::inline "$@"
+
+    cli::dump 'CLI_TYPE_*' "${ARG_NAME}" "${ARG_NAME}_*"
 }
 
-inline() {
-    : ${arg_name?}
-    : ${arg_type?}
+::cli::core::variable::put::inline() {
+    : ${ARG_NAME?}
+    : ${ARG_TYPE?}
 
-    local -n ref=${arg_name}
-    local -a type=( ${arg_type} )
+    local -n ref=${ARG_NAME}
+    local -a type=( ${ARG_TYPE} )
 
     # builtin
-    if arg_type=${arg_type} ::cli::core::type::is_builtin::inline; then
+    if arg_type=${ARG_TYPE} ::cli::core::type::is_builtin::inline; then
 
         # scaler
-        if arg_type=${arg_type} ::cli::core::type::is_scaler::inline; then
+        if arg_type=${ARG_TYPE} ::cli::core::type::is_scaler::inline; then
             cli::check::condition "(( $# < 2 ))"  \
-                "Failed to assign '${1-}' to ${arg_type} '${arg_name}'." \
+                "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." \
                 "Expected a record with one or no fields, but got '$@'."
 
             # supplied
             if (( $# != 0 )); then
                 case ${type} in
                     'boolean') cli::check::regex "${1-}" '^$|^true$|^false$' \
-                        "Failed to assign '${1-}' to ${arg_type} '${arg_name}'." ;;
+                        "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." ;;
                     'integer') cli::check::regex "${1-}" '^$|^[-]?[0-9]+$' \
-                        "Failed to assign '${1-}' to ${arg_type} '${arg_name}'." ;;
+                        "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." ;;
                 esac
 
                 ref="$1" 
 
             # default
             else
-                arg_type=${arg_type} \
-                arg_name=${arg_name} \
+                ARG_TYPE=${ARG_TYPE} \
+                ARG_NAME=${ARG_NAME} \
                     ::cli::core::variable::initialize::inline
             fi
 
@@ -69,14 +76,14 @@ inline() {
         elif [[ ${type} == 'map' ]]; then
 
             cli::check::condition "(( $# < 3 ))" \
-                "Failed to assign value '${2:-}' to key '${1-}' in map '${arg_name}'." \
+                "Failed to assign value '${2-}' to key '${1-}' in map '${ARG_NAME}'." \
                 "Expected a record with two or fewer fields, but got '$@'."
 
             # supplied
             if (( $# != 0 )); then
                 cli::check::regex "${1-}" '.' \
-                    "Failed to use empty key to assign '${2:-}' to map '${arg_name}'."
-                ref+=( [$1]="${2:-}" )
+                    "Failed to use empty key to assign '${2-}' to map '${ARG_NAME}'."
+                ref+=( [$1]="${2-}" )
 
             # default
             else
@@ -88,7 +95,7 @@ inline() {
             cli::assert "[[ ${type} == 'array' ]]"
 
             # default or supplied
-            ref+=( "$@" ) 
+            ref+=( "${1-}" ) 
         fi
 
     elif (( $# > 0 )); then
@@ -96,20 +103,20 @@ inline() {
         local next_name
 
         # anonymous
-        if arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
+        if arg_type=${ARG_TYPE} ::cli::core::type::is_modified::inline; then
             next_type=${type[@]:1}
-            next_name=${arg_name}_${ref[$1]:-}
+            next_name=${ARG_NAME}_${ref[$1]-}
 
             if [[ ! -n ${ref[$1]+set} ]]; then
 
                 # update anonymous type
                 ref+=( [$1]=${#ref[@]} )
 
-                next_name=${arg_name}_${ref[$1]}
+                next_name=${ARG_NAME}_${ref[$1]}
 
                 # declare variable
-                arg_name=${next_name} \
-                arg_type=${next_type} \
+                ARG_NAME=${next_name} \
+                ARG_TYPE=${next_type} \
                 arg_print=false \
                 arg_read=false \
                     ::cli::core::variable::declare::inline
@@ -124,29 +131,17 @@ inline() {
             fi
 
             next_type=${fields_ref[$1]}
-            next_name=${arg_name}_${1^^}
+            next_name=${ARG_NAME}_${1^^}
         fi
 
         : ${next_name:?}
         : ${next_type:?}
 
         # recurse
-        arg_name=${next_name} \
-        arg_type=${next_type} \
+        ARG_NAME=${next_name} \
+        ARG_TYPE=${next_type} \
             ::cli::core::variable::put::inline "${@:2}"
     fi
-}
-
-main() {
-    if ${arg_source}; then
-        source /dev/stdin
-    fi
-
-    arg_name=${arg_name} \
-    arg_type="${arg_type}" \
-        inline "$@"
-
-    ::cli::bash::emit::inline 'CLI_TYPE_*' "${arg_name}" "${arg_name}_*"
 }
 
 self_test() {

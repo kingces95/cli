@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -22,18 +22,20 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'name'
 }
 
-inline() {
-    : ${arg_name?"Unexpected missing name of function."}
-
-    if declare -F "${arg_name}" > /dev/null; then 
+::cli::bash::is_function_declared::inline() {
+    if declare -F "${1-}" > /dev/null; then 
         true
     else 
         false
     fi
+}
+
+main() {
+    ::cli::bash::is_function_declared::inline "${arg_name}"
 }
 
 self_test() {

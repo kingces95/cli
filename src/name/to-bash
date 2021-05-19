@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -27,22 +27,22 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_optional result 'RESULT'
 }
 
-inline() {
-    local -a _result=()
-    local -n ref_result=${arg_result:-RESULT}
+::cli::name::to_bash::inline() {
+    mapfile
+    if (( ${#MAPFILE} == 0 )); then return; fi
 
-    local args=( "$@" )
+    set ${MAPFILE[@]}
     while (( $# > 0 )); do
         if [[ ! "$1" =~ ${CLI_REGEX_NAME} ]]; then
             cli::fail "Unexpected cli name \"$1\"" \
-                "found in \"${args[@]}\"" \
+                "found in \"${MAPFILE[@]}\"" \
                 "does not match regex ${CLI_REGEX_NAME}."
         fi
-        ref_result+=( "${1//[-.]/_}" )
+        echo "${1//[-.]/_}"
         shift
     done
 }

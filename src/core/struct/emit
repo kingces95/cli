@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type unmodify
@@ -23,15 +23,11 @@ Arguments
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'type' '' ${CLI_REGEX_TYPE_NAME}
 }
 
 ::cli::core::struct::emit::inline() {
-    inline
-}
-
-inline() {
     : ${arg_type?}
     : ${arg_visited?}
     

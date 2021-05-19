@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
 
 help() {
@@ -21,13 +21,13 @@ EOF
     cli::help::global   
 }
 
-cli::core::variable::import() {
+cli::core::variable::cli::meta::declare() {
     cli::meta::add_required 'type' '' "${CLI_REGEX_TYPE_NAME}"
     cli::meta::add_required 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
     cli::meta::add_flag 'source'
 }
 
-export() {
+main() {
     cli::export::import_parent_group
     cli::export cli core variable
 }

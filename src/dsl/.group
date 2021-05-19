@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli_util
+cli::import cli-util
 
 help() {
     cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
 EOF
+}
+
+cli::meta::declare() {
+    :
 }
 
 readonly CLI_DSL_ARG_CHAR_GLOB="[a-zA-Z0-9_-]"
@@ -22,14 +26,18 @@ readonly CLI_DSL_LITERAL_ALLOWED='Allowed'
 readonly CLI_DSL_LITERAL_VALUES='values:'
 readonly CLI_DSL_LITERAL_REQUIRED='[Required]'
 readonly CLI_DSL_LITERAL_FLAG='[Flag]'
+readonly CLI_DSL_LITERAL_LIST='[List]'
+readonly CLI_DSL_LITERAL_PROPERTIES='[Properties]'
 readonly CLI_DSL_LITERAL_DASHDASH='--'
 
-export() {
+main() {
     cli::export::import_parent_group
 
     readonly CLI_DSL_TOKEN=(
         'DEFAULT'
         'FLAG'
+        'LIST'
+        'PROPERTIES'
         'ALLOWED_VALUES'
         'VALUE_COMMA'
         'VALUE_PERIOD'
@@ -52,6 +60,7 @@ export() {
         'REGEX'
         'REQUIRED'
         'FLAG'
+        'TYPE'
         'ALLOWED'
         'ALLOWED_VALUE'
         'ALLOWED_END'

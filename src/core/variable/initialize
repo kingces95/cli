@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
-cli::import_inline cli bash emit
+cli::import cli-assert
 
 help() {
     cat << EOF  | cli::core::variable::help
@@ -25,16 +24,28 @@ Description
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::core::variable::import
 }
 
-inline() {
-    : ${arg_type?}
-    : ${arg_name?}
+main() {
+    if ${arg_source}; then
+        source /dev/stdin
+    fi
 
-    local -n ref=${arg_name}
-    local -a type=( ${arg_type} )
+    ARG_TYPE=${ARG_TYPE} \
+    ARG_NAME=${ARG_NAME} \
+        ::cli::core::variable::initialize::inline "$@"
+
+    cli::dump "${ARG_NAME}"
+}
+
+::cli::core::variable::initialize::inline() {
+    : ${ARG_TYPE?}
+    : ${ARG_NAME?}
+
+    local -n ref=${ARG_NAME}
+    local -a type=( ${ARG_TYPE} )
 
     case ${type} in
         'string') ref="" ;;
@@ -44,18 +55,6 @@ inline() {
         'map') ref=() ;;
         'map_of') ref=() ;;
     esac
-}
-
-main() {
-    if ${arg_source}; then
-        source /dev/stdin
-    fi
-
-    arg_type=${arg_type} \
-    arg_name=${arg_name} \
-        inline "$@"
-
-    ::cli::bash::emit::inline "${arg_name}"
 }
 
 self_test() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-source $(cli loader)
+source $(cli loader ---exports)
 cli::import_group
-cli::import cli_assert
+cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
@@ -24,13 +24,13 @@ Examples
 EOF
 }
 
-import() {
+cli::meta::declare() {
     cli::meta::add_required 'command'
     cli::meta::add_required 'user'
     cli::meta::allow_positional
 }
 
-inline() {
+::cli::run_as::inline() {
     local -a args=($(printf %q "${arg_command}"))
 
     for i in "$@"; do
