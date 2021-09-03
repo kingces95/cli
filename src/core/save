@@ -46,7 +46,7 @@ cli::meta::declare() {
 
         # shift file name
         local name="$1"
-        cli::check::regex "${name}" "${CLI_REGEX_VARIABLE_NAME}"
+        [[ "${name}" =~ "${CLI_REGEX_VARIABLE_NAME}" ]] || cli::assert
         shift
 
         # construct file path

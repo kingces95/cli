@@ -9,6 +9,10 @@ Command
 EOF
 }
 
+cli::meta::declare() {
+    :
+}
+
 cli::core::variable::help() {
     cat
     cat << EOF

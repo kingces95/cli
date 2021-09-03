@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Load the parent process of each process into an array.
+
+Description
+    Load the parent process of each process into an array MAP. A custom
+    name for the array can be passed in as the first positional argument.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::process::tree::inline "$@"
+    declare -p MAP
+}
+
+::cli::process::tree::inline() {
+    if [[ ! ${1-} ]]; then
+        declare -Ag MAP=()
+        set MAP
+    fi
+
+    local -n CLI_SUBSHELL_TREE_REF_ARRAY=$1
+
+    while read pid ppid; do
+        CLI_SUBSHELL_TREE_REF_ARRAY[${pid}]=${ppid}
+    done < <(ps -o pid=,ppid=)
+}
+
+self_test() {
+    cli::source cli-assert
+
+    ::cli::process::tree::inline
+    [[ "${MAP[$$]-}" ]] || cli::assert
+
+    ( 
+        ::cli::process::tree::inline
+        [[ "${MAP[$BASHPID]-}" == "$$" ]] || cli::assert
+    )
+}
+
+cli::main "$@"

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import_inline cli process parent
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Set BASHPPID to the parent process id of the subshell. 
+
+Description
+    If there command is not executing in a subshell the call fails
+    by returning a non zero value.
+
+    If BASHPPID is already set, then it will be overwritten.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::subshell::parent::inline "$@"
+    declare -p BASHPID
+}
+
+::cli::subshell::parent::inline() {
+    (( $$ != $BASHPID )) || return 1
+    ::cli::process::parent::inline
+    declare -gi BASHPPID=${REPLY}
+}
+
+self_test() {
+    ! ::cli::subshell::parent::inline || cli::assert
+
+    ( 
+        ::cli::subshell::parent::inline || cli::assert
+        [[ "${BASHPPID}" == "$$" ]] || cli::assert "${BASHPPID}" == "$$"
+    )
+}
+
+cli::main "$@"

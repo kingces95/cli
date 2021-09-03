@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Copies stdin to a temporary file and echos the path to the file.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::dump::inline "$@"
+}
+
+::cli::bash::dump::inline() {
+    
+}
+
+self_test() {
+    cli::source cli-assert
+}
+
+cli::main "$@"

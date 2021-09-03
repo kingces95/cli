@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Returns 1.
+
+Description
+    Returns the first positonal argument.
+
+Arguments
+    --exit-code -e          : The exit code to return. Default: 1.
+    --message -m            : The error message message.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::return::inline "$@"
+}
+
+::cli::bash::return::inline() {
+    return $1
+}
+
+self_test() {
+    assert::returns "::cli::bash::return::inline 42" 42
+}
+
+cli::main "$@"

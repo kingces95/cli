@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import cli-assert
+cli::import_inline cli bash declare
+
+help() {
+    cat << EOF |  cli::core::variable::help
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Declare a global bash variable or variables for a given type and initialize it. 
+
+Description
+    Declares a global bash variable of the provided type and initialize it. 
+    Valid types and their default values are:
+
+        string ""
+        boolean false
+        integer 0
+        map ()
+        array ()
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::initialize::inline "$@"
+
+    while (( $# > 0 )); do
+        shift
+        declare -p $1
+        shift
+    done
+}
+
+::cli::bash::initialize::inline() {
+    ::cli::bash::declare::inline "$@"
+
+    while (( $# > 0 )); do
+
+        local ARG_TYPE=$1
+        shift
+
+        local ARG_NAME=$1
+        shift
+
+        local -n ref=${ARG_NAME}
+        case ${ARG_TYPE} in
+            'integer') ref=0 ;;
+            'array') ;&
+            'map') ref=() ;;
+            'boolean') ref='false' ;;
+            'string') ref='' ;;
+        esac
+    done
+}
+
+self_test() {
+
+    # string
+    ${CLI_COMMAND} -- string VAR \
+        | assert::pipe_eq \
+            'declare -- VAR=""'
+
+    # boolean
+    ${CLI_COMMAND} -- boolean VAR \
+        | assert::pipe_eq \
+            'declare -- VAR="false"'
+
+    # integer
+    ${CLI_COMMAND} -- integer VAR \
+        | assert::pipe_eq \
+            'declare -i VAR="0"'
+
+    # array
+    ${CLI_COMMAND} -- array VAR \
+        | assert::pipe_eq \
+            'declare -a VAR=()'
+
+    # map
+    ${CLI_COMMAND} -- map VAR \
+        | assert::pipe_eq \
+            'declare -A VAR=()'
+
+    # many
+    ${CLI_COMMAND} -- \
+        string MY_STRING \
+        map MY_MAP \
+        | assert::pipe_eq \
+            'declare -- MY_STRING=""' \
+            'declare -A MY_MAP=()'
+}
+
+cli::main "$@"

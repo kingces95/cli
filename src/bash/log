@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Use echo to write arguments to stderr.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::log::inline "$@" 
+}
+
+::cli::bash::log::inline() {
+    echo "$@" >&2
+}
+
+self_test() {
+    cli::source cli-assert
+
+    ::cli::bash::log::inline a b c 2> /dev/null \
+        | assert::pipe_eq
+
+    ::cli::bash::log::inline a b c 2>&1 \
+        | assert::pipe_eq \
+            'a b c'
+}
+
+cli::main "$@"

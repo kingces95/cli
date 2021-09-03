@@ -46,22 +46,22 @@ main() {
 
     # map
     if [[ ${ARG_TYPE} == 'map' ]]; then
-        cli::check::condition "(( $# <= 2 ))" \
+        cli::assert "(( $# <= 2 ))" \
             "Unexpected extra fields during assignment of map '${ARG_NAME}' key '$1' with value '${2-}'." \
             "Expected a record with two or fewer fields, but got ( $@ )."
 
-        cli::check::regex "$1" '.' \
+        [[ "$1" =~ '.' ]] || cli::assert \
             "Unexpected empty key during assigment of value '${2-}' to map '${ARG_NAME}'."
 
         if [[ ${ARG_TYPE} == 'map_of' ]]; then
-            cli::check::regex "${2-}" '.' \
+            [[ "${2-}" =~ '.' ]] || cli::assert \
                 "Unexpected assignment of empty value to map '${ARG_NAME}' key '$1'."
         fi
 
         return
     fi
 
-    cli::check::condition "(( $# < 2 ))"  \
+    cli::assert "(( $# < 2 ))"  \
         "Failed to assign '${1-}' to '${ARG_TYPE} ${ARG_NAME}'." \
         "Expected a record with one or no fields, but got $#. Fields are: '$@'"
 }

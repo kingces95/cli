@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
+if [[ -z ${CLI_PID-} ]]; then
+    declare -x CLI_PID=$$
+fi
+
 CLI_SRC="$(dirname ${BASH_SOURCE})/src"
 "${CLI_SRC}/shim" --name "${BASH_SOURCE##*/}" --base "${CLI_SRC}" -- "$@"

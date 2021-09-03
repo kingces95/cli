@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Create a temporary file in a temporary directory and set REPLY to its path.
+
+Description
+    The first argument is the name of the array holding temporary directories.
+    If there are no temporary directories then one is created via 'cli temp dir'.
+
+    Create a temporary file in the temprary directory and then set the variable 
+    to whatever name is passed as the second argument. If no second argument
+    is provided then REPLY is used as a default.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::subshell::temp::file::inline
+    echo ${REPLY}
+}
+
+::cli::subshell::temp::file::inline() {
+
+    # create and return a temporary file
+    declare -n REPLY_REF=${1-'REPLY'}
+    REPLY_REF=( $(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX") )
+
+    # record the temporary file 
+    declare -ga "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
+    declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+    CLI_SUBSHELL_TEMP_FILE_BASHPID+=( "${REPLY_REF}" )
+}
+
+self_test() {
+    cli::source cli-assert
+    cli::source cli subshell temp dir
+
+    declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
+
+    # create a temp file
+    ::cli::subshell::temp::file::inline
+    [[ -f "${REPLY}" ]] || cli::assert
+    [[ "${REPLY}" == ${CLI_SUBSHELL_TEMP_FILE_BASHPID[0]} ]] || cli::assert
+
+    # create a temp file returned via a custom name
+    ::cli::subshell::temp::file::inline MY_REPLY
+    [[ -f "${MY_REPLY}" ]] || cli::assert
+    [[ "${MY_REPLY}" == ${CLI_SUBSHELL_TEMP_FILE_BASHPID[1]} ]] || cli::assert
+
+    # create a temp file in a temp dir
+    ::cli::subshell::temp::dir::inline MY_DIR
+    ::cli::subshell::temp::file::inline REPLY "${MY_DIR}"
+    [[ "$(dirname "${REPLY}")/" == "${MY_DIR}" ]] || cli::assert
+
+    rm "${CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
+    rm -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
+}
+
+cli::main "$@"
+

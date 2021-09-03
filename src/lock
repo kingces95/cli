@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Blocks until taking an exclusive lock on path then copies the stdin to stdout.
+
+Description
+    First positional argument is a path to the file to use as lock.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::lock::inline "$@"
+}
+
+::cli::lock::inline() {
+    flock -x "$1" cat
+}
+
+self_test() {
+    cli::source cli-assert
+
+    lock() {
+        ::cli::lock::inline "${CLI_LOCK_FILE}"
+    }
+
+    for (( i=0; i<64; i++ )); do
+        local result=$({
+            { 
+                printf A
+                sleep 0
+                printf A
+            } | lock >&2 | {
+                printf B
+                sleep 0
+                printf B
+            } | lock >&2
+        } 2>&1 ) 
+        
+        [[ ${result} =~ AABB|BBAA ]] \
+            || assert::fail "Result ${result} interleaves A and B."
+    done  
+}
+
+cli::main "$@"

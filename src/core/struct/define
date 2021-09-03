@@ -35,7 +35,7 @@ cli::meta::declare() {
 
 ::cli::core::struct::define::inline() {
     : ${arg_name?}
-    cli::check::regex "${arg_name}" "${CLI_REGEX_STRUCT_NAME}"
+    [[ "${arg_name}" =~ "${CLI_REGEX_STRUCT_NAME}" ]] || cli::assert 
 
     # name
     local -u variable=CLI_TYPE_${arg_name}

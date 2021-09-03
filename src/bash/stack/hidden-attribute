@@ -6,15 +6,16 @@ help() {
     cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
+    
+Summary
+    Prevents the target method from appearing in stack traces.
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
+declare -A CLI_TYPE_CLI_BASH_STACK_HIDDEN_ATTRIBUTE=()
 
 main() {
-    cli::export::import_parent_group
+    cli::export CLI_TYPE_CLI_BASH_STACK
 }
 
 cli::main "$@"

@@ -96,7 +96,7 @@ cli::meta::declare() {
                 ::cli::core::variable::declare::inline
         fi
 
-        cli::check::condition \
+        cli::assert \
             "[[ \"${current_type}\" == \"${arg_type}\" ]]" \
             "Unexpected redeclaration of '${arg_name}'" \
             "type from '${current_type}' to '${arg_type}'."

@@ -37,7 +37,7 @@ main() {
 
     # while read -a REPLY; do
     while read -a reply; do
-        cli::check::condition "(( ${#reply[@]} > 0 ))" "Records must contain a key."
+        cli::assert "(( ${#reply[@]} > 0 ))" "Records must contain a key."
 
         key="${reply[*]:0:${ARG_KEYS}}"
 

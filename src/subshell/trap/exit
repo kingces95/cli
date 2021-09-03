@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+cli::import_inline cli subshell temp clean
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Exit trap that deletes temporary files and directories created by this subprocess.
+EOF
+}
+
+cli::meta::declare() {
+    :
+}
+
+main() {
+    ::cli::subshell::trap::exit::inline "$@"
+}
+
+::cli::subshell::trap::exit::inline() {
+    ::cli::subshell::temp::clean::inline
+}
+
+self_test() {
+    :
+}
+
+cli::main "$@"

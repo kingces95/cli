@@ -29,7 +29,7 @@ cli::meta::declare() {
 ::cli::core::load::inline() {
     : ${arg_dir:=$(pwd)}
 
-    cli::check::condition "[[ -d \"${arg_dir}\" ]]"
+    cli::assert "[[ -d \"${arg_dir}\" ]]"
 
     cd "${arg_dir}"
 
@@ -38,7 +38,7 @@ cli::meta::declare() {
     fi
 
     for name in $@; do
-        cli::check::regex "${name}" "${CLI_REGEX_VARIABLE_NAME}" > /dev/stderr
+        [[ "${name}" =~ "${CLI_REGEX_VARIABLE_NAME}" ]] || cli::assert
     
         while IFS= read -r; do
             echo "${name}" "${REPLY}"

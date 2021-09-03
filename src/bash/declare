@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 source $(cli loader ---exports)
 cli::import_group
-cli::import_inline cli core variable initialize
-cli::import_inline cli core type is-scaler
-cli::import_inline cli core type is-builtin
-cli::import_inline cli core type is-user-defined
 cli::import cli-assert
 
 help() {
-    cat << EOF |  cli::core::variable::help
+    cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND}
     
@@ -19,6 +15,7 @@ Description
     Declares a global bash variable of the provided type. Valid types are
 
         string
+        boolean
         integer
         map
         array
@@ -31,48 +28,74 @@ cli::meta::declare() {
 
 main() {
     ::cli::bash::declare::inline "$@"
-    declare -p $1
+
+    while (( $# > 0 )); do
+        shift
+        declare -p $1
+        shift
+    done
 }
 
 ::cli::bash::declare::inline() {
-    local -a ARG_NAME=${1?'Missing variable name.'}
-    local -a ARG_TYPE=${2-'string'}
 
-    # initialize declare flags
-    local flags=g
-    case ${ARG_TYPE} in
-        'integer') flags+=i ;;
-        'array') flags+=a ;;
-        'map') flags+=A ;;
-        'string') ;;
-        *) cli::fail "Cannot declare variable of unknown type '${ARG_TYPE}'."
-    esac
+    while (( $# > 0 )); do
 
-    # declare the bash variable
-    declare -${flags} ${ARG_NAME}
+        local ARG_TYPE=${1?'Missing variable type.'}
+        shift
+
+        local ARG_NAME=${1?'Missing variable name.'}
+        shift
+
+        # initialize declare flags
+        local flags=g
+        case ${ARG_TYPE} in
+            'integer') flags+=i ;;
+            'array') flags+=a ;;
+            'map') flags+=A ;;
+            'boolean') ;&
+            'string') ;;
+            *) cli::fail "Cannot declare variable of unknown type '${ARG_TYPE}'."
+        esac
+
+        # declare the bash variable
+        declare -${flags} ${ARG_NAME}
+    done
 }
 
 self_test() {
 
     # string
-    ${CLI_COMMAND} -- VAR string \
+    ${CLI_COMMAND} -- string VAR \
+        | assert::pipe_eq \
+            'declare -- VAR'
+
+    # boolean
+    ${CLI_COMMAND} -- boolean VAR \
         | assert::pipe_eq \
             'declare -- VAR'
 
     # integer
-    ${CLI_COMMAND} -- VAR integer \
+    ${CLI_COMMAND} -- integer VAR \
         | assert::pipe_eq \
             'declare -i VAR'
 
     # array
-    ${CLI_COMMAND} -- VAR array \
+    ${CLI_COMMAND} -- array VAR \
         | assert::pipe_eq \
             'declare -a VAR'
 
     # map
-    ${CLI_COMMAND} -- VAR map \
+    ${CLI_COMMAND} -- map VAR \
         | assert::pipe_eq \
             'declare -A VAR'
+    
+    # many
+    ${CLI_COMMAND} -- \
+        string MY_STRING \
+        map MY_MAP \
+        | assert::pipe_eq \
+            'declare -- MY_STRING' \
+            'declare -A MY_MAP'
 }
 
 cli::main "$@"

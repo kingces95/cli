@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+cli::import cli bash stack process
+cli::import cli bash stack call
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Print the bash stack followed by the process stack.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+::cli::bash::stack::trace::inline() {
+    ::cli::bash::stack::call::inline
+    if [[ -n "${CLI_STACK_SHOW_PROCESS-}" ]]; then
+        ::cli::bash::stack::process::inline
+    fi
+}
+
+self_test() {
+
+    cli::fail 'Test failure!'
+
+    my_trap() {
+        echo ---
+        echo "${BASH_COMMAND} -> ${1-0}"
+        ::cli::bash::stack::trace::inline 1 | sed 's/^/  /'
+    }
+
+    # trap 'my_trap $?' ERR
+
+    subpipe() {
+        local pid=$BASHPID
+        printf '%s %s:%s %s\n' "$1" "$pid" "${BASH_SUBSHELL}" $$ > /dev/stderr
+        printf '%s\n' "$1" "$(lsof -a -p "$pid" -d 0,1,2)" > /dev/stderr
+        cat
+        echo hello | grep bar
+    }
+
+    pipe() {
+        cat | subpipe "${1}${1}" | cat
+    }
+
+    echo hi | pipe a
+}
+
+cli::main "$@"

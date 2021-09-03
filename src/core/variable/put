@@ -50,16 +50,17 @@ main() {
 
         # scaler
         if arg_type=${ARG_TYPE} ::cli::core::type::is_scaler::inline; then
-            cli::check::condition "(( $# < 2 ))"  \
+            cli::assert "(( $# < 2 ))"  \
                 "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." \
                 "Expected a record with one or no fields, but got '$@'."
 
             # supplied
             if (( $# != 0 )); then
                 case ${type} in
-                    'boolean') cli::check::regex "${1-}" '^$|^true$|^false$' \
+                    'boolean') [[ "${1-}" =~ '^$|^true$|^false$' ]] || cli::assert \
                         "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." ;;
-                    'integer') cli::check::regex "${1-}" '^$|^[-]?[0-9]+$' \
+
+                    'integer') [[ "${1-}" =~ '^$|^[-]?[0-9]+$' ]] || cli::assert \
                         "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." ;;
                 esac
 
@@ -75,13 +76,13 @@ main() {
         # map
         elif [[ ${type} == 'map' ]]; then
 
-            cli::check::condition "(( $# < 3 ))" \
+            cli::assert "(( $# < 3 ))" \
                 "Failed to assign value '${2-}' to key '${1-}' in map '${ARG_NAME}'." \
                 "Expected a record with two or fewer fields, but got '$@'."
 
             # supplied
             if (( $# != 0 )); then
-                cli::check::regex "${1-}" '.' \
+                [[ "${1-}" =~ . ]] || cli::assert \
                     "Failed to use empty key to assign '${2-}' to map '${ARG_NAME}'."
                 ref+=( [$1]="${2-}" )
 

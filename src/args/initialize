@@ -2,7 +2,7 @@
 source $(cli loader ---exports)
 cli::import_group
 cli::import cli-assert
-cli::import cli args check
+cli::import_inline cli args check
 
 help() {
     cat << EOF | cli::help::global
@@ -173,7 +173,7 @@ main() {
     # positional
     if ! ${POSITIONAL} && (( ${#ARGS_POSITIONAL_REF[@]} > 0 )); then
         cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND}'," \
-            "but got ${#ARGS_POSITIONAL_REF[@]}: '${ARGS_POSITIONAL_REF[@]}'."
+            "but got ${#ARGS_POSITIONAL_REF[@]}: '${ARGS_POSITIONAL_REF[*]}'."
     fi
 }
 

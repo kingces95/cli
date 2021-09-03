@@ -27,6 +27,8 @@ cli::meta::declare() {
 }
 
 ::cli::core::type::is_scaler::inline() {
+    # if [[ -z "${arg_type:-}" ]]; then cli::callstack $? 0; exit 42; fi
+    [[ -n "${arg_type:-}" ]] || cli::assert
     : ${arg_type?"Unexpected missing 'type'."}
 
     local -a type=( ${arg_type} )

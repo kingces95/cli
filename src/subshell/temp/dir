@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Create a temporary directory.
+
+Description
+    First positional argument is the name of a variable to assign the
+    path of the created temporary directory. If no name is supplied 
+    REPLY is used as a default.
+
+    The temporary directory path will also be added to a global array 
+    variable CLI_SUBSHELL_TEMP_DIR_XXXX where XXXX is the bash subshell id.
+
+    The temporary directory path will end with a forward slash.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::subshell::temp::dir::inline
+    echo ${REPLY}
+}
+
+::cli::subshell::temp::dir::inline() {
+
+    # create and return a temporary directory
+    declare -n REPLY_REF=${1-'REPLY'}
+    REPLY_REF=( "$(mktemp -d "${TMPDIR:-/tmp/}cli-XXXXXXXX")/" )
+
+    # record the temporary directory 
+    declare -ga "CLI_SUBSHELL_TEMP_DIR_${BASHPID}+=()"
+    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
+    CLI_SUBSHELL_TEMP_DIR_BASHPID+=( "${REPLY_REF}" )
+}
+
+self_test() {
+    cli::source cli-assert
+    cli::source cli io dir remove
+
+    declare -ga "CLI_SUBSHELL_TEMP_DIR_${BASHPID}+=()"
+    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
+
+    # create an empty temp dir
+    ::cli::subshell::temp::dir::inline
+    [[ -d "${REPLY}" ]] || cli::assert
+    [[ "${REPLY}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[0]} ]] || cli::assert
+
+    # create another empty temp dir
+    ::cli::subshell::temp::dir::inline
+    [[ -d "${REPLY}" ]] || cli::assert
+    [[ "${REPLY}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[1]} ]] || cli::assert
+
+    # create an empty temp dir with custom name
+    local -a MY_TEMP_DIR
+    ::cli::subshell::temp::dir::inline MY_TEMP_DIR
+    [[ -d "${MY_TEMP_DIR}" ]] || cli::assert
+    [[ "${MY_TEMP_DIR}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[2]} ]] || cli::assert
+
+    # remove temp dir
+    ::cli::io::dir::remove::inline "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
+    [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[0]}" ]] || cli::assert
+    [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[1]}" ]] || cli::assert
+    [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[2]}" ]] || cli::assert
+}
+
+cli::main "$@"

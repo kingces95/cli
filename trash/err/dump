@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+cli::import cli-assert
+cli::import_inline cli bash stack trace
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Dumps the state of the program before exiting due to a signal trap.
+
+Description
+    Expects the following variables:
+
+        CLI_TRAP_TYPE - The name of the signal (e.g. EXIT or ERR).
+        CLI_TRAP_MESSAGE - The message to display before the stacktrace.
+        CLI_TRAP_SKIP_FRAMES - The number of frames to skip (e.g. assertion logic itself).
+        CLI_TRAP_EXIT_CODE - The exit code captured by the trap.
+
+    Error logic is expected to begin with the following boilerplate so that it is
+    excluded from display in the stack trace.
+
+        local CLI_TRAP_SKIP_FRAMES=\$(( \${CLI_TRAP_SKIP_FRAMES-0} + 1 ))
+
+    For example, an assert function would not want to itself appear in the stack trace and
+    so would begin with that statment to exclude itself from display.
+
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    local CLI_TRAP_EXIT_CODE=${1-??}
+    local CLI_TRAP_TYPE=${2-'UNKNOWN_TRAP_TYPE'}
+    local CLI_TRAP_MESSAGE="${3-'GENERAL FAILURE'}"
+
+    ::cli::bash::err::dump::inline
+}
+
+::cli::bash::err::dump::inline() {
+    local CLI_TRAP_EXIT_CODE=${CLI_TRAP_EXIT_CODE-$?}
+
+    : ${CLI_TRAP_TYPE?'Did you forget to set CLI_TRAP_TYPE?'}
+    : ${CLI_TRAP_MESSAGE?'Did you forget to set CLI_TRAP_MESSAGE?'}
+
+    echo "${CLI_TRAP_MESSAGE}"
+
+    if [[ ! "${CLI_TRAP_NO_STACK-}" == 'true' ]]; then
+        echo "--- ${CLI_TRAP_TYPE} TRAP STACKTRACE, exit=${CLI_TRAP_EXIT_CODE} ---"
+        ::cli::bash::stack::trace::inline | sed 's/^/  /'
+    fi
+}
+
+self_test() {
+    fail() {
+        main 42 MY_TRAP "FAILURE: $*"
+    }
+
+    # fail This is a test \
+    #     | assert::pipe_eq_exact \
+    #         '--- MY_TRAP TRAP STACKTRACE, exit=42 ---' \
+    #         'FAILURE: This is a test' \
+    #         '  {0} self_test --self-test                              /Users/Setup/git/cli/src/bash/trap/dump:66' \
+    #         '  {1} cli::main --self-test                              /Users/Setup/git/cli/src/.cli/loader/exports.sh:108' \
+    #         '  {2} main --self-test                                   /Users/Setup/git/cli/src/bash/trap/dump:75'
+
+    # ::cli::bash::err::dump::inline
+
+    CLI_TRAP_TYPE=MY_TRAP
+    # ::cli::bash::err::dump::inline 
+    # \
+    #     | assert::pipe_eq_exact \
+    #         'line 52: CLI_TRAP_TYPE: Did you forget to set CLI_TRAP_TYPE?'
+
+    CLI_TRAP_MESSAGE='My trap message'
+    # ::cli::bash::err::dump::inline
+
+    # CLI_TRAP_EXIT_CODE=42
+    # ::cli::bash::err::dump::inline
+
+    # CLI_TRAP_SKIP_FRAMES=1
+    # ::cli::bash::err::dump::inline
+
+    # cli::mktemp::dir
+    # cli::mktemp::file
+    # cli::mktemp::dir
+
+    CLI_TRAP_DUMP_STACK=true
+
+    ::cli::bash::err::dump::inline
+}
+
+cli::main "$@"
+

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_parent_group
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Print a line to stdout composed of the arguments joined 
+    using the first argument as the delimiter.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::bash::join::inline "$@" 
+}
+
+::cli::bash::join::inline() {
+    local delimiter=$1
+    shift
+
+    local -a segment=()
+    while (( $# > 0 )); do
+        segment+=( "$1" )
+        shift
+        if (( $# == 0 )); then break; fi
+        segment+=( "${delimiter}" )
+    done
+
+    printf %s "${segment[@]}"
+    echo
+}
+
+self_test() {
+    ${CLI_COMMAND} -- . a b c \
+        | assert::pipe_eq \
+            'a.b.c'
+}
+
+cli::main "$@"

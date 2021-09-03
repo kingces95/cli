@@ -55,11 +55,16 @@ main() {
     done
 
     for (( i=0; i<${#REPLY[@]}; i++ )); do
-        ::cli::bash::write::inline ${REPLY[$i]-} "${REPLY_VALUE[$i]-}"
+        echo -n "${REPLY[$i]-} "
+        ::cli::bash::write::inline "${REPLY_VALUE[$i]-}"
     done
 }
 
 ::cli::core::wire::load::inline() {
+    # : ${ARG_REPLY_NAME?}
+    # : ${ARG_REPLY_TYPE?}
+    # : ${ARG_REPLY_KEY?}
+
     : ${ARG_REPLY?}
     : ${ARG_REPLY_VALUE?}
     : ${ARG_TEMP_MAP?}
@@ -142,6 +147,8 @@ self_test() {
             [my_array]=array
             [my_udt]=version
             [my_map_of_map_of_version]='map_of map_of version'
+            [my_empty_map]=map
+            [my_empty_array]=array
         )
         declare -A CLI_TYPE_VERSION=(
             [major]=integer
@@ -162,23 +169,32 @@ self_test() {
         echo my_map_of_map_of_version foo alpha minor 40
         echo my_map_of_map_of_version foo beta major 50
         echo my_map_of_map_of_version moo-bar beta minor 60
-    ) | sort -u
+    )   | sort -u 
     # \
-    #     | assert::pipe_eq \
-    #         'MY_PREFIX_MY_ARRAY array element' \
-    #         'MY_PREFIX_MY_BOOLEAN boolean true' \
-    #         'MY_PREFIX_MY_INTEGER integer 42' \
-    #         'MY_PREFIX_MY_MAP map key value' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION bar 1' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0 beta 1' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_0_MAJOR integer 30' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_0_MINOR integer 40' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_1_MAJOR integer 50' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_1 beta 0' \
-    #         'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_1_0_MINOR integer 60' \
-    #         'MY_PREFIX_MY_STRING string hello world' \
-    #         'MY_PREFIX_MY_UDT_MAJOR integer 10' \
-    #         'MY_PREFIX_MY_UDT_MINOR integer 20'
+    #     | assert::pipe_eq_exact \
+    #             'MY_PREFIX target ' \
+    #             'MY_PREFIX_MY_ARRAY array element_0' \
+    #             'MY_PREFIX_MY_ARRAY array element_1' \
+    #             'MY_PREFIX_MY_BOOLEAN boolean true' \
+    #             'MY_PREFIX_MY_INTEGER integer 42' \
+    #             'MY_PREFIX_MY_MAP map key_0 value_0' \
+    #             'MY_PREFIX_MY_MAP map key_1 value_1' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION map_of map_of version foo 0' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION map_of map_of version moo-bar 1' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0 map_of version alpha 0' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0 map_of version beta 1' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_0 version ' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_0_MAJOR integer 30' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_0_MINOR integer 40' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_1 version ' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_0_1_MAJOR integer 50' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_1 map_of version beta 0' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_1_0 version ' \
+    #             'MY_PREFIX_MY_MAP_OF_MAP_OF_VERSION_1_0_MINOR integer 60' \
+    #             'MY_PREFIX_MY_STRING string hello\ world' \
+    #             'MY_PREFIX_MY_UDT version ' \
+    #             'MY_PREFIX_MY_UDT_MAJOR integer 10' \
+    #             'MY_PREFIX_MY_UDT_MINOR integer 20'
     exit
 
     cli dsl sample ---load \

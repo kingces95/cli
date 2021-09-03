@@ -30,10 +30,12 @@ cli::meta::declare() {
 main() {
     source ${1-'/dev/null'}
     
-    # select many bash variables for each record; if record is 
+    # select many core variables for each record; if record is 
     #   - scaler type then there is one bash variable
-    #   - user defined type then there is only an update to CLI_SCOPE
-    #   - modified type there are both a variable and CLI_SCOPE upate
+    #   - user defined type then there is 
+    #       - an update to CLI_SCOPE
+    #       - variables for each field with default values
+    #   - modified type (e.g. map_of) there are both a variable and CLI_SCOPE upate
     while read -a RECORD; do
         local -a REPLY_NAME=()
         local -a REPLY_TYPE=()
@@ -52,7 +54,7 @@ main() {
             REPLY+=( ${REPLY_NAME[$i]} )
             REPLY+=( ${REPLY_TYPE[$i]} )
             if [[ ${REPLY_TYPE} == 'map' ]]; then 
-                REPLY+=( ${REPLY_KEY[$i]} );
+                REPLY+=( "${REPLY_KEY[$i]}" );
             fi
             REPLY+=( "${REPLY_VALUE[$i]}" )
 
@@ -90,14 +92,15 @@ main() {
     shift
 
     # update scope 
-    if ! arg_type=${ARG_TYPE} ::cli::core::type::is_builtin::inline; then
+    if ! arg_type="${ARG_TYPE}" ::cli::core::type::is_builtin::inline; then
         ARG_REPLY_NAME_REF+=( CLI_SCOPE )
         ARG_REPLY_TYPE_REF+=( map )
         ARG_REPLY_KEY_REF+=( ${ARG_NAME} )
         ARG_REPLY_VALUE_REF+=( "${ARG_TYPE[*]}" )
 
         if [[ ! ${ARG_TYPE} == 'map_of' ]]; then 
-            # udt (e.g. 'MY_VERSION version'); simply a scope entry 
+            # udt (e.g. 'MY_VERSION version')
+            # add defaults
             return
         fi
     fi
@@ -133,16 +136,16 @@ main() {
 
     if [[ ${ARG_TYPE} == 'map' || ${ARG_TYPE} == 'map_of' ]]; then
        
-        cli::check::condition "(( $# <= 2 ))" \
+        (( $# <= 2 )) || cli::assert \
             "Unexpected extra fields during assignment of '${ARG_TYPE[*]} ${ARG_NAME}' key '$1' with value '${2-}'." \
             "Expected a record with two or fewer fields, but got ( $@ )."
 
-        cli::check::regex "$1" '.' \
+        [[ "$1" =~ '.' ]] || cli::assert \
             "Unexpected empty key during assigment of value '${2-}' to '${ARG_TYPE[*]} ${ARG_NAME}'."
 
         # map_of has no default value
         if [[ ${ARG_TYPE} == 'map_of' ]]; then
-            cli::check::regex "${2-}" '.' \
+            [[ "${2-}" =~ '.' ]] || cli::assert \
                 "Unexpected assignment of empty value to '${ARG_TYPE[*]} ${ARG_NAME}' key '$1'."
         fi
 
@@ -151,17 +154,17 @@ main() {
         return
     fi
 
-    cli::check::condition "(( $# < 2 ))"  \
+    cli::assert "(( $# < 2 ))"  \
         "Failed to assign '${1-}' to ${ARG_TYPE} '${ARG_NAME}'." \
         "Expected 2 remaining fields, but got $#. Fields are '$@'."
 
     # set scaler value
     case ${ARG_TYPE} in
         'boolean') 
-            cli::check::regex "$1" '^$|^true$|^false$' \
+            [[  "$1" =~ '^$|^true$|^false$' ]] || cli::assert \
                 "Failed to assign '$1' to ${ARG_TYPE} '${ARG_NAME}'." ;;
         'integer') 
-            cli::check::regex "$1" '^$|^[-]?[0-9]+$' \
+            [[ "$1" =~ '^$|^[-]?[0-9]+$' ]] || cli::assert \
                 "Failed to assign '$1' to ${ARG_TYPE} '${ARG_NAME}'." ;;
     esac
 

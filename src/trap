@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+assert() {
+    echo "ASSERT FAILED: ${BASHPID}" >&2
+    ps -j >&2
+
+    read PID < <(ps -p ${BASHPID} -o pgid=)
+    echo kill -SIGINT -${PID} >&2
+    kill -SIGINT -${PID}
+    
+    exit 1
+}
+
+set -eE
+set -o pipefail
+trap 'echo ERR TRAP: ${BASHPID} >&2' ERR
+echo work: ${BASHPID} >&2
+(
+    echo work: ${BASHPID} >&2
+    (
+        echo work: ${BASHPID} >&2
+        { echo pipeA: ${BASHPID} >&2; sleep 1; } \
+            | { echo pipeB: ${BASHPID} >&2; assert; } \
+            | { echo pipeC: ${BASHPID} >&2; read; sleep 1; }
+        declare -p PIPESTATUS
+        echo done: ${BASHPID} >&2
+    )
+    echo done: ${BASHPID} >&2
+)  
+echo done: ${BASHPID} >&2
+

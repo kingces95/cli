@@ -79,6 +79,12 @@ main() {
             | swap 1 2 \
             | cli::read "${ARG_META_GROUP}" 
 
+        # join name->bash_name name->type on name to get bash_name->type
+        join -1 2 -2 4 -o "2.2 1.3 2.5" \
+            <(cli::write "${ARG_META}" | grep "bash_name" | sort) \
+            <(cli::write "${ARG_META}" | grep "group \\* type" | sort) \
+            | awk '{ print $1, "bash_type", $2, $3 }' \
+            | cli::read "${ARG_META_GROUP}"
     # groups
     else
 

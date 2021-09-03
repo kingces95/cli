@@ -15,7 +15,7 @@ EOF
 main() (
     ${arg_cli} '---print' \
         | emit::file \
-        | emit::subproc "$(cli::emit::library_name ${arg_cli})"; \
+        | emit::subshell "$(cli::emit::library_name ${arg_cli})"; \
 )
 
 cli::main "$@"

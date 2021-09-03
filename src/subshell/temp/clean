@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Delete temporary directories created by this subshell.
+
+Description
+    First positional argument is the name of an array containing the temporary
+    directories created by this subshell and its parents in reverse chronological
+    order. 
+
+    Delete temporary directories popped from the provided array that were crated 
+    by this subshell. Pop deleted directories from the array passed as the first
+    argument.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::subshell::temp::clean::inline
+}
+
+::cli::subshell::temp::clean::inline() {
+    declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+    rm -f "${CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
+
+    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
+    rm -r -f "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
+}
+
+self_test() {
+    cli::source cli-assert
+    cli::source cli subshell temp dir
+
+    local FAKE_DIR='/tmp/fake/direcotry'
+    declare -a REPLY=( "${FAKE_DIR}" )
+
+    # create a temp dir
+    ::cli::subshell::temp::dir::inline
+    local tempDirA="${REPLY}"
+
+    # create another temp dir
+    ::cli::subshell::temp::dir::inline
+    local tempDirB="${REPLY}"
+
+    # remove temp dirs created by this subshell
+    ::cli::subshell::temp::clean::inline REPLY
+
+    # assert
+    [[ ! -d "${tempDirA}" ]] || cli::assert
+    [[ ! -d "${tempDirB}" ]] || cli::assert
+    (( 1 == ${#REPLY[@]} )) || cli::assert
+    [[ "${FAKE_DIR}" == ${REPLY} ]] || cli::assert
+}
+
+cli::main "$@"
+

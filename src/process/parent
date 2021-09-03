@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+source $(cli loader ---exports)
+cli::import_group
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND}
+    
+Summary
+    Set REPLY to the process id of $1. 
+
+Description
+    By default $1 is the process id of the subprocess. 
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::proc::parent::inline "$@"
+    declare -p REPLY
+}
+
+::cli::process::parent::inline() {
+    local PID=${1-${BASHPID}}
+    read < <(ps -p ${PID} -o ppid=)
+}
+
+self_test() {
+    ( 
+        ::cli::process::parent::inline
+        [[ "${REPLY}" == "$$" ]] || cli::assert "${REPLY}" == "$$"
+    )
+}
+
+cli::main "$@"

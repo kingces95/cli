@@ -52,7 +52,6 @@ emit() {
     cli::write ${META_PREFIX} \
         | cli core wire load -- CLI_META cli_meta | sort -u \
         | cli core wire read | sort -u \
-        | sort -u \
         | cli bash wire emit
 
     # cli::write ${META_PREFIX}
