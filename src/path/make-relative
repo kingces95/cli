@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Given \$1 and \$2 are absolute paths beginning with /
@@ -15,7 +13,7 @@ EOF
 
 Examples
     Make relative "/A/B/C" "/A" -->  "../.."
-        ${CLI_COMMAND} -- "/A/B/C" "/A"
+        ${CLI_COMMAND[@]} -- "/A/B/C" "/A"
 
 Credit
     https://stackoverflow.com/questions/2564634
@@ -81,5 +79,3 @@ self_test() {
     [[ $(main "/A/B/C" "/A/D/E") == "../../D/E" ]] || cli::assert
     [[ $(main "/A/B/C" "/D/E/F") == "../../../D/E/F" ]] || cli::assert
 }
-
-cli::main "$@"

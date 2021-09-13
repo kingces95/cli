@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     These functions simplify creating and reclaming temporary directories and files.
@@ -23,7 +21,5 @@ cli::meta::declare() {
 }
 
 main() {
-    cli::export::import_parent_group
+    :
 }
-
-cli::main "$@"

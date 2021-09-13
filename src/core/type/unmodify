@@ -1,64 +1,43 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::core::type::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
-    Return the unmodified type of a type.
+    Return the type less one modifier or the type if self it is unmodified.
 
 Description
-    Return a type without any modifiers. For example, the unmodified type of
+    Return a type less one modifiers. For example, the unmodified type of
     
         map_of map_of string
 
-    is 
+    becomes 
 
         map_of string
-
-Arguments
-    --recurse -r     [Flag] : Strip all modifiers.
 EOF
 }
 
 cli::meta::declare() {
     cli::core::type::import
-    cli::meta::add_flag 'recurse'
 }
 
 ::cli::core::type::unmodify::inline() {
-    : ${arg_type?}
-    : ${arg_recurse:=false}
+    set ${1-}
 
-    set ${arg_type}
-
-    if ${arg_recurse}; then
-        eval "echo \$$#"
-    else
-        if (( $# > 1 )); then
-            shift
-        fi
-
-        echo "$@"
+    if (( $# > 1 )); then
+        shift
     fi
+
+    echo "$@"
+}
+
+main() {
+    ::cli::core::type::unmodify::inline "$@"
 }
 
 self_test() {
-    assert::eq \
-        "$(arg_type=boolean inline)" \
-        'boolean'
-
-    assert::eq \
-        "$(arg_type='map_of map_of boolean' inline)" \
-        'map_of boolean'
-
-    assert::eq \
-        "$(arg_type='map_of map_of boolean' arg_recurse=true inline)" \
-        'boolean'
+    [[ "$(main 'boolean')" == 'boolean' ]] || cli::assert
+    [[ "$(main 'map_of map_of boolean')" == 'map_of boolean' ]] || cli::assert
 }
-
-cli::main "$@"

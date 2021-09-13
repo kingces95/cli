@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import cli-assert
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
 cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Read records from a set of files and write the records to stdout using 
@@ -56,20 +53,20 @@ self_test() {
         baz z00
 EOF
 
-    ${CLI_COMMAND} --dir "${dir}" -- foo bar \
+    ${CLI_COMMAND[@]} --dir "${dir}" -- foo bar \
         | sort \
         | assert::pipe_records_eq \
             'bar s00 s01 s\ 02' \
             'foo r00 r01 r02' \
             'foo r10 r11 r12'
 
-    ${CLI_COMMAND} --dir "${dir}" -- 'f*' \
+    ${CLI_COMMAND[@]} --dir "${dir}" -- 'f*' \
         | sort \
         | assert::pipe_records_eq \
             'foo r00 r01 r02' \
             'foo r10 r11 r12'
 
-    ${CLI_COMMAND} --dir "${dir}" \
+    ${CLI_COMMAND[@]} --dir "${dir}" \
         | sort \
         | assert::pipe_records_eq \
             'bar s00 s01 s\ 02' \
@@ -79,5 +76,3 @@ EOF
 
     rm -r "${dir}"
 }
-
-cli::main "$@"

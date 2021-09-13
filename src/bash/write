@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Writes a record escaping default IFS characters; Opposite of 'read'.
@@ -25,7 +22,7 @@ Arguments
 
 Examples
     Write and read a record with fields 'x', space, tab, and backslash.
-        ${CLI_COMMAND} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY
+        ${CLI_COMMAND[@]} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY
 EOF
 }
 
@@ -56,17 +53,15 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY \
+    ${CLI_COMMAND[@]} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY \
     | assert::pipe_eq_exact \
         "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")"
 
-    ${CLI_COMMAND} -- $'\a' | read -a ARRAY; declare -p ARRAY \
+    ${CLI_COMMAND[@]} -- $'\a' | read -a ARRAY; declare -p ARRAY \
     | assert::pipe_eq_exact \
         "declare -a ARRAY=([0]=\$'\a')"
 
-    ${CLI_COMMAND} -- 'a b' | read -a ARRAY; declare -p ARRAY \
+    ${CLI_COMMAND[@]} -- 'a b' | read -a ARRAY; declare -p ARRAY \
     | assert::pipe_eq_exact \
         "declare -a ARRAY=([0]=\"a b\")"
 }
-
-cli::main "$@"

@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Description
     Read command help tokens from stdin and emit productions to stdout 
@@ -271,5 +268,3 @@ self_test() {
             '* self-test FLAG ' \
             '* self-test TYPE boolean'
 }
-
-cli::main "$@"

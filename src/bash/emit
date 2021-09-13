@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::sourceable | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Emit a variable declaration.
@@ -28,19 +25,19 @@ Examples
     Emit the embedded variable 'MY_STRING'.
         declare MY_STRING='Hello World!'
         declare -p MY_STRING \
-            | ${CLI_COMMAND} --source -- MY_STRING
+            | ${CLI_COMMAND[@]} --source -- MY_STRING
 
     Emit the embedded variables that start with 'MY_'.
         declare MY_STRING='Hello World!'
         declare -i MY_NUMBER=42
         declare -p MY_STRING MY_NUMBER \
-            | ${CLI_COMMAND} -- MY_* \
+            | ${CLI_COMMAND[@]} -- MY_* \
 
     Emit nothing.
-        ${CLI_COMMAND}
+        ${CLI_COMMAND[@]}
 
     Emit nothing.
-        ${CLI_COMMAND} -- ''
+        ${CLI_COMMAND[@]} -- ''
 EOF
 }
 
@@ -89,33 +86,31 @@ self_test() {
     # local -a MY_ARRAY
 
     # declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
-    #     | ${CLI_COMMAND} --source -- 'MY_STRING' \
+    #     | ${CLI_COMMAND[@]} --source -- 'MY_STRING' \
     #     | assert::pipe_eq \
     #         "declare -- MY_STRING=\"Hello world!\"" 
 
     # declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
-    #     | ${CLI_COMMAND} --source --  MY_STRING MY_NUMBER MY_NOT_DEFINED \
+    #     | ${CLI_COMMAND[@]} --source --  MY_STRING MY_NUMBER MY_NOT_DEFINED \
     #     | sort -k3,3 \
     #     | assert::pipe_eq \
     #         "declare -i MY_NUMBER=\"42\"" \
     #         "declare -- MY_STRING=\"Hello world!\""
 
     # declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
-    #     | ${CLI_COMMAND} --source -- 'MY_*' \
+    #     | ${CLI_COMMAND[@]} --source -- 'MY_*' \
     #     | sort -k3,3 \
     #     | assert::pipe_eq \
     #         'declare -i MY_NUMBER="42"' \
     #         'declare -- MY_STRING="Hello world!"'
 
     # declare -p MY_STRING MY_NUMBER MY_MAP MY_ARRAY \
-    #     | ${CLI_COMMAND} --source -- "NOOP_*" \
+    #     | ${CLI_COMMAND[@]} --source -- "NOOP_*" \
     #     | assert::pipe_eq
 
-    ${CLI_COMMAND} -- "" \
+    ${CLI_COMMAND[@]} -- "" \
         | assert::pipe_eq
 
-    # ${CLI_COMMAND} -- MY_NOT_DEFINED \
+    # ${CLI_COMMAND[@]} -- MY_NOT_DEFINED \
     #     | assert::pipe_eq
 }
-
-cli::main "$@"

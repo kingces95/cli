@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Description
     Read command help from stdin and emit tokens to stdout one per 
@@ -23,7 +20,7 @@ Description
     help sections that do not include the word "Arguments". 
     
     Within "Arguments" help sections the preporcessor excludes 
-    argument copy as defined as text after a colon up to 
+    argument copy is defined as text after a colon up to 
     "Required:", "Allowed values:", or a new command name. 
 
     Within "Arguments" help sections: CLI_DSL_TOKEN_NAME is returned for
@@ -218,5 +215,3 @@ self_test() (
             'FLAG 27 2 ' \
             'EOF 31 6 '
 )
-
-cli::main "$@"

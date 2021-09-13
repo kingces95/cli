@@ -1,16 +1,13 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli bash initialize
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-user-defined
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Declare and initialize a bash variable or variables for a given type.
@@ -79,32 +76,32 @@ main() {
 self_test() {
 
     # string
-    ${CLI_COMMAND} -- string VAR \
+    ${CLI_COMMAND[@]} -- string VAR \
         | assert::pipe_eq \
             'declare -- VAR=""'
 
     # integer
-    ${CLI_COMMAND} -- integer VAR \
+    ${CLI_COMMAND[@]} -- integer VAR \
         | assert::pipe_eq \
             'declare -i VAR="0"'
 
     # boolean
-    ${CLI_COMMAND} -- boolean VAR \
+    ${CLI_COMMAND[@]} -- boolean VAR \
         | assert::pipe_eq \
             'declare -- VAR="false"'
 
     # array
-    ${CLI_COMMAND} -- array VAR \
+    ${CLI_COMMAND[@]} -- array VAR \
         | assert::pipe_eq \
             'declare -a VAR=()'
 
     # map
-    ${CLI_COMMAND} -- map VAR \
+    ${CLI_COMMAND[@]} -- map VAR \
         | assert::pipe_eq \
             'declare -A VAR=()'
 
     # map_of
-    ${CLI_COMMAND} -- map_of integer VAR \
+    ${CLI_COMMAND[@]} -- map_of integer VAR \
         | assert::pipe_eq \
             'declare -A VAR=()'
 
@@ -126,7 +123,7 @@ self_test() {
         [my_map_of_version]='map_of version'
     )
 
-    ${CLI_COMMAND} ---source <( declare -p CLI_TYPE_VERSION CLI_TYPE_UDT ) \
+    ${CLI_COMMAND[@]} ---source <( declare -p CLI_TYPE_VERSION CLI_TYPE_UDT ) \
         -- udt VAR \
         | assert::pipe_eq \
             'declare -a VAR_MY_ARRAY=()' \
@@ -139,5 +136,3 @@ self_test() {
             'declare -i VAR_MY_VERSION_MAJOR="0"' \
             'declare -i VAR_MY_VERSION_MINOR="0"'
 }
-
-cli::main "$@"

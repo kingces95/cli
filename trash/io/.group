@@ -5,7 +5,7 @@ cli::import_parent_group
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 EOF
 }
 
@@ -14,7 +14,7 @@ cli::meta::declare() {
 }
 
 main() {
-    cli::export::import_parent_group
+    :;
 }
 
 cli::main "$@"

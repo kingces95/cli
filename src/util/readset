@@ -1,12 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Read stdin into an associative array.
@@ -22,7 +20,7 @@ EOF
 
 Examples
     Create the set { 'a' 'b' 'c' }.
-        ${CLI_COMMAND} -emit <<< $'a\n\b\nc'
+        ${CLI_COMMAND[@]} -emit <<< $'a\n\b\nc'
 EOF
 }
 
@@ -48,30 +46,28 @@ main() {
 
 self_test() {
     # cat /dev/null \
-    # | ${CLI_COMMAND} --name set \
+    # | ${CLI_COMMAND[@]} --name set \
     # | assert::pipe_eq \
     #     'declare -A set'
 
-    # ${CLI_COMMAND} --name set <<< $'a' \
+    # ${CLI_COMMAND[@]} --name set <<< $'a' \
     # | assert::pipe_eq \
     #     'declare -A set=([a]="true" )'
 
     printf '%q\n' $'\n' \
-    | ${CLI_COMMAND} --name set
+    | ${CLI_COMMAND[@]} --name set
     # | assert::pipe_eq \
     #     'declare -A set=([a]="true" )'
     
     exit
 
-    ${CLI_COMMAND} --name set <<< $'a\nb' \
+    ${CLI_COMMAND[@]} --name set <<< $'a\nb' \
     | assert::pipe_eq \
         'declare -A set=([b]="true" [a]="true" )'
 
     declare -A RESULT
-    ${CLI_COMMAND} ---emit | source /dev/stdin
+    ${CLI_COMMAND[@]} ---emit | source /dev/stdin
     ::cli::util::readset::inline <<< $'a'
     assert::pipe_eq < <(declare -p RESULT) \
         'declare -A RESULT=([a]="true" )'
 }
-
-cli::main "$@"

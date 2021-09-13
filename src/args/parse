@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Parse a command line.
@@ -24,7 +21,7 @@ EOF
 Examples
     Parse 'grp cmd --option value -hg -- a0 a1'
         cli args tokenize -- grp cmd --option value -h --param/key value -- a0 a1 \\
-        | ${CLI_COMMAND} -- <( echo 'h help' )
+        | ${CLI_COMMAND[@]} -- <( echo 'h help' )
 
     Produces:
         path grp
@@ -120,7 +117,7 @@ main() {
         local alias="${ALIAS_REF[$identifier]-}"
         if [[ -z "${alias}" ]]; then
             cli::fail "Unexpected unknown alias \"-${identifier}\"" \
-                "passed as argument ? to command '${CLI_COMMAND}'."
+                "passed as argument ? to command '${CLI_COMMAND[@]}'."
         fi
 
         identifier="${alias}"
@@ -169,7 +166,7 @@ main() {
 
 self_test() {
     cli args tokenize -- --myarr a b c --myprops a=0 b=1 c=2 \
-        | ${CLI_COMMAND} \
+        | ${CLI_COMMAND[@]} \
         | assert::pipe_eq \
             'first_named myarr' \
             'named myprops a=0' \
@@ -180,7 +177,7 @@ self_test() {
             'named myarr c'
 
     cli args tokenize -- x y z -h --help opt --help key=value -- a0 a1 \
-        | ${CLI_COMMAND} -- <( echo $'h help\nt test\n' ) \
+        | ${CLI_COMMAND[@]} -- <( echo $'h help\nt test\n' ) \
         | assert::pipe_eq \
             'first_named help' \
             'path x' \
@@ -192,5 +189,3 @@ self_test() {
             'named help opt' \
             'named help key=value'
 }
-
-cli::main "$@"

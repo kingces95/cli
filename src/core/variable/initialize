@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF  | cli::core::variable::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Initialize scaler values.
@@ -60,39 +57,37 @@ main() {
 self_test() {
     declare MY_STRING
     declare -p MY_STRING \
-        | ${CLI_COMMAND} -s --type string --name MY_STRING \
+        | ${CLI_COMMAND[@]} -s --type string --name MY_STRING \
         | assert::pipe_eq \
             "declare -- MY_STRING=\"\""
 
     declare MY_BOOLEAN
     declare -p MY_BOOLEAN \
-        | ${CLI_COMMAND} -s --type boolean --name MY_BOOLEAN \
+        | ${CLI_COMMAND[@]} -s --type boolean --name MY_BOOLEAN \
         | assert::pipe_eq \
             'declare -- MY_BOOLEAN="false"'
 
     declare -i MY_INTEGER
     declare -p MY_INTEGER \
-        | ${CLI_COMMAND} -s --type integer --name MY_INTEGER \
+        | ${CLI_COMMAND[@]} -s --type integer --name MY_INTEGER \
         | assert::pipe_eq \
             'declare -i MY_INTEGER="0"'
 
     declare -a MY_ARRAY
     declare -p MY_ARRAY \
-        | ${CLI_COMMAND} -s --type array --name MY_ARRAY \
+        | ${CLI_COMMAND[@]} -s --type array --name MY_ARRAY \
         | assert::pipe_eq \
             'declare -a MY_ARRAY=()'
 
     declare -A MY_MAP
     declare -p MY_MAP \
-        | ${CLI_COMMAND} -s --type map --name MY_MAP \
+        | ${CLI_COMMAND[@]} -s --type map --name MY_MAP \
         | assert::pipe_eq \
             'declare -A MY_MAP=()'
 
     declare -A MY_MAP_OF_MAP
     declare -p MY_MAP_OF_MAP \
-        | ${CLI_COMMAND} -s --type 'map_of map' --name MY_MAP_OF_MAP \
+        | ${CLI_COMMAND[@]} -s --type 'map_of map' --name MY_MAP_OF_MAP \
         | assert::pipe_eq \
             'declare -A MY_MAP_OF_MAP=()'
 }
-
-cli::main "$@"

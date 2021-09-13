@@ -1,12 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Description
     Loads metadata into a structure more suitable for consumption at runtime.
@@ -114,7 +112,7 @@ self_test() {
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
-        | ${CLI_COMMAND} \
+        | ${CLI_COMMAND[@]} \
         | assert::pipe_eq \
             'bash_name my-list my_list' \
             'bash_name run-as run_as' \
@@ -165,5 +163,3 @@ self_test() {
             'group name allow fruit orange ' \
             'group name allow fruit banana '
 }
-
-cli::main "$@"

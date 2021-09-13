@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Test if a file exists and is older than another file.
@@ -43,21 +40,19 @@ self_test() {
     local source_path=$(mktemp "/tmp/source.XXXXXX")
     local cache_path=$(mktemp "/tmp/cache.XXXXXX")
 
-    if ! ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}"; then
+    if ! ${CLI_COMMAND[@]} --source "${source_path}" --cache "${cache_path}"; then
         assert::fail 'Fresh cache reported stale.'
     fi
 
     touch "$source_path"
-    if ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
+    if ${CLI_COMMAND[@]} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
         assert::fail 'Stale cache reported fresh.'
     fi
 
     rm "${cache_path}"
-    if ${CLI_COMMAND} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
+    if ${CLI_COMMAND[@]} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
         assert::fail 'Missing cache reported fresh.'
     fi
 
     rm "${source_path}"
 }
-
-cli::main "$@"

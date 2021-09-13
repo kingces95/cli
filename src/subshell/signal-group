@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Issue control-c. 
@@ -37,7 +35,7 @@ self_test() {
 
         assert() {
             echo "ASSERT_FAILED ${BASHPID}" >&2
-            if [[ "$1" != 'test' ]]; then ps -j >&2; fi
+            if [[ "$1" != 'run' ]]; then ps -j >&2; fi
             ::cli::subshell::signal_group::inline
             exit 1
         }
@@ -61,9 +59,9 @@ self_test() {
         echo doneA ${BASHPID} >&2
     
     else
-        run() {
+        test() {
             set -m
-            ! ${CLI_COMMAND} --self-test -- "$@" 2>&1 || cli::assert
+            if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1; then exit 1; fi 
         }
 
         {
@@ -98,10 +96,6 @@ self_test() {
             [[ "${ASSERT}" == 'ASSERT_FAILED' ]] || cli::assert
             [[ "${ASSERT_PID}" == "${PIPEB_PID}" ]] || cli::assert
 
-        } 0< <( run test )
+        } 0< <( test run )
     fi
 }
-
-cli::main "$@"
-
-

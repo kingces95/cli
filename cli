@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-if [[ -z ${CLI_PID-} ]]; then
-    declare -x CLI_PID=$$
-fi
-
-CLI_SRC="$(dirname ${BASH_SOURCE})/src"
-"${CLI_SRC}/shim" --name "${BASH_SOURCE##*/}" --base "${CLI_SRC}" -- "$@"
+source $( "$(dirname $0)/src/loader" ---exports )
+[[ -d "${CLI_SHIM_ROOT_DIR_CLI-}" ]] || cli::assert
+cli() {
+    local CLI_NAME='cli'
+    cli::loader::shim "$@"
+}
+cli "$@"

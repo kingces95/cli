@@ -1,16 +1,13 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
+#!/usr/bin/env CLI_NAME=cli bash-cli
 # cli::import_inline cli core variable declare
-cli::import_group
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
 cli::import_inline cli bash write
-cli::import cli-assert
 
 help() {
     cat << EOF
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Load joins records with type information to form tuples ( name, type, value ).
@@ -138,7 +135,7 @@ main() {
 
 self_test() {
 
-    ${CLI_COMMAND} -- MY_PREFIX target <(
+    ${CLI_COMMAND[@]} -- MY_PREFIX target <(
         declare -A CLI_TYPE_TARGET=(
             [my_integer]=integer
             [my_string]=string
@@ -203,5 +200,3 @@ self_test() {
         | sort -u \
         | cli bash wire emit
 }
-
-cli::main "$@"

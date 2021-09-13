@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Set REPLY to the process id of $1. 
@@ -35,5 +33,3 @@ self_test() {
         [[ "${REPLY}" == "$$" ]] || cli::assert "${REPLY}" == "$$"
     )
 }
-
-cli::main "$@"

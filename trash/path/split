@@ -1,12 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_group
 cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Split a path into segments.
@@ -28,16 +27,16 @@ EOF
 
 Examples
     Split path '/foo/bar' into 'foo' 'bar' 
-        ${CLI_COMMAND} --path /foo/bar
+        ${CLI_COMMAND[@]} --path /foo/bar
 
     Split path '/.foo_bar' into '.foo-bar'
-        ${CLI_COMMAND} --path .foo_bar
+        ${CLI_COMMAND[@]} --path .foo_bar
 
     Split path '::foo::bar' into 'foo' 'bar' 
-        ${CLI_COMMAND} --delimiter :: --path ::foo::bar
+        ${CLI_COMMAND[@]} --delimiter :: --path ::foo::bar
 
     Split path '/usr/foo/bar' with base 'usr' into 'foo' 'bar' 
-        ${CLI_COMMAND} --base usr --path /usr/foo/bar
+        ${CLI_COMMAND[@]} --base usr --path /usr/foo/bar
 EOF
 }
 
@@ -79,33 +78,31 @@ inline() {
 }
 
 self_test() {
-    ${CLI_COMMAND} --path /foo/bar \
+    ${CLI_COMMAND[@]} --path /foo/bar \
         | assert::pipe_eq \
             'foo bar'
             
-    ${CLI_COMMAND} --path /.foo_bar \
+    ${CLI_COMMAND[@]} --path /.foo_bar \
         | assert::pipe_eq \
             '.foo-bar'
             
-    ${CLI_COMMAND} --delimiter :: --path ::foo::bar \
+    ${CLI_COMMAND[@]} --delimiter :: --path ::foo::bar \
         | assert::pipe_eq \
             'foo bar'
             
-    ${CLI_COMMAND} --base /usr --path /usr/foo/bar \
+    ${CLI_COMMAND[@]} --base /usr --path /usr/foo/bar \
         | assert::pipe_eq \
             'foo bar'
 
-    if ${CLI_COMMAND} --base usr --path /usr/foo/bar 2> /dev/null; then
+    if ${CLI_COMMAND[@]} --base usr --path /usr/foo/bar 2> /dev/null; then
         assert::fail 'Failed to reject relative base path.'
     fi
 
-    if ${CLI_COMMAND} --base /usr --path /foo 2> /dev/null; then
+    if ${CLI_COMMAND[@]} --base /usr --path /foo 2> /dev/null; then
         assert::fail 'Failed to reject path not starting with base.'
     fi
 
-    if ${CLI_COMMAND} --path /foo-bar 2> /dev/null ; then
+    if ${CLI_COMMAND[@]} --path /foo-bar 2> /dev/null ; then
         assert::fail 'Failed to reject path containing dash.'
     fi 
 }
-
-cli::main "$@"

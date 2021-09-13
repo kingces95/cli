@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Print a line to stdout composed of the arguments joined 
@@ -39,9 +36,7 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} -- . a b c \
+    ${CLI_COMMAND[@]} -- . a b c \
         | assert::pipe_eq \
             'a.b.c'
 }
-
-cli::main "$@"

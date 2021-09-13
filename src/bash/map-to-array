@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Converts a map into an array.
@@ -20,7 +17,7 @@ Arguments
 
 Examples
     declare -A my_map=( [a]=0 [b]=1 ); \\
-        declare -p my_map | ${CLI_COMMAND} -- my_map my_array
+        declare -p my_map | ${CLI_COMMAND[@]} -- my_map my_array
 EOF
 }
 
@@ -50,9 +47,7 @@ main() {
 self_test() {
     declare -A map=( [a]=0 [b]=1 )
 
-    declare -p map | ${CLI_COMMAND} -- map array \
+    declare -p map | ${CLI_COMMAND[@]} -- map array \
     | assert::pipe_eq_exact \
         "declare -a array=([0]=\"b=1\" [1]=\"a=0\")"
 }
-
-cli::main "$@"

@@ -1,15 +1,12 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli bash declare
 cli::import_inline cli bash wire verify
-cli::import cli-assert
 cli::import cli-emit
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Read records representing bash variables and declare them.
@@ -46,7 +43,7 @@ main() {
 
 self_test() {
     { 
-        ${CLI_COMMAND} "$@" << EOF
+        ${CLI_COMMAND[@]} "$@" << EOF
             MY_STRING string Hello\ world!
             MY_INTEGER integer 42
             MY_ARRAY array element_0
@@ -66,9 +63,7 @@ EOF
         '    [key_1]="value_1"' \
         ')'
 
-    ${CLI_COMMAND} "$@" <<< $'MY_BELL string \a' \
+    ${CLI_COMMAND[@]} "$@" <<< $'MY_BELL string \a' \
         | assert::pipe_eq_exact \
             "declare -g MY_BELL=$'\\a'"
 }
-
-cli::main "$@"

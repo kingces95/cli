@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Read from stdin and write to a temp file that is moved to a cache path.
@@ -49,5 +46,3 @@ self_test() {
     rm "${cache_path}"
     rmdir "${cache_dir}"
 }
-
-cli::main "$@"

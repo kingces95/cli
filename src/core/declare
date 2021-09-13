@@ -1,17 +1,14 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core struct emit
 cli::import_inline cli core variable declare
 cli::import_inline cli core variable put
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Declare a variable of a given type.
@@ -41,9 +38,9 @@ Redefinition
     Likewise, declare supports redefinition without clobbering existing values. 
     For example:
 
-        \$ ${CLI_COMMAND} --name my_array --type array \\
-            | ${CLI_COMMAND} --name my_array -- a \\
-            | ${CLI_COMMAND} --name my_array --type array
+        \$ ${CLI_COMMAND[@]} --name my_array --type array \\
+            | ${CLI_COMMAND[@]} --name my_array -- a \\
+            | ${CLI_COMMAND[@]} --name my_array --type array
         \$ echo \${my_array[@]}
         a
 
@@ -159,49 +156,49 @@ self_test() {
 
         # string
         echo 'hi' \
-            | ${CLI_COMMAND} --read --name MY_STRING --type string --print \
+            | ${CLI_COMMAND[@]} --read --name MY_STRING --type string --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_STRING]="string" )' \
                 'declare -- MY_STRING="hi"'
 
         # string (from stdin and as positional args)
         echo 'hi' \
-            | ${CLI_COMMAND} --read --name MY_STRING --type string --print -- 'there' \
+            | ${CLI_COMMAND[@]} --read --name MY_STRING --type string --print -- 'there' \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_STRING]="string" )' \
                 'declare -- MY_STRING="there"'
 
         # integer
         echo '42' \
-            | ${CLI_COMMAND} --read --name MY_INTEGER --type integer --print \
+            | ${CLI_COMMAND[@]} --read --name MY_INTEGER --type integer --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_INTEGER]="integer" )' \
                 'declare -i MY_INTEGER="42"'
 
         # boolean
         echo 'true' \
-            | ${CLI_COMMAND} --read --name MY_BOOLEAN --type boolean --print \
+            | ${CLI_COMMAND[@]} --read --name MY_BOOLEAN --type boolean --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="true"'
 
         # array
         printf '%s\n' a b c \
-            | ${CLI_COMMAND} --read --name MY_ARRAY --type array --print \
+            | ${CLI_COMMAND[@]} --read --name MY_ARRAY --type array --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=([0]="a" [1]="b" [2]="c")'
 
         # map
         echo 'k v' \
-            | ${CLI_COMMAND} --read --name MY_MAP --type map --print \
+            | ${CLI_COMMAND[@]} --read --name MY_MAP --type map --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP]="map" )' \
                 'declare -A MY_MAP=([k]="v" )'
 
         # map_of builtin
         echo 'n k v' \
-            | ${CLI_COMMAND} --read --name MY_MAP_OF_MAP --type "map_of map" --print \
+            | ${CLI_COMMAND[@]} --read --name MY_MAP_OF_MAP --type "map_of map" --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="0" )' \
@@ -212,7 +209,7 @@ self_test() {
             'default color black' \
             'allow color black' \
             'allow color white' \
-            | ${CLI_COMMAND} --read --name MY_META --type "map_of map_of map" --print \
+            | ${CLI_COMMAND[@]} --read --name MY_META --type "map_of map_of map" --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_META]="map_of map_of map" )' \
                 'declare -A MY_META=([default]="0" [allow]="1" )' \
@@ -222,10 +219,10 @@ self_test() {
                 'declare -A MY_META_1_0=([black]="" [white]="" )'
 
         # name collision
-        ${CLI_COMMAND} --name VAR --type 'map_of map_of string' \
-            | ${CLI_COMMAND} --source --name VAR -- foo bar_baz x \
-            | ${CLI_COMMAND} --source --name VAR -- foo_bar baz y \
-            | ${CLI_COMMAND} --source --name VAR --print \
+        ${CLI_COMMAND[@]} --name VAR --type 'map_of map_of string' \
+            | ${CLI_COMMAND[@]} --source --name VAR -- foo bar_baz x \
+            | ${CLI_COMMAND[@]} --source --name VAR -- foo_bar baz y \
+            | ${CLI_COMMAND[@]} --source --name VAR --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([VAR]="map_of map_of string" )' \
                 'declare -A VAR=([foo]="0" [foo_bar]="1" )' \
@@ -238,37 +235,37 @@ self_test() {
     builtin_default() {
 
         # string
-        ${CLI_COMMAND} --name MY_STRING --type string --print \
+        ${CLI_COMMAND[@]} --name MY_STRING --type string --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_STRING]="string" )' \
                 'declare -- MY_STRING=""'
 
         # integer
-        ${CLI_COMMAND} --name MY_INTEGER --type integer --print \
+        ${CLI_COMMAND[@]} --name MY_INTEGER --type integer --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_INTEGER]="integer" )' \
                 'declare -i MY_INTEGER="0"'
 
         # boolean
-        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean --print \
+        ${CLI_COMMAND[@]} --name MY_BOOLEAN --type boolean --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="false"'
 
         # array
-        ${CLI_COMMAND} --name MY_ARRAY --type array --print \
+        ${CLI_COMMAND[@]} --name MY_ARRAY --type array --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=()'
 
         # map
-        ${CLI_COMMAND} --name MY_MAP --type map --print \
+        ${CLI_COMMAND[@]} --name MY_MAP --type map --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP]="map" )' \
                 'declare -A MY_MAP=()'
 
         # map_of
-        ${CLI_COMMAND} --name MY_MAP_OF_STRING --type "map_of string" --print \
+        ${CLI_COMMAND[@]} --name MY_MAP_OF_STRING --type "map_of string" --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_STRING]="map_of string" )' \
                 'declare -A MY_MAP_OF_STRING=()'
@@ -277,47 +274,47 @@ self_test() {
     builtin_assign() {
 
         # string
-        ${CLI_COMMAND} --name MY_STRING --type string --print -- hi \
+        ${CLI_COMMAND[@]} --name MY_STRING --type string --print -- hi \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_STRING]="string" )' \
                 'declare -- MY_STRING="hi"'
 
         # integer
-        ${CLI_COMMAND} --name MY_INTEGER --type integer --print -- 42 \
+        ${CLI_COMMAND[@]} --name MY_INTEGER --type integer --print -- 42 \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_INTEGER]="integer" )' \
                 'declare -i MY_INTEGER="42"'
 
         # boolean
-        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean --print -- true \
+        ${CLI_COMMAND[@]} --name MY_BOOLEAN --type boolean --print -- true \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="true"'
 
         # array
-        ${CLI_COMMAND} --name MY_ARRAY --type array --print -- a b c \
+        ${CLI_COMMAND[@]} --name MY_ARRAY --type array --print -- a b c \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=([0]="a" [1]="b" [2]="c")'
 
         # map
-        ${CLI_COMMAND} --name MY_MAP --type map --print -- k v \
+        ${CLI_COMMAND[@]} --name MY_MAP --type map --print -- k v \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP]="map" )' \
                 'declare -A MY_MAP=([k]="v" )'
 
         # map_of builtin
-        ${CLI_COMMAND} --name MY_MAP_OF_MAP --type "map_of map" --print -- n k v \
+        ${CLI_COMMAND[@]} --name MY_MAP_OF_MAP --type "map_of map" --print -- n k v \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_MAP_OF_MAP]="map_of map" )' \
                 'declare -A MY_MAP_OF_MAP=([n]="0" )' \
                 'declare -A MY_MAP_OF_MAP_0=([k]="v" )'
 
         # map_of map_of map
-        ${CLI_COMMAND} --name MY_META --type "map_of map_of map" \
-            | ${CLI_COMMAND} --source --name MY_META -- default color black \
-            | ${CLI_COMMAND} --source --name MY_META -- allow color black \
-            | ${CLI_COMMAND} --source --name MY_META --print -- allow color white \
+        ${CLI_COMMAND[@]} --name MY_META --type "map_of map_of map" \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- default color black \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- allow color black \
+            | ${CLI_COMMAND[@]} --source --name MY_META --print -- allow color white \
             | sort \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_META]="map_of map_of map" )' \
@@ -333,7 +330,7 @@ self_test() {
         # map_of udt
         declare -A CLI_TYPE_VERSION=(['major']='integer' ['minor']='integer')
         declare -p CLI_TYPE_VERSION \
-            | ${CLI_COMMAND} --source \
+            | ${CLI_COMMAND[@]} --source \
                 --name MY_MAP_OF_VERSION \
                 --type "map_of version" \
                 --print \
@@ -358,8 +355,8 @@ self_test() {
             | cli core struct define-field --name boolean --type boolean \
             | cli core struct define-field --name string --type string \
             | cli core struct define-field --name map_of_map --type 'map_of map' \
-            | ${CLI_COMMAND} --source --name KITCHEN_SINK --type kitchen_sink_type  \
-            | ${CLI_COMMAND} --source --name KITCHEN_SINK --print \
+            | ${CLI_COMMAND[@]} --source --name KITCHEN_SINK --type kitchen_sink_type  \
+            | ${CLI_COMMAND[@]} --source --name KITCHEN_SINK --print \
             | assert::pipe_eq \
                 'declare -A CLI_TYPE_KITCHEN_SINK_TYPE=([boolean]="boolean" [version]="version" [map]="map" [map_of_map]="map_of map" [string]="string" [array]="array" [integer]="integer" )' \
                 'declare -A CLI_TYPE_VERSION=([minor]="integer" [major]="integer" )' \
@@ -382,16 +379,16 @@ self_test() {
             | cli core struct define-field --name implicit_value --type map \
             | cli core struct define-field --name positional --type boolean \
             | cli core struct define-field --name allow --type 'map_of map' \
-            | ${CLI_COMMAND} --source --name MY_META --type my_meta \
-            | ${CLI_COMMAND} --source --name MY_META -- timeout 42 \
-            | ${CLI_COMMAND} --source --name MY_META -- allow help true \
-            | ${CLI_COMMAND} --source --name MY_META -- allow help false \
-            | ${CLI_COMMAND} --source --name MY_META -- implicit_value help true \
-            | ${CLI_COMMAND} --source --name MY_META -- default help false \
-            | ${CLI_COMMAND} --source --name MY_META -- alias h help \
-            | ${CLI_COMMAND} --source --name MY_META -- require name \
-            | ${CLI_COMMAND} --source --name MY_META -- positional true \
-            | ${CLI_COMMAND} --source --name MY_META --print \
+            | ${CLI_COMMAND[@]} --source --name MY_META --type my_meta \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- timeout 42 \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- allow help true \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- allow help false \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- implicit_value help true \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- default help false \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- alias h help \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- require name \
+            | ${CLI_COMMAND[@]} --source --name MY_META -- positional true \
+            | ${CLI_COMMAND[@]} --source --name MY_META --print \
             | sort \
             | assert::pipe_eq \
                 'declare -- MY_META_POSITIONAL="true"' \
@@ -409,26 +406,26 @@ self_test() {
     redeclare() {
 
         # array
-        ${CLI_COMMAND} --name MY_ARRAY --type array \
-            | ${CLI_COMMAND} --source --name MY_ARRAY -- a \
-            | ${CLI_COMMAND} --source --name MY_ARRAY --type array --print \
+        ${CLI_COMMAND[@]} --name MY_ARRAY --type array \
+            | ${CLI_COMMAND[@]} --source --name MY_ARRAY -- a \
+            | ${CLI_COMMAND[@]} --source --name MY_ARRAY --type array --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_ARRAY]="array" )' \
                 'declare -a MY_ARRAY=([0]="a")'
 
         # boolean
-        ${CLI_COMMAND} --name MY_BOOLEAN --type boolean \
-            | ${CLI_COMMAND} --source --name MY_BOOLEAN -- true \
-            | ${CLI_COMMAND} --source --name MY_BOOLEAN --type boolean --print \
+        ${CLI_COMMAND[@]} --name MY_BOOLEAN --type boolean \
+            | ${CLI_COMMAND[@]} --source --name MY_BOOLEAN -- true \
+            | ${CLI_COMMAND[@]} --source --name MY_BOOLEAN --type boolean --print \
             | assert::pipe_eq \
                 'declare -A CLI_SCOPE+=([MY_BOOLEAN]="boolean" )' \
                 'declare -- MY_BOOLEAN="true"'
 
         # switch
         assert::pipe_fails << EOF
-            ${CLI_COMMAND} --name MY_VAR --type boolean \
-                | ${CLI_COMMAND} --source --name MY_VAR --type boolean \
-                | ${CLI_COMMAND} --source --name MY_VAR --type integer
+            ${CLI_COMMAND[@]} --name MY_VAR --type boolean \
+                | ${CLI_COMMAND[@]} --source --name MY_VAR --type boolean \
+                | ${CLI_COMMAND[@]} --source --name MY_VAR --type integer
 EOF
     }
 
@@ -438,5 +435,3 @@ EOF
     redeclare
     user_defined
 }
-
-cli::main "$@"

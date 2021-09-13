@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Delete temporary directories created by this subshell.
@@ -38,7 +36,6 @@ main() {
 }
 
 self_test() {
-    cli::source cli-assert
     cli::source cli subshell temp dir
 
     local FAKE_DIR='/tmp/fake/direcotry'
@@ -61,6 +58,3 @@ self_test() {
     (( 1 == ${#REPLY[@]} )) || cli::assert
     [[ "${FAKE_DIR}" == ${REPLY} ]] || cli::assert
 }
-
-cli::main "$@"
-

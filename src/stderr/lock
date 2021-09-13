@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Blocks until taking an exclusive lock on path then copies the stdin to stdout.
@@ -20,18 +18,18 @@ cli::meta::declare() {
 }
 
 main() {
-    ::cli::lock::inline "$@"
+    ::cli::stderr::lock::inline "$@"
 }
 
-::cli::lock::inline() {
-    flock -x "$1" cat
+::cli::stderr::lock::inline() {
+    flock -x "${CLI_LOCK_FILE}" cat
 }
 
 self_test() {
     cli::source cli-assert
 
     lock() {
-        ::cli::lock::inline "${CLI_LOCK_FILE}"
+        ::cli::stderr::lock::inline
     }
 
     for (( i=0; i<64; i++ )); do
@@ -51,5 +49,3 @@ self_test() {
             || assert::fail "Result ${result} interleaves A and B."
     done  
 }
-
-cli::main "$@"

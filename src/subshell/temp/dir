@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Create a temporary directory.
@@ -44,8 +42,6 @@ main() {
 }
 
 self_test() {
-    cli::source cli-assert
-    cli::source cli io dir remove
 
     declare -ga "CLI_SUBSHELL_TEMP_DIR_${BASHPID}+=()"
     declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
@@ -67,10 +63,8 @@ self_test() {
     [[ "${MY_TEMP_DIR}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[2]} ]] || cli::assert
 
     # remove temp dir
-    ::cli::io::dir::remove::inline "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
+    rm -r -f  "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
     [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[0]}" ]] || cli::assert
     [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[1]}" ]] || cli::assert
     [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[2]}" ]] || cli::assert
 }
-
-cli::main "$@"

@@ -1,14 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli bash declare
 cli::import_inline cli bash wire verify
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Read records representing bash variables and declare them.
@@ -56,7 +53,7 @@ main() {
 
 self_test() {
     { 
-        ${CLI_COMMAND} "$@" << EOF
+        ${CLI_COMMAND[@]} "$@" << EOF
             MY_STRING string 'Hello\ world!'
             MY_INTEGER integer 42
             MY_ARRAY array element_0
@@ -71,4 +68,4 @@ EOF
         "declare -- MY_STRING=\"'Hello world!'\""
 }
 
-cli::main "$@"
+#!/usr/bin/env CLI_NAME=cli bash-cli

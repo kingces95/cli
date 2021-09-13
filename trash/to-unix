@@ -6,7 +6,7 @@ cli::import cli-assert
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Converts a stream of cli names to unix names.
@@ -22,7 +22,7 @@ EOF
 
 Examples
     Convert '.foo-bar' 'baz' to '.foo-bar' 'baz'
-        ${CLI_COMMAND} <<< $'.foo-bar\nbaz'
+        ${CLI_COMMAND[@]} <<< $'.foo-bar\nbaz'
 
 EOF
 }
@@ -56,12 +56,12 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} <<< $'.foo-bar-baz\nbaz' \
+    ${CLI_COMMAND[@]} <<< $'.foo-bar-baz\nbaz' \
     | assert::pipe_eq \
         ".foo_bar_baz" \
         "baz"
 
-    assert::fails "${CLI_COMMAND} <<< $'foo_bar'"
+    assert::fails "${CLI_COMMAND[@]} <<< $'foo_bar'"
 }
 
 cli::main "$@"

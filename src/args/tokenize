@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Tokenizes command line arguments.
@@ -22,7 +19,7 @@ Description
 
     For example, 
     
-        ${CLI_COMMAND} -- bin sequence --name even -v -- two four six 
+        ${CLI_COMMAND[@]} -- bin sequence --name even -v -- two four six 
         
     produces:
 
@@ -64,7 +61,7 @@ EOF
 
 Examples
     Tokenize 'bin cli --k0 v0 --flag -xyz v1 -- a0 a1'.
-        ${CLI_COMMAND} -- bin cli --k0 v0 --flag -xyz v1 -- a0 a1
+        ${CLI_COMMAND[@]} -- bin cli --k0 v0 --flag -xyz v1 -- a0 a1
 EOF
 }
 
@@ -120,7 +117,7 @@ main() {
             if [[ ! "$1" =~ ${DASH_FLAGS_REGEX} ]]; then
                 cli::fail "Unexpected option \"$1\"" \
                     "does not match regex ${DASH_FLAGS_REGEX}" \
-                    "passed to command \"${CLI_COMMAND}\"."
+                    "passed to command \"${CLI_COMMAND[@]}\"."
             fi
 
             yield ${CLI_ARG_TOKEN_DASH} "${BASH_REMATCH[1]}"
@@ -130,7 +127,7 @@ main() {
             if [[ ! "$1" =~ ${DASH_DASH_OPTION_REGEX} ]]; then
                 cli::fail "Unexpected option \"$1\"" \
                     "does not match regex ${DASH_DASH_OPTION_REGEX}" \
-                    "passed to command \"${CLI_COMMAND}\"."
+                    "passed to command \"${CLI_COMMAND[@]}\"."
             fi
 
             yield ${CLI_ARG_TOKEN_DASH_DASH} "${BASH_REMATCH[1]}"
@@ -140,7 +137,7 @@ main() {
             if [[ ! "$1" =~ ${DASH_DASH_DASH_OPTION_REGEX} ]]; then
                 cli::fail "Unexpected option \"$1\"" \
                     "does not match regex ${DASH_DASH_DASH_OPTION_REGEX}" \
-                    "passed to command \"${CLI_COMMAND}\"."
+                    "passed to command \"${CLI_COMMAND[@]}\"."
             fi
 
             yield ${CLI_ARG_TOKEN_DASH_DASH_DASH} "${BASH_REMATCH[1]}"
@@ -166,17 +163,17 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} \
+    ${CLI_COMMAND[@]} \
         | assert::pipe_eq \
             'EOF '
 
     # positional argument delimiter (e.g. --)
-    ${CLI_COMMAND} -- \
+    ${CLI_COMMAND[@]} -- \
         | assert::pipe_eq \
             'EOF '
    
     # basic
-    ${CLI_COMMAND} -- c --k v -- a0 \
+    ${CLI_COMMAND[@]} -- c --k v -- a0 \
         | assert::pipe_eq \
             'PATH c' \
             'DASH_DASH k' \
@@ -185,7 +182,7 @@ self_test() {
             'VALUE a0' \
             'EOF '
     # escape
-    ${CLI_COMMAND} -- --k 'v v' -- 'a a' \
+    ${CLI_COMMAND[@]} -- --k 'v v' -- 'a a' \
         | assert::pipe_eq \
             'DASH_DASH k' \
             'VALUE v v' \
@@ -194,27 +191,27 @@ self_test() {
             'EOF '
 
     # named argument default aliasing (e.g. '-k' -> '--k' )
-    ${CLI_COMMAND} -- -k v \
+    ${CLI_COMMAND[@]} -- -k v \
         | assert::pipe_eq \
             'DASH k' \
             'VALUE v' \
             'EOF ' 
 
     # named argument packed (e.g. '-mn' -> '--m --n' )
-    ${CLI_COMMAND} -- -mn \
+    ${CLI_COMMAND[@]} -- -mn \
         | assert::pipe_eq \
             'DASH mn' \
             'EOF '
 
     # named argument implicit value (e.g. '' )
-    ${CLI_COMMAND} -- --m -n \
+    ${CLI_COMMAND[@]} -- --m -n \
         | assert::pipe_eq \
             'DASH_DASH m' \
             'DASH n' \
             'EOF '
 
     # path
-    ${CLI_COMMAND} -- g0 g1 cmd \
+    ${CLI_COMMAND[@]} -- g0 g1 cmd \
         | assert::pipe_eq \
             'PATH g0' \
             'PATH g1' \
@@ -222,24 +219,22 @@ self_test() {
             'EOF '
 
     # positional
-    ${CLI_COMMAND} -- -- a0 a1 \
+    ${CLI_COMMAND[@]} -- -- a0 a1 \
         | assert::pipe_eq \
             'END_OPTIONS ' \
             'VALUE a0' \
             'VALUE a1' \
             'EOF '
 
-    assert::fails "${CLI_COMMAND} -- -!" \
+    assert::fails "${CLI_COMMAND[@]} -- -!" \
         "Unexpected option \"-!\" does not match regex ^-([a-z]+)$" \
         "passed to command \"cli args tokenize\"."
 
-    assert::fails "${CLI_COMMAND} -- --!" \
+    assert::fails "${CLI_COMMAND[@]} -- --!" \
         "Unexpected option \"--!\" does not match regex ^--([a-z][a-z0-9-]*)$" \
         "passed to command \"cli args tokenize\"."
 
-    assert::fails "${CLI_COMMAND} -- ---!" \
+    assert::fails "${CLI_COMMAND[@]} -- ---!" \
         "Unexpected option \"---!\" does not match regex ^---([a-z][a-z0-9-]*)$" \
         "passed to command \"cli args tokenize\"."
 }
-
-cli::main "$@"

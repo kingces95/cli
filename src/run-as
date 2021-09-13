@@ -1,12 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Run a command as a different user.
@@ -20,7 +18,7 @@ EOF
 
 Examples
     Test for the function 'inline'.
-        ${CLI_COMMAND} --name inline
+        ${CLI_COMMAND[@]} --name inline
 EOF
 }
 
@@ -44,5 +42,3 @@ self_test() {
     return
     # TODO create user, test, delete user
 }
-
-cli::main "$@"

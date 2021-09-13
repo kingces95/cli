@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Print a string as a literal bash string.
@@ -48,21 +45,19 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} -- hello \
+    ${CLI_COMMAND[@]} -- hello \
         | assert::pipe_eq \
             'hello'
 
-    ${CLI_COMMAND} -- hello world \
+    ${CLI_COMMAND[@]} -- hello world \
         | assert::pipe_eq \
             '"hello world"'
 
-    ${CLI_COMMAND} -- $'\a' \
+    ${CLI_COMMAND[@]} -- $'\a' \
         | assert::pipe_eq_exact \
             "\$'\\a'"
 
-    ${CLI_COMMAND} -- "\$" \
+    ${CLI_COMMAND[@]} -- "\$" \
         | assert::pipe_eq_exact \
             '"\$"'
 }
-
-cli::main "$@"

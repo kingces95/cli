@@ -7,7 +7,7 @@ cli::import_inline cli bash stack trace
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Dumps the state of the program before exiting due to a signal trap.

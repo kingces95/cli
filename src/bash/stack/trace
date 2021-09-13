@@ -1,14 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli bash stack process
 cli::import cli bash stack call
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Print the bash stack followed by the process stack.
@@ -52,5 +49,3 @@ self_test() {
 
     echo hi | pipe a
 }
-
-cli::main "$@"

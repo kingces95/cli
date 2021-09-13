@@ -1,0 +1,105 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import cli-assert
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+    Join segments into an absolute path.
+
+Description
+    Join segments into a path using a supplied delimiter (e.g. '/' or '::'
+    depending on whether the cli is unpacked or packed). Each segment may
+    contain alpha-numeric characters or dash and may optionally start with
+    period. Each dash is replaced with underbar during the join. 
+
+Arguments
+    --delimiter -d [Required] : Default: /. Allowed values: /, ::.
+    --base -b               : Base path. Value is simply prepended
+                              to the joined segments. Default is the delimiter.
+    --                      : Segments to join into a path.
+EOF
+    cat << EOF
+
+Examples
+    Join segments 'foo' 'bar' into '/foo/bar'
+        ${CLI_COMMAND[@]} -- foo bar
+
+    Join segments '.foo-bar' into '/.foo_bar'
+        ${CLI_COMMAND[@]} -- .foo-bar
+
+    Join segments 'foo' 'bar' into '::foo::bar'
+        ${CLI_COMMAND[@]} --delimiter :: -- foo bar
+
+    Join base 'usr' with segments 'foo' 'bar' into '/usr/foo/bar'
+        ${CLI_COMMAND[@]} --base usr -- foo bar
+
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::add_required 'delimiter' '/'
+    cli::meta::add_optional 'base'
+    cli::meta::allow_positional
+    # TODO: Allowed values: ...
+}
+
+inline() {
+    local GLOB="?([.])[a-zA-Z0-9]*([a-zA-Z0-9-])"
+  
+    : ${arg_base:=$arg_delimiter}
+
+    if [[ ! "${arg_base}" == ${arg_delimiter}* ]]; then
+        echo "Unexpected relative base path '${arg_base}'. Base path must be absolute." >&2
+        exit 1
+    fi
+
+    local path="${arg_base:-${arg_delimiter}}"
+
+    while (( $# > 0 )); do
+
+        # ensure uniformity of group names (e.g. foo-bar, not foo_bar)
+        if [[ ! "$1" == $GLOB ]]; then
+            echo "Unexpected segment '$1' does not match '${GLOB}'." >&2
+            exit 1
+        fi
+
+        # if path does not end in a arg_delimiter, then add one (e.g. '::' or '/')
+        if [[ -n "${path}" && ! "${path}" =~ .*${arg_delimiter}$ ]]; then
+            path="${path}${arg_delimiter}"
+        fi
+
+        path="${path}$1"
+        shift
+    done
+
+    echo "${path}"
+}
+
+self_test() {
+    ${CLI_COMMAND[@]} -- foo bar \
+        | assert::pipe_eq \
+            '/foo/bar'
+            
+    ${CLI_COMMAND[@]} -- .foo-bar \
+        | assert::pipe_eq \
+            '/.foo_bar'
+            
+    ${CLI_COMMAND[@]} --delimiter :: -- foo bar \
+        | assert::pipe_eq \
+            '::foo::bar'
+            
+    ${CLI_COMMAND[@]} --base /usr -- foo bar \
+        | assert::pipe_eq \
+            '/usr/foo/bar'
+
+    if ${CLI_COMMAND[@]} --base usr -- foo bar 2> /dev/null; then
+        assert::fail 'Failed to reject relative base path.'
+    fi
+
+    if ${CLI_COMMAND[@]} -- foo_bar 2> /dev/null; then
+        assert::fail 'Failed to reject join containing underbar.'
+    fi 
+}

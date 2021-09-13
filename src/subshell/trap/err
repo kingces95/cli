@@ -1,13 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli subshell dump
 cli::import_inline cli bash stack trace
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Dump a stacktrace after an error trap fires.
@@ -46,5 +44,3 @@ main() {
 self_test() {
     cli::source cli-assert
 }
-
-cli::main "$@"

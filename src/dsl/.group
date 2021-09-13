@@ -1,12 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-util
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 EOF
 }
 
@@ -31,7 +29,7 @@ readonly CLI_DSL_LITERAL_PROPERTIES='[Properties]'
 readonly CLI_DSL_LITERAL_DASHDASH='--'
 
 main() {
-    cli::export::import_parent_group
+    :
 
     readonly CLI_DSL_TOKEN=(
         'DEFAULT'
@@ -71,5 +69,3 @@ main() {
 
     cli::export cli dsl
 }
-
-cli::main "$@"

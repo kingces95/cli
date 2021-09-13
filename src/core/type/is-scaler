@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::core::type::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Return true if type is a scaler.
@@ -27,13 +24,9 @@ cli::meta::declare() {
 }
 
 ::cli::core::type::is_scaler::inline() {
-    # if [[ -z "${arg_type:-}" ]]; then cli::callstack $? 0; exit 42; fi
-    [[ -n "${arg_type:-}" ]] || cli::assert
-    : ${arg_type?"Unexpected missing 'type'."}
+    local -a TYPE=( ${1-''} )
 
-    local -a type=( ${arg_type} )
-
-    case ${type} in
+    case ${TYPE} in
         'integer') ;&
         'boolean') ;&
         'string') true ;;
@@ -41,26 +34,16 @@ cli::meta::declare() {
     esac
 }
 
-self_test() {
-    set +e
-    arg_type=boolean inline
-    assert::ok 'boolean'
-
-    arg_type=string inline
-    assert::ok 'string'
-
-    arg_type=integer inline
-    assert::ok 'integer'
-
-    arg_type=map inline 
-    assert::failed 'map'
-
-    arg_type=user_defined inline
-    assert::failed 'user_defined'
-
-    arg_type='map_of string' inline
-    assert::failed 'map_of string'
-    set -e
+main() {
+    ::cli::core::type::is_scaler::inline "$@"
 }
 
-cli::main "$@"
+self_test() {
+    main 'boolean' || cli::assert
+    main 'string' || cli::assert
+    main 'integer' || cli::assert
+
+    ! main 'map' || cli::assert
+    ! main 'user_defined' || cli::assert
+    ! main 'map_of string' || cli::assert
+}

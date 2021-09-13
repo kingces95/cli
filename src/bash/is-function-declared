@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Return true if the function is declared, otherwise false.
@@ -18,7 +15,7 @@ EOF
 
 Examples
     Test for the function 'inline'.
-        ${CLI_COMMAND} --name inline
+        ${CLI_COMMAND[@]} --name inline
 EOF
 }
 
@@ -39,11 +36,9 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} --name inline
+    ${CLI_COMMAND[@]} --name inline
     assert::ok
 
-    ${CLI_COMMAND} --name missing
+    ${CLI_COMMAND[@]} --name missing
     assert::failed
 }
-
-cli::main "$@"

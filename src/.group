@@ -1,10 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 EOF
 }
 
@@ -82,5 +81,3 @@ main() {
     declare -f cli::meta::add_required
     declare -f cli::meta::allow_positional
 }
-
-cli::main "$@"

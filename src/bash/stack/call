@@ -1,13 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli bash literal
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Print the callstack.
@@ -46,7 +43,7 @@ cli::meta::declare() {
         # pop argc stack for i-th frame
         argc+=${BASH_ARGC[$i]}
 
-        if [[ -z "${CLI_STACK_SHOW_HIDDEN-}" ]] \
+        if [[ ! "${CLI_STACK_SHOW_HIDDEN-}" ]] \
             && cli::attributes::method::is_defined \
             "${funcname}" 'cli_bash_stack_hidden_attribute'; then
             continue
@@ -93,5 +90,3 @@ self_test() {
 
     echo hi | pipe a
 }
-
-cli::main "$@"

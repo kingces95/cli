@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Find commands and groups of a cli.
@@ -27,13 +25,13 @@ EOF
 
 Examples
     List commands and groups of 'cli' in post-order
-        ${CLI_COMMAND} --cli cli --ls --traversal post
+        ${CLI_COMMAND[@]} --cli cli --ls --traversal post
 
     List groups of 'cli'
-        ${CLI_COMMAND} --cli cli --type g
+        ${CLI_COMMAND[@]} --cli cli --type g
 
     List emit commands of 'cli'
-        ${CLI_COMMAND} --cli "cli emit" --type c
+        ${CLI_COMMAND[@]} --cli "cli emit" --type c
 EOF
 }
 
@@ -107,5 +105,3 @@ predicate() {
 main() {
     find "${ARG_CLI}"
 }
-
-cli::main "$@"

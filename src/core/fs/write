@@ -1,13 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import cli-assert
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli bash write
 
 help() {
 cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Save a stream of records to files using the first field as the file name
@@ -92,5 +89,3 @@ EOF
             'r10 r11 r12' \
             's00 s01 s\ 02'
 }
-
-cli::main "$@"

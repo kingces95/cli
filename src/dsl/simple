@@ -1,10 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF
 Command
-    ${CLI_COMMAND} 
+    ${CLI_COMMAND[@]} 
 
 Summary    
     Sample command to test Domain Specific Language.
@@ -44,5 +43,3 @@ main() {
 self_test() {
     return
 }   
-
-cli::main "$@"

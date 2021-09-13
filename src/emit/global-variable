@@ -1,13 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-assert
 cli::import cli-emit
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Description
     Accepts output of 'declare -p' and adds a '-g' to each variable declaration.
@@ -25,7 +23,7 @@ main() {
 self_test() {
     foo=42
     declare -p foo \
-        | ${CLI_COMMAND} \
+        | ${CLI_COMMAND[@]} \
         | assert::pipe_eq \
             'declare -g -- foo="42"'
 }

@@ -1,14 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::type::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Return true if type is user defined.
@@ -35,37 +32,25 @@ cli::meta::declare() {
 }
 
 ::cli::core::type::is_user_defined::inline() {   
-    if arg_type=${arg_type} ::cli::core::type::is_builtin::inline || \
-        arg_type=${arg_type} ::cli::core::type::is_modified::inline; then
+    if ::cli::core::type::is_builtin::inline "$@" || \
+        ::cli::core::type::is_modified::inline "$@"; then
         false
     else
         true
     fi
 }
 
-self_test() {
-    arg_type=user_defined inline 
-    assert::ok 'user_defined'
-
-    set +e
-    arg_type=boolean inline boolean
-    assert::failed 'boolean'
-
-    arg_type=string inline 
-    assert::failed 'string'
-
-    arg_type=integer inline 
-    assert::failed 'integer'
-
-    arg_type=map inline 
-    assert::failed 'map'
-
-    arg_type=array inline 
-    assert::failed 'array'
-
-    arg_type='map_of string' inline 
-    assert::failed 'map_of string'
-    set -e
+main() {
+    ::cli::core::type::is_user_defined::inline "$@"
 }
 
-cli::main "$@"
+self_test() {
+    main 'user_defined' || cli::assert
+
+    ! main 'boolean' || cli::assert
+    ! main 'string' || cli::assert
+    ! main 'integer' || cli::assert
+    ! main 'map' || cli::assert
+    ! main 'array' || cli::assert
+    ! main 'map_of string' || cli::assert
+}

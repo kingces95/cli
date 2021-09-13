@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     
@@ -16,7 +14,7 @@ EOF
 Examples
     Emit a predicate that test if a path is a group.
         cli find --cli cli --type g \
-            | ${CLI_COMMAND}
+            | ${CLI_COMMAND[@]}
 EOF
 }
 

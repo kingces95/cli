@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Prevents the target method from appearing in stack traces.
@@ -17,5 +15,3 @@ declare -A CLI_TYPE_CLI_BASH_STACK_HIDDEN_ATTRIBUTE=()
 main() {
     cli::export CLI_TYPE_CLI_BASH_STACK
 }
-
-cli::main "$@"

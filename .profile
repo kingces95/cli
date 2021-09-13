@@ -14,6 +14,7 @@ fi
 PATH="${PATH_ORIG}"
 PATH+=":${GIT_DIR}/bin"
 PATH+=":${GIT_DIR}/cli"
+PATH+=":${GIT_DIR}/cli/src"
 PATH+=":${GIT_DIR}/cli_assert"
 PATH+=":${GIT_DIR}/cli_util"
 PATH+=":${GIT_DIR}/cli_emit"

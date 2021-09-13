@@ -6,7 +6,7 @@ cli::import_inline cli process parent
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Set BASHPPID to the parent process id of the subshell. 

@@ -5,7 +5,7 @@ cli::import_parent_group
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Emit a minimum implementation of initialize.

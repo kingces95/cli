@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_parent_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Returns 1.
@@ -35,5 +32,3 @@ main() {
 self_test() {
     assert::returns "::cli::bash::return::inline 42" 42
 }
-
-cli::main "$@"

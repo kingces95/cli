@@ -1,6 +1,4 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-assert
 cli::import_inline cli bash emit
 cli::import_inline cli core type is-builtin
@@ -9,7 +7,7 @@ cli::import_inline cli core type unmodify
 help() {
     cat << EOF | cli::help::sourceable | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Emit a type, the type of its fields, and their fields, etc.
@@ -69,19 +67,19 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} --type string | assert::pipe_eq
-    ${CLI_COMMAND} --type boolean | assert::pipe_eq
-    ${CLI_COMMAND} --type integer | assert::pipe_eq
-    ${CLI_COMMAND} --type map | assert::pipe_eq
-    ${CLI_COMMAND} --type array | assert::pipe_eq
-    ${CLI_COMMAND} --type 'map_of string' | assert::pipe_eq
-    ${CLI_COMMAND} --type 'map_of map_of string' | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type string | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type boolean | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type integer | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type map | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type array | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type 'map_of string' | assert::pipe_eq
+    ${CLI_COMMAND[@]} --type 'map_of map_of string' | assert::pipe_eq
 
     cli core struct define --name float \
         | cli core struct define-field --name integer --type integer \
         | cli core struct define-field --name decimal --type integer \
         | cli core struct define-field --name places --type integer \
-        | ${CLI_COMMAND} --source --type 'map_of float' \
+        | ${CLI_COMMAND[@]} --source --type 'map_of float' \
         | assert::pipe_eq \
             'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
 
@@ -97,11 +95,9 @@ self_test() {
         | cli core struct define-field --name pi --type constant \
         | cli core struct define-field --name e --type constant \
         | cli core struct define-field --name lookup --type 'map_of constant' \
-        | ${CLI_COMMAND} --source --type table \
+        | ${CLI_COMMAND[@]} --source --type table \
         | assert::pipe_eq \
             'declare -A CLI_TYPE_TABLE=([lookup]="map_of constant" [pi]="constant" [e]="constant" )' \
             'declare -A CLI_TYPE_CONSTANT=([value]="float" [name]="string" )' \
             'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
 }
-
-cli::main "$@"

@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
     Given a stream of command line productions produce a stream of
     the following form:
@@ -138,5 +135,3 @@ self_test() (
             'allow * fruit orange ' \
             'allow * fruit banana ' \
 )
-
-cli::main "$@"

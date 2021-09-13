@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND} 
+    ${CLI_COMMAND[@]} 
     
 Summary
     Emit function 'list' for a cli.
@@ -20,7 +18,7 @@ EOF
     cat << EOF
 
 Examples
-    ${CLI_COMMAND} --cli cli
+    ${CLI_COMMAND[@]} --cli cli
 EOF
 }
 

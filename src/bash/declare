@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Declare a bash variable or variables for a given type. 
@@ -65,37 +62,35 @@ main() {
 self_test() {
 
     # string
-    ${CLI_COMMAND} -- string VAR \
+    ${CLI_COMMAND[@]} -- string VAR \
         | assert::pipe_eq \
             'declare -- VAR'
 
     # boolean
-    ${CLI_COMMAND} -- boolean VAR \
+    ${CLI_COMMAND[@]} -- boolean VAR \
         | assert::pipe_eq \
             'declare -- VAR'
 
     # integer
-    ${CLI_COMMAND} -- integer VAR \
+    ${CLI_COMMAND[@]} -- integer VAR \
         | assert::pipe_eq \
             'declare -i VAR'
 
     # array
-    ${CLI_COMMAND} -- array VAR \
+    ${CLI_COMMAND[@]} -- array VAR \
         | assert::pipe_eq \
             'declare -a VAR'
 
     # map
-    ${CLI_COMMAND} -- map VAR \
+    ${CLI_COMMAND[@]} -- map VAR \
         | assert::pipe_eq \
             'declare -A VAR'
     
     # many
-    ${CLI_COMMAND} -- \
+    ${CLI_COMMAND[@]} -- \
         string MY_STRING \
         map MY_MAP \
         | assert::pipe_eq \
             'declare -- MY_STRING' \
             'declare -A MY_MAP'
 }
-
-cli::main "$@"

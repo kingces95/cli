@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Converts a stream of cli names to bash names.
@@ -22,7 +19,7 @@ EOF
 
 Examples
     Convert '.foo-bar' 'baz' to '_foo_bar' 'baz'
-        ${CLI_COMMAND} <<< $'.foo-bar\nbaz'
+        ${CLI_COMMAND[@]} <<< $'.foo-bar\nbaz'
 
 EOF
 }
@@ -56,12 +53,10 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} <<< $'.foo-bar\nbaz' \
+    ${CLI_COMMAND[@]} <<< $'.foo-bar\nbaz' \
     | assert::pipe_eq \
         "_foo_bar" \
         "baz"
 
-    assert::fails "${CLI_COMMAND} <<< $'foo_bar'"
+    assert::fails "${CLI_COMMAND[@]} <<< $'foo_bar'"
 }
-
-cli::main "$@"

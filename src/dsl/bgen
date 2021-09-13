@@ -1,13 +1,11 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-emit
 cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Description
     Like ngen, but for bash.
@@ -88,7 +86,5 @@ self_test() {
         | cli dsl parse \
         | cli dsl meta \
         | cli dsl load \
-        | ${CLI_COMMAND} > /dev/null
+        | ${CLI_COMMAND[@]} > /dev/null
 }
-
-cli::main "$@"

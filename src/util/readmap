@@ -1,12 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Deserialize pairs of records from stdin into an associative array.
@@ -25,7 +23,7 @@ EOF
 
 Examples
     Create the set { 'a' 'b' 'c' }.
-        ${CLI_COMMAND} -emit <<< $'a\n\b\nc'
+        ${CLI_COMMAND[@]} -emit <<< $'a\n\b\nc'
 EOF
 }
 
@@ -55,27 +53,25 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND} --name set < /dev/null \
+    ${CLI_COMMAND[@]} --name set < /dev/null \
     | assert::pipe_eq \
         'declare -A set'
 
     declare -A RESULT=( [a]=b [f]=g )
     printf '%q %q\n' a b f g \
-    | ${CLI_COMMAND} \
+    | ${CLI_COMMAND[@]} \
     | assert::pipe_eq \
         "$(declare -p RESULT)"
 
     declare -A RESULT=( [$'\n']=$'\t' )
     printf '%q %q\n' $'\n' $'\t' \
-    | ${CLI_COMMAND} \
+    | ${CLI_COMMAND[@]} \
     | assert::pipe_eq_exact \
         "$(declare -p RESULT)"
 
     declare -A RESULT=()
-    ${CLI_COMMAND} ---emit | source /dev/stdin
+    ${CLI_COMMAND[@]} ---emit | source /dev/stdin
     ::cli::util::readmap::inline "$'\n'" "$'\t'"
     assert::pipe_eq_exact < <(declare -p RESULT) \
         "declare -A RESULT=([\$'\n']=\$'\t' )"
 }
-
-cli::main "$@"

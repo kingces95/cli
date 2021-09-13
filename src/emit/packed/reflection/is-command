@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Emit predicate 'is_command' for a cli.
@@ -19,7 +17,7 @@ EOF
 Examples
     Emit a predicate that test if a path is a command.
         cli find --cli cli --type c \
-            | ${CLI_COMMAND}
+            | ${CLI_COMMAND[@]}
 EOF
 }
 

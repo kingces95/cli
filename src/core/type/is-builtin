@@ -1,13 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli core type is-scaler
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::type::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Return true if type is builtin.
@@ -30,11 +27,9 @@ cli::meta::declare() {
 }
 
 ::cli::core::type::is_builtin::inline() {
-    : ${arg_type?}
-    
-    local -a type=( ${arg_type} )
+    local -a type=( ${1-} )
 
-    if arg_type=${type} ::cli::core::type::is_scaler::inline; then
+    if ::cli::core::type::is_scaler::inline "$@"; then
         true
     else
         case ${type} in
@@ -45,29 +40,17 @@ cli::meta::declare() {
     fi
 }
 
-self_test() {
-    arg_type=boolean inline boolean
-    assert::ok 'boolean'
-
-    arg_type=string inline 
-    assert::ok 'string'
-
-    arg_type=integer inline 
-    assert::ok 'integer'
-
-    arg_type=map inline 
-    assert::ok 'map'
-
-    arg_type=array inline 
-    assert::ok 'array'
-
-    set +e
-    arg_type='map_of string' inline
-    assert::failed 'map_of string'
-
-    arg_type=user_defined inline
-    assert::failed 'user_defined'
-    set -e
+main() {
+    ::cli::core::type::is_builtin::inline "$@"
 }
 
-cli::main "$@"
+self_test() {
+    main 'boolean' || cli::assert
+    main 'string' || cli::assert
+    main 'integer' || cli::assert
+    main 'map' || cli::assert
+    main 'array' || cli::assert
+
+    ! main 'user_defined' || cli::assert
+    ! main 'map_of string' || cli::assert
+}

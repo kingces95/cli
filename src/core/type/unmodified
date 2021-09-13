@@ -1,0 +1,43 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Return the unmodified type of a type.
+
+Description
+    Return a type without any modifiers. For example, the unmodified type of
+    
+        map_of map_of string
+
+    is 
+
+        string
+EOF
+}
+
+cli::meta::declare() {
+    cli::core::type::import
+}
+
+::cli::core::type::unmodified::inline() {
+    set ${1-}
+
+    if (( $# > 1 )); then
+        eval "echo \$$#"
+    else
+        echo "$@"
+    fi
+}
+
+main() {
+    ::cli::core::type::unmodified::inline "$@"  
+}
+
+self_test() {
+    [[ "$(main 'boolean')" == 'boolean' ]] || cli::assert
+    [[ "$(main 'map_of map_of boolean')" == 'boolean' ]] || cli::assert
+}

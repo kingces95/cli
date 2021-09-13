@@ -1,13 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli args check
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Check command line arguments against constraints declared in help.
@@ -78,7 +75,7 @@ main() {
     for option in "${!ARGS_NAMED_REF[@]}"; do
         if [[ -z ${TYPE[${option}]+set} ]]; then
             cli::fail "Unexpected unknown argument '--${option}'" \
-                "passed to command '${CLI_COMMAND}'."
+                "passed to command '${CLI_COMMAND[@]}'."
         fi
     done
 
@@ -95,7 +92,7 @@ main() {
             # fail if required and missing
             if [[ -n ${REQUIRE[$option]+set} ]]; then
                 cli::fail "Missing required argument '--${option}'" \
-                    "in call to command '${CLI_COMMAND}'."
+                    "in call to command '${CLI_COMMAND[@]}'."
 
             # switch has an explict default
             elif [[ -n "${DEFAULT[${option}]+set}" ]] ; then
@@ -122,7 +119,7 @@ main() {
             # fail if required and empty
             if [[ -n ${REQUIRE[$option]+set} ]]; then
                 cli::fail "Required argument '--${option}'" \
-                    "passed to command '${CLI_COMMAND}' has empty value."
+                    "passed to command '${CLI_COMMAND[@]}' has empty value."
             fi
         fi
 
@@ -147,7 +144,7 @@ main() {
                 for value in "${ARGS_NAMED_N_REF[@]}"; do
                     if [[ ! "${value}" =~ ${CLI_REGEX_PROPERTY_ARG} ]]; then
                         cli::fail "Unexpected value '${value}' for argument '--${option}'" \
-                            "passed to command '${CLI_COMMAND}'." \
+                            "passed to command '${CLI_COMMAND[@]}'." \
                             "Expected a value that matches regex '${CLI_REGEX_PROPERTY_ARG}'."
                     fi
                     values+=( ${BASH_REMATCH[2]} )
@@ -172,7 +169,7 @@ main() {
 
     # positional
     if ! ${POSITIONAL} && (( ${#ARGS_POSITIONAL_REF[@]} > 0 )); then
-        cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND}'," \
+        cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND[@]}'," \
             "but got ${#ARGS_POSITIONAL_REF[@]}: '${ARGS_POSITIONAL_REF[*]}'."
     fi
 }
@@ -185,7 +182,7 @@ self_test() {
             cli dsl sample ---load \
                 | awk '$1 == "alias" { $1=""; print }' \
             ) \
-        | ${CLI_COMMAND} -- <( \
+        | ${CLI_COMMAND[@]} -- <( \
             cli dsl sample ---load \
                 | awk '$1 == "group" && $2 == "id" { $1=""; $2=""; print }' \
             ) \
@@ -206,7 +203,7 @@ self_test() {
     # supply list (e.g. '--props a=0 b=1')
     cli args tokenize -- --props a=0 b=1 \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named props' \
             'named props a=0' \
@@ -220,7 +217,7 @@ self_test() {
     # supply list (e.g. '--name a b')
     cli args tokenize -- --name a b \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named name' \
             'named name a' \
@@ -229,7 +226,7 @@ self_test() {
     # supply list with regex mismatch (e.g. '--name 0')
     cli args tokenize -- --name a b 0 \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
             "Unexpected value '0' for argument '--name' passed to command 'cli args initialize'." \
             "Expected a value that matches regex '^[a-z]$'."
                 
@@ -242,7 +239,7 @@ self_test() {
     # supply list with allow mismatch (e.g. '--name 0')
     cli args tokenize -- --name a b 0 \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
             "Unexpected value '0' for argument '--name' passed to command 'cli args initialize'." \
             "Expected a value in the set { b a }."
 
@@ -254,25 +251,25 @@ self_test() {
     # fail to supply required named argument (e.g. no '--name')
     cli args tokenize \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
-            "Missing required argument '--name' in call to command '${CLI_COMMAND}'."
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
+            "Missing required argument '--name' in call to command '${CLI_COMMAND[@]}'."
 
     # empty string for required named argument (e.g. '--name ""')
     cli args tokenize -- --name \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
             "Required argument '--name' passed to command 'cli args initialize' has empty value."
 
     # provide unknown named argument (e.g. '--bad')
     cli args tokenize -- --name foo --bad \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
-            "Unexpected unknown argument '--bad' passed to command '${CLI_COMMAND}'."
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
+            "Unexpected unknown argument '--bad' passed to command '${CLI_COMMAND[@]}'."
 
     # provide required named argument (e.g. '--name bar')
     cli args tokenize -- --name foo \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named name' \
             'named name foo' 
@@ -285,14 +282,14 @@ self_test() {
     # fail regex (e.g. '--value 1a')
     cli args tokenize -- --value 1a \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
             "Unexpected value '1a' for argument '--value' passed to command 'cli args initialize'." \
             "Expected a value that matches regex '^[0-9]+$'."
 
     # provide required named argument (e.g. '--value 42')
     cli args tokenize -- --value 42 \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named value' \
             'named value 42' 
@@ -305,7 +302,7 @@ self_test() {
     #  default (e.g. '--color black')
     cli args tokenize \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named' \
             'named color black' 
@@ -313,7 +310,7 @@ self_test() {
     # override default value (e.g. --color white)
     cli args tokenize -- --color white \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named color' \
             'named color white'
@@ -321,7 +318,7 @@ self_test() {
     # override default value with alias (e.g. -c white)
     cli args tokenize -- -c white \
         | cli args parse -- <( echo 'c color' ) \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named color' \
             'named color white'
@@ -333,14 +330,14 @@ self_test() {
     # default boolean
     cli args tokenize \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named'
 
     # implicit boolean (e.g. '--help')
     cli args tokenize -- --help \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named help' \
             'named help'
@@ -348,7 +345,7 @@ self_test() {
     # bad allowed value (e.g. '--help bad')
     cli args tokenize -- --help bad \
         | cli args parse \
-        | assert::fails "${CLI_COMMAND} -- <( meta )" \
+        | assert::fails "${CLI_COMMAND[@]} -- <( meta )" \
             "Unexpected value 'bad' for argument '--help'" \
             "passed to command 'cli args initialize'." \
             "Expected a value that matches regex '^true$|^false$|^$'."
@@ -360,11 +357,9 @@ self_test() {
     # positional argument allowed
     cli args tokenize -- -- a0 a1 \
         | cli args parse \
-        | ${CLI_COMMAND} -- <( meta ) \
+        | ${CLI_COMMAND[@]} -- <( meta ) \
         | assert::pipe_records_eq \
             'first_named' \
             'positional a0' \
             'positional a1'
 }
-
-cli::main "$@"

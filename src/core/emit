@@ -1,13 +1,10 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import cli-emit
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Description
     Emit a function that globally declares a type and initializes its fields.
@@ -30,7 +27,7 @@ main() {
     : ${ARG_FUNCTION_NAME:?}
 
     {
-        echo "::cli::core::scope::add::inline \$1 ${ARG_TYPE}" 
+        echo "cli::core::scope::add \$1 ${ARG_TYPE}" 
         echo
 
         while read name type; do
@@ -55,7 +52,7 @@ self_test() {
     )
 
     cli::write CLI_TYPE_TEST map \
-        | ${CLI_COMMAND} -- CLI_TYPE_TEST my_func 
+        | ${CLI_COMMAND[@]} -- CLI_TYPE_TEST my_func 
         # \
         # | assert::pipe_eq \
         #     'my_func() {' \
@@ -67,5 +64,3 @@ self_test() {
         #     '    declare -gi "$1_MY_INTEGER=0"' \
         #     '}'
 }
-
-cli::main "$@"

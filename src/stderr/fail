@@ -1,0 +1,44 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import_inline cli stderr dump
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Copies an IFS join of the arguments to stderr stream before exiting 
+    with code 1.
+
+Examples
+    Test a condition
+        [[ \${foo} == 'bar' ]] || ${CLI_COMMAND[@]} -- 'Foo does not equal bar.'
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+main() {
+    ::cli::stderr::fail::inline "$@"
+}
+
+::cli::stderr::fail::inline() {
+    echo "$*" \
+        | ::cli::stderr::dump::inline
+}
+
+self_test() {
+    if (( $# > 0 )); then
+        eval "$1"
+    else
+        test() {
+            set -m
+            if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1; then exit 1; fi 
+        }
+
+        diff <( test "main 'Bad news'" ) <( echo 'Bad news' ) \
+            || cli::assert
+    fi
+}

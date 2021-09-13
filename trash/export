@@ -7,7 +7,7 @@ source $(cli loader ---exports)
 help() {
     cat << EOF
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Emit functions for exporting functions, variables, and import statements.
@@ -81,14 +81,14 @@ cli::export::cli::meta::declare() {
 }
 
 cli::export::import_group() {
-    local segments=( ${CLI_COMMAND} )
+    local segments=( ${CLI_COMMAND[@]} )
     local length=${#segments[@]}
     local group="${segments[@]:0:$(( length - 1 ))}"
     echo "cli::import ${group} .group"
 }
 
-cli::export::import_parent_group() {
-    local segments=( ${CLI_COMMAND} )
+:;() {
+    local segments=( ${CLI_COMMAND[@]} )
     local length=${#segments[@]}
     local parent_group="${segments[@]:0:$(( length - 2 ))}"
     echo "cli::import ${parent_group} .group"
@@ -98,7 +98,7 @@ main() {
     declare -f cli::export
     declare -f cli::export::import
     declare -f cli::export::import_group
-    declare -f cli::export::import_parent_group
+    declare -f :;
     declare -f cli::export::variable
     declare -f cli::export::variable::merge
     declare -f cli::export::variables

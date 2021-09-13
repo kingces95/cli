@@ -5,7 +5,7 @@ cli::import cli-assert
 help() {
 cat << EOF
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Set a field.
@@ -122,41 +122,41 @@ self_test() {
     cli type define --name metadata_type \
         | cli type define-field --name allow -- map_of set \
         | cli type declare -x --scope meta --name data -- metadata_type \
-        | ${CLI_COMMAND} -x -- meta data allow color white \
-        | ${CLI_COMMAND} -x -- meta data allow color black \
-        | ${CLI_COMMAND} -x -p -- meta data allow color
+        | ${CLI_COMMAND[@]} -x -- meta data allow color white \
+        | ${CLI_COMMAND[@]} -x -- meta data allow color black \
+        | ${CLI_COMMAND[@]} -x -p -- meta data allow color
 exit
 
     cli type define --name metadata_type \
         | cli type define-field --name allow -- map_of set \
         | cli type declare -x --scope meta --name data -- metadata_type \
-        | ${CLI_COMMAND} -x -- meta data allow color white \
-        | ${CLI_COMMAND} -x -- meta data allow color black
+        | ${CLI_COMMAND[@]} -x -- meta data allow color white \
+        | ${CLI_COMMAND[@]} -x -- meta data allow color black
 
     cli type declare --scope my --name allow -- map_of set \
-        | ${CLI_COMMAND} -x -- my allow color white \
-        | ${CLI_COMMAND} -x -- my allow color black
+        | ${CLI_COMMAND[@]} -x -- my allow color white \
+        | ${CLI_COMMAND[@]} -x -- my allow color black
 
     cli type declare --scope my --name meta -- map_of map_of map \
-        | ${CLI_COMMAND} -x -- my meta allow color white true \
-        | ${CLI_COMMAND} -x -- my meta allow color black true
+        | ${CLI_COMMAND[@]} -x -- my meta allow color white true \
+        | ${CLI_COMMAND[@]} -x -- my meta allow color black true
 
     cli type declare --scope my --name map -- map \
-        | ${CLI_COMMAND} -x -- my map k0 v0 \
-        | ${CLI_COMMAND} -x -- my map k1 v1
+        | ${CLI_COMMAND[@]} -x -- my map k0 v0 \
+        | ${CLI_COMMAND[@]} -x -- my map k1 v1
 
     cli type declare --scope my --name array -- array \
-        | ${CLI_COMMAND} -x -- my array e0 \
-        | ${CLI_COMMAND} -x -- my array e1
+        | ${CLI_COMMAND[@]} -x -- my array e0 \
+        | ${CLI_COMMAND[@]} -x -- my array e1
 
     cli type declare --scope my --name string -- string \
-        | ${CLI_COMMAND} -x -- my string "Hello World"
+        | ${CLI_COMMAND[@]} -x -- my string "Hello World"
 
     cli type declare --scope my --name integer -- integer \
-        | ${CLI_COMMAND} -x -- my integer 42
+        | ${CLI_COMMAND[@]} -x -- my integer 42
 
     cli type declare --scope my --name bool -- boolean \
-        | ${CLI_COMMAND} -x -- my bool true
+        | ${CLI_COMMAND[@]} -x -- my bool true
 }
 
 cli::main "$@"

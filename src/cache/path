@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
-cli::import cli-assert
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
 
 Summary
     Print cache directory for an unpacked command.
@@ -17,8 +14,8 @@ EOF
     cat << EOF
 
 Examples
-    Print cache directory for '${CLI_COMMAND}'
-        ${CLI_COMMAND} --path \$(${CLI_COMMAND} ---which)
+    Print cache directory for '${CLI_COMMAND[@]}'
+        ${CLI_COMMAND[@]} --path \$(${CLI_COMMAND[@]} ---which)
 EOF
 }
 
@@ -33,10 +30,8 @@ cli::cache::path::inline() {
 }
 
 self_test() {
-    ${CLI_COMMAND} --path '/base/command' \
+    ${CLI_COMMAND[@]} --path '/base/command' \
     | assert::pipe_eq \
         '/base/.cli/command'
 
 }
-
-cli::main "$@"

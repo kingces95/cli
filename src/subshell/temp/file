@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
     cat << EOF | cli::help::global
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Create a temporary file in a temporary directory and set REPLY to its path.
@@ -42,7 +40,6 @@ main() {
 }
 
 self_test() {
-    cli::source cli-assert
     cli::source cli subshell temp dir
 
     declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
@@ -66,6 +63,3 @@ self_test() {
     rm "${CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
     rm -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
 }
-
-cli::main "$@"
-

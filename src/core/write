@@ -1,18 +1,15 @@
-#!/usr/bin/env bash
-source $(cli loader ---exports)
-cli::import_group
+#!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli bash write
 cli::import_inline cli core type is-scaler
 cli::import_inline cli core type is-builtin
 cli::import_inline cli core type is-modified
 cli::import_inline cli core type is-user-defined
 cli::import_inline cli core type unmodify
-cli::import cli-assert
 
 help() {
     cat << EOF | cli::core::help
 Command
-    ${CLI_COMMAND}
+    ${CLI_COMMAND[@]}
     
 Summary
     Write a variable as a sequence of records.
@@ -230,5 +227,3 @@ self_test() {
             'version major 1' \
             'version minor 2'
 }
-
-cli::main "$@"
