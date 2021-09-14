@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import_inline cli subshell temp fifo
 
 help() {
     cat << EOF | cli::help::sourceable | cli::help::global
@@ -8,8 +9,16 @@ Command
 Summary
     Group records into pipes.
 
-Arguments
-    --                      : The variables to emit.
+Description
+    Argument $1 is the number of fields of each record to use as the key.
+    The fields are one based. Default is one.
+
+    Return a record for each unique key discovered in the records read
+    from stdin. The retuned record contains two fields. The first field is
+    the key for the group and the second field is a file descriptor which 
+    must be drained before the next records is produced. The file descriptor
+    contians only the fields that follow the key of the grouped record read
+    from stdin.
 EOF
     cat << EOF
 Examples
@@ -34,7 +43,7 @@ main() {
 
     # while read -a REPLY; do
     while read -a reply; do
-        cli::assert "(( ${#reply[@]} > 0 ))" "Records must contain a key."
+        (( ${#reply[@]} > 0 )) || cli::assert "Records must contain a key."
 
         key="${reply[*]:0:${ARG_KEYS}}"
 
@@ -60,17 +69,18 @@ main() {
     for (( i=0; i<${#keys[@]}; i++ )); do
 
         # activate pipe
-        local fifo=$(mktemp -u)
-        mkfifo "${fifo}"
+        ::cli::subshell::temp::fifo::inline fifo
 
         # publish group
         echo "${keys[$i]}" "${fifo}"
 
         # publish members
         local -n group_ref=GROUP_${i}
+        echo "printf ${fifo}" >&2
         printf '%s\n' "${group_ref[@]}" > "${fifo}"
     
         # delete pipe
+        echo "rm ${fifo}" >&2
         rm "${fifo}"
     done
 }
@@ -83,14 +93,19 @@ self_test() {
     } | ${CLI_COMMAND[@]} | {
         while read -a reply; do
             echo group ${reply}
+            sleep 3
+            echo "cat ${reply[1]}" >&2
             cat ${reply[1]}
         done
-    } | assert::pipe_eq \
-        'group a' \
-        '0 x' \
-        '1 y' \
-        'group b' \
-        '2 z' 
+    } | diff <( cat <<-EOF
+			group a
+			0 x
+			1 y
+			group b
+			2 z
+			EOF
+    ) - || cli::assert
+exit
         
     {
         echo a 0 x
@@ -101,10 +116,12 @@ self_test() {
             echo group ${reply[@]:0:2}
             cat ${reply[2]}
         done
-    } | assert::pipe_eq \
-        'group a 0' \
-        'x' \
-        'y' \
-        'group a 1' \
-        'z' 
+    } | diff <( cat <<-EOF
+			group a 0
+			x
+			y
+			group a 1
+			z
+			EOF
+    ) - || cli::assert
 }

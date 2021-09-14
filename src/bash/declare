@@ -9,13 +9,20 @@ Summary
     Declare a bash variable or variables for a given type. 
 
 Description
-    Declares a global bash variable of the provided type. Valid types are
+    Argument $1 is the type and $2 is the name of the variable and so forth
+    for $3 and $4 etc. Names must be valid bash names and will be declared
+    globally.
+
+    Valid types are
 
         string
         boolean
         integer
         map
         array
+
+    Variable are _not_ initialized. So if 'set -u' is enabled, then dereferencing
+    a variable will result in an 'unbound variable' error. 
 EOF
 }
 
@@ -51,7 +58,7 @@ main() {
             'map') flags+=A ;;
             'boolean') ;&
             'string') ;;
-            *) cli::fail "Cannot declare variable of unknown type '${ARG_TYPE}'."
+            *) cli::fail "Cannot declare variable of type '${ARG_TYPE}'."
         esac
 
         # declare the bash variable
@@ -60,37 +67,14 @@ main() {
 }
 
 self_test() {
+    [[ "$(main string VAR)" == "declare -- VAR" ]] || cli::assert
+    [[ "$(main boolean VAR)" == "declare -- VAR" ]] || cli::assert
+    [[ "$(main integer VAR)" == "declare -i VAR" ]] || cli::assert
+    [[ "$(main array VAR)" == "declare -a VAR" ]] || cli::assert
+    [[ "$(main map VAR)" == "declare -A VAR" ]] || cli::assert
 
-    # string
-    ${CLI_COMMAND[@]} -- string VAR \
-        | assert::pipe_eq \
-            'declare -- VAR'
-
-    # boolean
-    ${CLI_COMMAND[@]} -- boolean VAR \
-        | assert::pipe_eq \
-            'declare -- VAR'
-
-    # integer
-    ${CLI_COMMAND[@]} -- integer VAR \
-        | assert::pipe_eq \
-            'declare -i VAR'
-
-    # array
-    ${CLI_COMMAND[@]} -- array VAR \
-        | assert::pipe_eq \
-            'declare -a VAR'
-
-    # map
-    ${CLI_COMMAND[@]} -- map VAR \
-        | assert::pipe_eq \
-            'declare -A VAR'
-    
-    # many
-    ${CLI_COMMAND[@]} -- \
-        string MY_STRING \
-        map MY_MAP \
-        | assert::pipe_eq \
-            'declare -- MY_STRING' \
-            'declare -A MY_MAP'
+    diff <( main string MY_STRING map MY_MAP ) - <<-EOF || cli::assert
+		declare -- MY_STRING
+		declare -A MY_MAP
+		EOF
 }

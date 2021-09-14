@@ -420,58 +420,75 @@ import() {
     ::cli::bash::emit::inline() {
         for name in "$@"; do
             if [[ "${name}" =~ ^.*[*]$ ]]; then
-                # declare -p \
-                #     | grep "^declare [-A-Za-z]* ${name:0:-1}" \
-                #     || true # grep fails on no match but we want it to succeed
-
-                # the syntax ${!VAR*} will only print *initialized* variables
-                # (e.g. 'declare VAR=' but not 'declare VAR') whereas the above
-                # grep will print both initialized and uninitialized variables
-                # The one above is slow. Instead we choose to initialize all
-                # variables so we can use the faster one below.
-                
                 ::cli::bash::emit::inline $(eval "echo \${!${name}}")
-            elif [[ -z "${name}" ]]; then
-                continue
-            else
-                set +e
-                declare -p "${name}" 2> /dev/null
-                set -e
+            elif [[ -v "${name}" ]]; then
+                declare -p "${name}"
             fi
         done
     }
 
+    ::cli::subshell::on_exit::inline() {
+        local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
+        local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
+
+        if (( ${#CLI_SUBSHELL_ON_EXIT[@]} == 0 )); then
+            cli::subshell::on_exit::trap() {
+                local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
+                for delegate in ${CLI_SUBSHELL_ON_EXIT[@]}; do
+                    ${delegate}
+                done
+            }
+            trap cli::subshell::on_exit::trap EXIT
+        fi
+
+        CLI_SUBSHELL_ON_EXIT+=( "$@" )
+    }
+
     ::cli::subshell::temp::dir::inline() {
-
-        # create and return a temporary directory
         declare -n REPLY_REF=${1-'REPLY'}
-        REPLY_REF=( "$(mktemp -d "${TMPDIR:-/tmp/}cli-XXXXXXXX")/" )
+        ::cli::subshell::temp::file::inline "$@"
+        rm -f "${REPLY_REF}"
+        mkdir "${REPLY_REF}"
+    }
 
-        # record the temporary directory 
-        declare -ga "CLI_SUBSHELL_TEMP_DIR_${BASHPID}+=()"
-        declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
-        CLI_SUBSHELL_TEMP_DIR_BASHPID+=( "${REPLY_REF}" )
+    ::cli::subshell::temp::fifo::inline() {
+        declare -n REPLY_REF=${1-'REPLY'}
+        ::cli::subshell::temp::file::inline "$@"
+        rm -f "${REPLY_REF}"
+        mkfifo "${REPLY_REF}"
     }
 
     ::cli::subshell::temp::file::inline() {
 
         # create and return a temporary file
-        declare -n REPLY_REF=${1-'REPLY'}
-        REPLY_REF=( $(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX") )
+        local -n REPLY_REF=${1-'REPLY'}
+        REPLY_REF=$(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
 
         # record the temporary file 
-        declare -ga "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
-        declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-        CLI_SUBSHELL_TEMP_FILE_BASHPID+=( "${REPLY_REF}" )
+        declare -gA "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
+        local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+
+        # cleanup
+        if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
+            ::cli::subshell::temp::file::on_exit() {
+                local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+
+                # unlink files/directories
+                for FILE in ${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}; do
+                    if [[ -d "${FILE}" ]]; then
+                        rm -f -r "${FILE}"
+                    else
+                        rm -f "${FILE}"
+                    fi
+                done
+            }
+
+            ::cli::subshell::on_exit::inline \
+                ::cli::subshell::temp::file::on_exit
+        fi
+
+        CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${REPLY_REF}"]='true' )
     }
-
-    ::cli::subshell::temp::clean::inline() {
-        declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-        rm -f "${CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
-
-        declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
-        rm -r -f "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
-    }    
 
     ::cli::subshell::signal_group::inline() {
         local SIGNAL=${1-'SIGINT'}
@@ -502,10 +519,6 @@ import() {
 
         # issue control-c
         ::cli::subshell::signal_group::inline
-    }
-
-    ::cli::subshell::trap::exit::inline() {
-        ::cli::subshell::temp::clean::inline
     }
 
     ::cli::stderr::assert::inline() {
@@ -549,14 +562,10 @@ declare_traps() {
             ::cli::bash::stack::trace::inline | sed 's/^/  /'
         } | ::cli::stderr::dump::inline
     }
-    cli::trap::exit() { 
-        ::cli::subshell::trap::exit::inline
-    }
 }
 declare_traps
 
 trap 'cli::trap::err $?' ERR
-trap 'cli::trap::exit' EXIT
 
 # system
 cli::lock() { ::cli::lock::inline "${CLI_LOCK_FILE}"; }
@@ -983,6 +992,7 @@ cli::loader::import() {
     local diff=$(diff <(echo "${existing_function}") <(echo "${inline_function}") || true)
     if [[ -n "${diff}" ]]; then
         echo "cli::loader::import, existing_function != inline_function, fqn=${fqn}"
+        echo "declare -x CLI_LOADER_IMPORT_DISABLE=1"
         echo "${diff}"
         exit 1
     fi > /dev/stderr
@@ -1443,11 +1453,13 @@ cli() {
 # these functions pre-imported because the import logic itself depends on them.
 # the effect of importing pre-imported functions is to ensure the copies here
 # match the source copies. 
-cli::loader::import 'cli subshell temp dir'
-cli::loader::import 'cli subshell temp file'
-cli::loader::import 'cli subshell temp clean'
-cli::loader::import 'cli subshell trap exit' \
-    'cli subshell temp clean'
+cli::loader::import 'cli subshell on-exit'
+cli::loader::import 'cli subshell temp file' \
+    'cli subshell on-exit'
+cli::loader::import 'cli subshell temp dir' \
+    'cli subshell temp file'
+cli::loader::import 'cli subshell temp fifo' \
+    'cli subshell temp file'
 
 cli::loader::import 'cli stderr lock'
 cli::loader::import 'cli stderr cat' \

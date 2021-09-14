@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import_inline cli subshell temp file
 
 help() {
     cat << EOF | cli::help::global
@@ -6,17 +7,15 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Create a temporary directory.
+    Create a temporary directory, set REPLY to its path, and register a trap to
+    recursively delete the directory upon subshell exit.
 
 Description
-    First positional argument is the name of a variable to assign the
-    path of the created temporary directory. If no name is supplied 
-    REPLY is used as a default.
+    The first argument is the name of the variable to return the path to the
+    temporary directory. The default is REPLY. The directory name does _not_
+    end in a slash.
 
-    The temporary directory path will also be added to a global array 
-    variable CLI_SUBSHELL_TEMP_DIR_XXXX where XXXX is the bash subshell id.
-
-    The temporary directory path will end with a forward slash.
+    Upon exit a trap will recusively delete the temporary directory.
 EOF
 }
 
@@ -25,46 +24,41 @@ cli::meta::declare() {
 }
 
 main() {
-    ::cli::subshell::temp::dir::inline
-    echo ${REPLY}
+    ::cli::subshell::temp::dir::inline "$@"
 }
 
 ::cli::subshell::temp::dir::inline() {
-
-    # create and return a temporary directory
     declare -n REPLY_REF=${1-'REPLY'}
-    REPLY_REF=( "$(mktemp -d "${TMPDIR:-/tmp/}cli-XXXXXXXX")/" )
-
-    # record the temporary directory 
-    declare -ga "CLI_SUBSHELL_TEMP_DIR_${BASHPID}+=()"
-    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
-    CLI_SUBSHELL_TEMP_DIR_BASHPID+=( "${REPLY_REF}" )
+    ::cli::subshell::temp::file::inline "$@"
+    rm -f "${REPLY_REF}"
+    mkdir "${REPLY_REF}"
 }
 
 self_test() {
 
-    declare -ga "CLI_SUBSHELL_TEMP_DIR_${BASHPID}+=()"
-    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
+    mapfile -t < <(
+        # create a temp dir
+        main
+        [[ -d "${REPLY}" ]] || cli::assert
+        echo "${REPLY}"
 
-    # create an empty temp dir
-    ::cli::subshell::temp::dir::inline
-    [[ -d "${REPLY}" ]] || cli::assert
-    [[ "${REPLY}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[0]} ]] || cli::assert
+        # create a temp dir to explicitly delete
+        main
+        [[ -d "${REPLY}" ]] || cli::assert
+        rm -r "${REPLY}"
 
-    # create another empty temp dir
-    ::cli::subshell::temp::dir::inline
-    [[ -d "${REPLY}" ]] || cli::assert
-    [[ "${REPLY}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[1]} ]] || cli::assert
+        # create a temp dir returned via a custom name
+        main MY_REPLY
+        [[ -d "${MY_REPLY}" ]] || cli::assert
+        echo "${MY_REPLY}"
 
-    # create an empty temp dir with custom name
-    local -a MY_TEMP_DIR
-    ::cli::subshell::temp::dir::inline MY_TEMP_DIR
-    [[ -d "${MY_TEMP_DIR}" ]] || cli::assert
-    [[ "${MY_TEMP_DIR}" == ${CLI_SUBSHELL_TEMP_DIR_BASHPID[2]} ]] || cli::assert
+        # test recursive directory delete
+        echo > "${MY_REPLY}/file.log"
+    )
 
-    # remove temp dir
-    rm -r -f  "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
-    [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[0]}" ]] || cli::assert
-    [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[1]}" ]] || cli::assert
-    [[ ! -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[2]}" ]] || cli::assert
+    (( ${#MAPFILE[@]} == 2 )) || cli::assert
+    [[ ! -a "${MAPFILE[0]}" ]] || cli::assert
+    [[ ! -a "${MAPFILE[1]}" ]] || cli::assert
+
+    [[ "${MAPFILE}" =~ [^/]$ ]] || cli::assert
 }

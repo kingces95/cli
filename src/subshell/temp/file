@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import_inline cli subshell on-exit
 
 help() {
     cat << EOF | cli::help::global
@@ -6,15 +7,14 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Create a temporary file in a temporary directory and set REPLY to its path.
+    Create a temporary file, set REPLY to its path, and register a trap to
+    unlink the file upon subshell exit.
 
 Description
-    The first argument is the name of the array holding temporary directories.
-    If there are no temporary directories then one is created via 'cli temp dir'.
+    The first argument is the name of the variable to return the path to the
+    temporary file. The default is REPLY.
 
-    Create a temporary file in the temprary directory and then set the variable 
-    to whatever name is passed as the second argument. If no second argument
-    is provided then REPLY is used as a default.
+    Upon exit a trap will run to delete the temporary file.
 EOF
 }
 
@@ -23,43 +23,63 @@ cli::meta::declare() {
 }
 
 main() {
-    ::cli::subshell::temp::file::inline
-    echo ${REPLY}
+    ::cli::subshell::temp::file::inline "$@"
 }
 
 ::cli::subshell::temp::file::inline() {
 
     # create and return a temporary file
-    declare -n REPLY_REF=${1-'REPLY'}
-    REPLY_REF=( $(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX") )
+    local -n REPLY_REF=${1-'REPLY'}
+    REPLY_REF=$(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
 
     # record the temporary file 
-    declare -ga "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
-    declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-    CLI_SUBSHELL_TEMP_FILE_BASHPID+=( "${REPLY_REF}" )
+    declare -gA "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
+    local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+
+    # cleanup
+    if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
+        ::cli::subshell::temp::file::on_exit() {
+            local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+
+            # unlink files/directories
+            for FILE in ${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}; do
+                if [[ ! -a "${FILE}" ]]; then
+                    :
+                elif [[ -d "${FILE}" ]]; then
+                    rm -f -r "${FILE}"
+                else
+                    rm -f "${FILE}"
+                fi
+            done
+        }
+
+        ::cli::subshell::on_exit::inline \
+            ::cli::subshell::temp::file::on_exit
+    fi
+
+    CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${REPLY_REF}"]='true' )
 }
 
 self_test() {
-    cli::source cli subshell temp dir
 
-    declare -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-    declare -n CLI_SUBSHELL_TEMP_DIR_BASHPID=CLI_SUBSHELL_TEMP_DIR_${BASHPID}
+    mapfile -t < <(
+        # create a temp file
+        main
+        [[ -f "${REPLY}" ]] || cli::assert
+        echo "${REPLY}"
 
-    # create a temp file
-    ::cli::subshell::temp::file::inline
-    [[ -f "${REPLY}" ]] || cli::assert
-    [[ "${REPLY}" == ${CLI_SUBSHELL_TEMP_FILE_BASHPID[0]} ]] || cli::assert
+        # create a temp file returned via a custom name
+        main MY_REPLY
+        [[ -f "${MY_REPLY}" ]] || cli::assert
+        echo "${MY_REPLY}"
 
-    # create a temp file returned via a custom name
-    ::cli::subshell::temp::file::inline MY_REPLY
-    [[ -f "${MY_REPLY}" ]] || cli::assert
-    [[ "${MY_REPLY}" == ${CLI_SUBSHELL_TEMP_FILE_BASHPID[1]} ]] || cli::assert
+        # create a temp file to explicitly delete
+        main
+        [[ -f "${REPLY}" ]] || cli::assert
+        rm "${REPLY}"
+    )
 
-    # create a temp file in a temp dir
-    ::cli::subshell::temp::dir::inline MY_DIR
-    ::cli::subshell::temp::file::inline REPLY "${MY_DIR}"
-    [[ "$(dirname "${REPLY}")/" == "${MY_DIR}" ]] || cli::assert
-
-    rm "${CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
-    rm -d "${CLI_SUBSHELL_TEMP_DIR_BASHPID[@]}"
+    (( ${#MAPFILE[@]} == 2 )) || cli::assert
+    [[ ! -a "${MAPFILE[0]}" ]] || cli::assert
+    [[ ! -a "${MAPFILE[1]}" ]] || cli::assert
 }
