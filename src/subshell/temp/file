@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import_inline cli subshell temp remove
 cli::import_inline cli subshell on-exit
 
 help() {
@@ -39,18 +40,10 @@ main() {
     # cleanup
     if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
         ::cli::subshell::temp::file::on_exit() {
-            local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
 
             # unlink files/directories
-            for FILE in ${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}; do
-                if [[ ! -a "${FILE}" ]]; then
-                    :
-                elif [[ -d "${FILE}" ]]; then
-                    rm -f -r "${FILE}"
-                else
-                    rm -f "${FILE}"
-                fi
-            done
+            local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+            ::cli::subshell::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
         }
 
         ::cli::subshell::on_exit::inline \

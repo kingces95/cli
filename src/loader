@@ -443,19 +443,28 @@ import() {
 
         CLI_SUBSHELL_ON_EXIT+=( "$@" )
     }
+        
+    ::cli::subshell::temp::remove::inline() {
 
-    ::cli::subshell::temp::dir::inline() {
-        declare -n REPLY_REF=${1-'REPLY'}
-        ::cli::subshell::temp::file::inline "$@"
-        rm -f "${REPLY_REF}"
-        mkdir "${REPLY_REF}"
-    }
+        local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
 
-    ::cli::subshell::temp::fifo::inline() {
-        declare -n REPLY_REF=${1-'REPLY'}
-        ::cli::subshell::temp::file::inline "$@"
-        rm -f "${REPLY_REF}"
-        mkfifo "${REPLY_REF}"
+        # unlink files/directories
+        for FILE in "$@"; do
+            if ! ${CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]-}; then
+                continue
+            fi
+            
+            unset "CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]"
+
+            if [[ ! -a "${FILE}" ]]; then
+                :
+            elif [[ -d "${FILE}" ]]; then
+                rm -f -r "${FILE}"
+                rm -f -r "${FILE}"
+            else
+                rm -f "${FILE}"
+            fi
+        done
     }
 
     ::cli::subshell::temp::file::inline() {
@@ -471,16 +480,10 @@ import() {
         # cleanup
         if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
             ::cli::subshell::temp::file::on_exit() {
-                local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
 
                 # unlink files/directories
-                for FILE in ${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}; do
-                    if [[ -d "${FILE}" ]]; then
-                        rm -f -r "${FILE}"
-                    else
-                        rm -f "${FILE}"
-                    fi
-                done
+                local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
+                ::cli::subshell::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
             }
 
             ::cli::subshell::on_exit::inline \
@@ -488,6 +491,20 @@ import() {
         fi
 
         CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${REPLY_REF}"]='true' )
+    }
+
+    ::cli::subshell::temp::dir::inline() {
+        declare -n REPLY_REF=${1-'REPLY'}
+        ::cli::subshell::temp::file::inline "$@"
+        rm -f "${REPLY_REF}"
+        mkdir "${REPLY_REF}"
+    }
+
+    ::cli::subshell::temp::fifo::inline() {
+        declare -n REPLY_REF=${1-'REPLY'}
+        ::cli::subshell::temp::file::inline "$@"
+        rm -f "${REPLY_REF}"
+        mkfifo "${REPLY_REF}"
     }
 
     ::cli::subshell::signal_group::inline() {
@@ -1454,7 +1471,9 @@ cli() {
 # the effect of importing pre-imported functions is to ensure the copies here
 # match the source copies. 
 cli::loader::import 'cli subshell on-exit'
+cli::loader::import 'cli subshell temp remove'
 cli::loader::import 'cli subshell temp file' \
+    'cli subshell temp remove' \
     'cli subshell on-exit'
 cli::loader::import 'cli subshell temp dir' \
     'cli subshell temp file'
