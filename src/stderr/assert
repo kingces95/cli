@@ -22,10 +22,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::stderr::assert::inline "$@"
-}
-
 ::cli::stderr::assert::inline() {
     if (( $# == 0 )); then 
         set 'Condition failed'
@@ -41,22 +37,21 @@ main() {
 self_test() {
     test() {
         set -m
-        main "$@" 2>&1 1>/dev/stderr
+        ::cli::stderr::assert::inline "$@" \
+            2>&1 1> /dev/stderr
     }
 
     diff <(test 'oops!') - <<-EOF || cli::assert
 		ASSERT FAILED: oops!
-		  main "oops!"                                       /Users/Setup/git/cli/src/stderr/assert:26
-		  test "oops!"                                       /Users/Setup/git/cli/src/stderr/assert:44
-		  self_test                                          /Users/Setup/git/cli/src/stderr/assert:47
+		  test "oops!"                                       /Users/Setup/git/cli/src/stderr/assert:40
+		  self_test                                          /Users/Setup/git/cli/src/stderr/assert:44
 		  cli stderr assert --self-test                      /Users/Setup/git/cli/cli:6
 		EOF
 
     diff <(test) - <<-EOF || cli::assert
 		ASSERT FAILED: Condition failed
-		  main                                               /Users/Setup/git/cli/src/stderr/assert:26
-		  test                                               /Users/Setup/git/cli/src/stderr/assert:44
-		  self_test                                          /Users/Setup/git/cli/src/stderr/assert:55
+		  test                                               /Users/Setup/git/cli/src/stderr/assert:40
+		  self_test                                          /Users/Setup/git/cli/src/stderr/assert:51
 		  cli stderr assert --self-test                      /Users/Setup/git/cli/cli:6
 		EOF
 }

@@ -1,5 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import cli bash literal
+cli::import_inline cli bash literal
+cli::import_inline cli attribute is-defined
 
 help() {
     cat << EOF | cli::help::global
@@ -44,8 +45,8 @@ cli::meta::declare() {
         argc+=${BASH_ARGC[$i]}
 
         if [[ ! "${CLI_STACK_SHOW_HIDDEN-}" ]] \
-            && cli::attributes::method::is_defined \
-            "${funcname}" 'cli_bash_stack_hidden_attribute'; then
+            && ::cli::attribute::is_defined::inline \
+            'METHOD' "${funcname}" 'cli_bash_stack_hidden_attribute'; then
             continue
         fi
 

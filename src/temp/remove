@@ -20,11 +20,7 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::subshell::temp::remove::inline "$@"
-}
-
-::cli::subshell::temp::remove::inline() {
+::cli::temp::remove::inline() {
 
     local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
 
@@ -48,21 +44,21 @@ main() {
 }
 
 self_test() {
-    cli::source cli subshell temp file
+    cli::source cli temp file
 
     mapfile -t < <(
         # create temp file
-        ::cli::subshell::temp::file::inline
+        ::cli::temp::file::inline
         echo "${REPLY}"
         set "${REPLY}"
 
         # create temp file an explicitly delete it
-        ::cli::subshell::temp::file::inline
+        ::cli::temp::file::inline
         echo "${REPLY}"
         set "$@" "${REPLY}"
         rm "${REPLY}"
 
-        main "$@"
+        ::cli::temp::remove::inline "$@"
 
         # explictly re-create file
         echo > "${REPLY}"

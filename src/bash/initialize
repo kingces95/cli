@@ -10,29 +10,20 @@ Summary
     Declare a global bash variable or variables for a given type and initialize it. 
 
 Description
-    Declares a global bash variable of the provided type and initialize it. 
-    Valid types and their default values are:
+    Argument $1 is the bash type which can be either string, boolean,
+    integer, map, or array. A string type variable is initialized to the
+    empty string, boolean to false, integer to zero, map to an empty 
+    associative array, and array to an empty array.
 
-        string ""
-        boolean false
-        integer 0
-        map ()
-        array ()
+    Argument $2 is the name of the global bash variable to declare and initialize.
+
+    Subsequent positional arguments pairs of type/name can be passed and will be
+    declared an initialized in turn.
 EOF
 }
 
 cli::meta::declare() {
     cli::meta::allow_positional
-}
-
-main() {
-    ::cli::bash::initialize::inline "$@"
-
-    while (( $# > 0 )); do
-        shift
-        declare -p $1
-        shift
-    done
 }
 
 ::cli::bash::initialize::inline() {
@@ -59,36 +50,23 @@ main() {
 
 self_test() {
 
-    # string
-    ${CLI_COMMAND[@]} -- string VAR \
-        | assert::pipe_eq \
-            'declare -- VAR=""'
+    cmd() {
+        ::cli::bash::initialize::inline "$@"
 
-    # boolean
-    ${CLI_COMMAND[@]} -- boolean VAR \
-        | assert::pipe_eq \
-            'declare -- VAR="false"'
+        while (( $# > 0 )); do
+            shift
+            declare -p $1
+            shift
+        done
+    }
 
-    # integer
-    ${CLI_COMMAND[@]} -- integer VAR \
-        | assert::pipe_eq \
-            'declare -i VAR="0"'
-
-    # array
-    ${CLI_COMMAND[@]} -- array VAR \
-        | assert::pipe_eq \
-            'declare -a VAR=()'
-
-    # map
-    ${CLI_COMMAND[@]} -- map VAR \
-        | assert::pipe_eq \
-            'declare -A VAR=()'
-
-    # many
-    ${CLI_COMMAND[@]} -- \
-        string MY_STRING \
-        map MY_MAP \
-        | assert::pipe_eq \
-            'declare -- MY_STRING=""' \
-            'declare -A MY_MAP=()'
+    diff <(cmd string VAR) - <<< 'declare -- VAR=""' || cli::assert
+    diff <(cmd boolean VAR) - <<< 'declare -- VAR="false"' || cli::assert
+    diff <(cmd integer VAR) - <<< 'declare -i VAR="0"' || cli::assert
+    diff <(cmd array VAR) - <<< 'declare -a VAR=()' || cli::assert
+    diff <(cmd map VAR) - <<< 'declare -A VAR=()' || cli::assert
+    diff <(cmd string MY_STRING map MY_MAP) - <<-EOF || cli::assert
+		declare -- MY_STRING=""
+		declare -A MY_MAP=()
+		EOF
 }

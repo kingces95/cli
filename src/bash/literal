@@ -9,6 +9,9 @@ Summary
     Print a string as a literal bash string.
 
 Description
+    Positional argumetns are join using IFS and the result is copied to stdout
+    as a bash literal string.
+
     Simple strings consisting of letters, numbers, dash, and underbar are
     printed as is. Otherwise, the bash string is harvested from 'declare -p'
     for the value of an array element. So spaces are wrapped in double quoes,
@@ -20,14 +23,9 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::bash::literal::inline "$@"
-}
-
 ::cli::bash::literal::inline() {
     local literal="$*"
     
-    #echo "if [[ ! \"${literal}\" =~ ^[a-zA-Z_-]* ]]; then"
     if [[ "${literal}" =~ ^[a-zA-Z0-9_-]*$ ]]; then
         echo "${literal}"
         return 0
@@ -45,19 +43,10 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} -- hello \
-        | assert::pipe_eq \
-            'hello'
+    cmd() { ::cli::bash::literal::inline "$@"; }
 
-    ${CLI_COMMAND[@]} -- hello world \
-        | assert::pipe_eq \
-            '"hello world"'
-
-    ${CLI_COMMAND[@]} -- $'\a' \
-        | assert::pipe_eq_exact \
-            "\$'\\a'"
-
-    ${CLI_COMMAND[@]} -- "\$" \
-        | assert::pipe_eq_exact \
-            '"\$"'
+    diff <(cmd hello) - <<< 'hello' || cli::assert
+    diff <(cmd hello world) - <<< '"hello world"' || cli::assert
+    diff <(cmd $'\a') - <<< "\$'\\a'" || cli::assert
+    diff <(cmd "\$") - <<< '"\$"' || cli::assert
 }

@@ -54,11 +54,6 @@ cli::meta::declare() {
     done
 }
 
-main() {
-    source /dev/stdin
-    ::cli::bash::emit::inline "$@"
-}
-
 self_test() {
     echo \
         | ${CLI_COMMAND[@]} \

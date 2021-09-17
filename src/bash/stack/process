@@ -14,10 +14,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::bash::stack::process::inline
-}
-
 ::cli::bash::stack::process::inline() {
     local ARG_START_PID=${1-$$}
     local ARG_END_PID=${2-${CLI_PID-}}
@@ -51,7 +47,7 @@ main() {
                 | sed -e $'s/--/\\\n  --/g'
         fi
 
-        if (( ${pid} == ${ARG_END_PID-} )); then break; fi
+        if (( ${pid} == ${ARG_END_PID-0} )); then break; fi
         pid=${pid_parent[${pid}]-0}
     done
 }

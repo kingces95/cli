@@ -37,23 +37,23 @@ Examples
 EOF
 }
 
-main() {
+# main() {
 
-    cli::declare 'cli_args' ARGS
-    cli::read ARGS
+#     cli::declare 'cli_args' ARGS
+#     cli::read ARGS
 
-    cli::declare 'cli_meta_group' META
-    cli::read META < "${1-/dev/null}"
+#     cli::declare 'cli_meta_group' META
+#     cli::read META < "${1-/dev/null}"
 
-    # cli::print ARGS
-    # cli::print META
+#     # cli::print ARGS
+#     # cli::print META
 
-    ARG_META='META' \
-    ARG_ARGS='ARGS' \
-        ::cli::args::initialize::inline
+#     ARG_META='META' \
+#     ARG_ARGS='ARGS' \
+#         ::cli::args::initialize::inline
 
-    cli::write ARGS
-}
+#     cli::write ARGS
+# }
 
 ::cli::args::initialize::inline() {
 

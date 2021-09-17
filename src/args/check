@@ -40,10 +40,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::args::check::inline "$@"
-}
-
 ::cli::args::check::inline() {
     local name="${1-}"
     local value="${2-}"
@@ -125,7 +121,7 @@ self_test() {
     cli args check -- myname myothervalue 'string' '.*' 'myvalue myothervalue' 0 100
 
     test() {
-        ! { set -m; (main "$@") } 2>&1 1>/dev/stderr || cli::assert
+        ! { set -m; (::cli::args::check::inline "$@") } 2>&1 1>/dev/stderr || cli::assert
     }
 
     diff <(test myname 'two' 'integer') <(echo \

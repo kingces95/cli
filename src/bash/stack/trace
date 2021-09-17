@@ -25,7 +25,7 @@ cli::meta::declare() {
 
 self_test() {
 
-    cli::fail 'Test failure!'
+    # cli::fail 'Test failure!'
 
     my_trap() {
         echo ---

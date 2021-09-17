@@ -8,6 +8,9 @@ Command
 Summary
     Print a line to stdout composed of the arguments joined 
     using the first argument as the delimiter.
+
+Description
+    Argument $1 is a delimiter used to join the remaining arguments.
 EOF
 }
 
@@ -15,12 +18,8 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::bash::join::inline "$@" 
-}
-
 ::cli::bash::join::inline() {
-    local delimiter=$1
+    local delimiter=${1?'Missing delimiter'}
     shift
 
     local -a segment=()
@@ -36,7 +35,6 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} -- . a b c \
-        | assert::pipe_eq \
-            'a.b.c'
+    diff <(::cli::bash::join::inline . a b c) - <<< 'a.b.c' || cli::assert
+    diff <(::cli::bash::join::inline .) - <<< '' || cli::assert
 }

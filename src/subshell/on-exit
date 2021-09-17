@@ -17,10 +17,6 @@ cli::meta::declare() {
     :
 }
 
-main() {
-    ::cli::subshell::on_exit::inline "$@"
-}
-
 ::cli::subshell::on_exit::inline() {
     local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
     local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
@@ -42,15 +38,17 @@ self_test() {
     handler_a() { echo "a"; }
     handler_b() { echo "b"; }
 
+    inline() { ::cli::subshell::on_exit::inline "$@"; }
+
     # multipule handlers
-    diff <( main handler_a handler_b ) <(printf '%s\n' a b) \
+    diff <( inline handler_a handler_b ) <(printf '%s\n' a b) \
         || cli::assert
 
     # multipule calls
-    diff <( main handler_a; main handler_b ) <(printf '%s\n' a b) \
+    diff <( inline handler_a; inline handler_b ) <(printf '%s\n' a b) \
         || cli::assert
 
     # subshell isolation
-    diff <( (main handler_a); main handler_b ) <(printf '%s\n' a b) \
+    diff <( (inline handler_a); inline handler_b ) <(printf '%s\n' a b) \
         || cli::assert
 }

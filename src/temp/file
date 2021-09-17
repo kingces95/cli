@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli subshell temp remove
+cli::import_inline cli temp remove
 cli::import_inline cli subshell on-exit
 
 help() {
@@ -23,11 +23,7 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::subshell::temp::file::inline "$@"
-}
-
-::cli::subshell::temp::file::inline() {
+::cli::temp::file::inline() {
 
     # create and return a temporary file
     local -n REPLY_REF=${1-'REPLY'}
@@ -39,15 +35,15 @@ main() {
 
     # cleanup
     if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
-        ::cli::subshell::temp::file::on_exit() {
+        ::cli::temp::file::on_exit() {
 
             # unlink files/directories
             local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-            ::cli::subshell::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
+            ::cli::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
         }
 
         ::cli::subshell::on_exit::inline \
-            ::cli::subshell::temp::file::on_exit
+            ::cli::temp::file::on_exit
     fi
 
     CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${REPLY_REF}"]='true' )
@@ -57,17 +53,17 @@ self_test() {
 
     mapfile -t < <(
         # create a temp file
-        main
+        ::cli::temp::file::inline
         [[ -f "${REPLY}" ]] || cli::assert
         echo "${REPLY}"
 
         # create a temp file returned via a custom name
-        main MY_REPLY
+        ::cli::temp::file::inline MY_REPLY
         [[ -f "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"
 
         # create a temp file to explicitly delete
-        main
+        ::cli::temp::file::inline
         [[ -f "${REPLY}" ]] || cli::assert
         rm "${REPLY}"
     )

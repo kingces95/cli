@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
 cli::import_inline cli stderr lock
-cli::import_inline cli subshell temp file
+cli::import_inline cli temp file
 
 help() {
     cat << EOF | cli::help::global
@@ -19,14 +19,10 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::stderr::cat::inline
-}
-
 ::cli::stderr::cat::inline() {
 
     # create a temporary file
-    ::cli::subshell::temp::file::inline
+    ::cli::temp::file::inline
 
     # write to file instead of stderr so generator can take lock
     cat > "${REPLY}"

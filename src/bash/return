@@ -6,14 +6,10 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Returns 1.
+    Returns 0.
 
 Description
-    Returns the first positonal argument.
-
-Arguments
-    --exit-code -e          : The exit code to return. Default: 1.
-    --message -m            : The error message message.
+    Returns the first positonal argument. Default is 0.
 EOF
 }
 
@@ -21,14 +17,11 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::bash::return::inline "$@"
-}
-
 ::cli::bash::return::inline() {
-    return $1
+    return ${1-0}
 }
 
 self_test() {
-    assert::returns "::cli::bash::return::inline 42" 42
+    ::cli::bash::return::inline || cli::assert
+    ! ::cli::bash::return::inline 1 || cli::assert
 }

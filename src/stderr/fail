@@ -20,10 +20,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::stderr::fail::inline "$@"
-}
-
 ::cli::stderr::fail::inline() {
     echo "$*" \
         | ::cli::stderr::dump::inline
@@ -38,7 +34,7 @@ self_test() {
             if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1; then exit 1; fi 
         }
 
-        diff <( test "main 'Bad news'" ) <( echo 'Bad news' ) \
-            || cli::assert
+        diff <( test "::cli::stderr::fail::inline 'Bad news'" ) \
+            <( echo 'Bad news' ) || cli::assert
     fi
 }

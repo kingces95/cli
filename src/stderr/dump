@@ -22,10 +22,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::stderr::dump::inline "$@"
-}
-
 ::cli::stderr::dump::inline() {
 
     # copy stdin to stderr
@@ -46,7 +42,7 @@ self_test() {
             if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1 1> /dev/null; then exit 1; fi 
         }
 
-        diff <(test "echo 'LOG AND CTRL-C' | main") <(echo "LOG AND CTRL-C") \
-            || cli::assert
+        diff <(test "echo 'LOG AND CTRL-C' | ::cli::stderr::dump::inline") \
+            <(echo "LOG AND CTRL-C") || cli::assert
     fi
 }

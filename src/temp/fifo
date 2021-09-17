@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli subshell temp file
+cli::import_inline cli temp file
 
 help() {
     cat << EOF | cli::help::global
@@ -22,13 +22,9 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::subshell::temp::fifo::inline "$@"
-}
-
-::cli::subshell::temp::fifo::inline() {
+::cli::temp::fifo::inline() {
     declare -n REPLY_REF=${1-'REPLY'}
-    ::cli::subshell::temp::file::inline "$@"
+    ::cli::temp::file::inline "$@"
     rm -f "${REPLY_REF}"
     mkfifo "${REPLY_REF}"
 }
@@ -37,17 +33,17 @@ self_test() {
 
     mapfile -t < <(
         # create a temp file
-        main
+        ::cli::temp::fifo::inline
         [[ -p "${REPLY}" ]] || cli::assert
         echo "${REPLY}"
 
         # create a temp fifo to explicitly delete
-        main
+        ::cli::temp::fifo::inline
         [[ -p "${REPLY}" ]] || cli::assert
         rm "${REPLY}"
 
         # create a temp file returned via a custom name
-        main MY_REPLY
+        ::cli::temp::fifo::inline MY_REPLY
         [[ -p "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"
     )

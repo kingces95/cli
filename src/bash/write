@@ -10,19 +10,15 @@ Summary
 
 Description
     Tables consist of records which are lines containing fields separated by
-    whilespace found in IFS which have any whitespace contained within them
+    whilespace found in IFS which have whitespace contained within them
     (plus backslash) escaped with a backslash. This function accepts a set
     of arguments, and prints a record consisting of those arguments.
 
     This operationn is the inverse of 'read' with default IFS; A record written
-    with 'write' can be read with 'read' using the default value of IFS. 
+    with 'write' can be read with 'read' using the default value of IFS.
 
-Arguments
-    --                      : The fields of the table record.
-
-Examples
-    Write and read a record with fields 'x', space, tab, and backslash.
-        ${CLI_COMMAND[@]} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY
+    This is different than print '%q' which is the inverse of eval and has a
+    different set of escaping rules. 
 EOF
 }
 
@@ -30,13 +26,10 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::bash::write::inline "$@"
-}
-
 ::cli::bash::write::inline() {
     while (( $# > 0 )); do
         local field="$1"
+
         field="${field//\\/\\\\}"
         field="${field// /\\ }"
         field="${field//$'\t'/\\$'\t'}"
@@ -53,15 +46,17 @@ main() {
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY \
-    | assert::pipe_eq_exact \
-        "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")"
+    write() { ::cli::bash::write::inline "$@"; }
 
-    ${CLI_COMMAND[@]} -- $'\a' | read -a ARRAY; declare -p ARRAY \
-    | assert::pipe_eq_exact \
-        "declare -a ARRAY=([0]=\$'\a')"
+    diff <(write 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY) \
+        - <<< "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")" \
+        || cli::assert
 
-    ${CLI_COMMAND[@]} -- 'a b' | read -a ARRAY; declare -p ARRAY \
-    | assert::pipe_eq_exact \
-        "declare -a ARRAY=([0]=\"a b\")"
+    diff <(write $'\a' | read -a ARRAY; declare -p ARRAY) \
+        - <<< "declare -a ARRAY=([0]=\$'\a')" \
+        || cli::assert
+
+    diff <(write 'a b' | read -a ARRAY; declare -p ARRAY) \
+        - <<< "declare -a ARRAY=([0]=\"a b\")" \
+        || cli::assert
 }

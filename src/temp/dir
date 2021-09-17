@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli subshell temp file
+cli::import_inline cli temp file
 
 help() {
     cat << EOF | cli::help::global
@@ -23,13 +23,9 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::subshell::temp::dir::inline "$@"
-}
-
-::cli::subshell::temp::dir::inline() {
+::cli::temp::dir::inline() {
     declare -n REPLY_REF=${1-'REPLY'}
-    ::cli::subshell::temp::file::inline "$@"
+    ::cli::temp::file::inline "$@"
     rm -f "${REPLY_REF}"
     mkdir "${REPLY_REF}"
 }
@@ -38,17 +34,17 @@ self_test() {
 
     mapfile -t < <(
         # create a temp dir
-        main
+        ::cli::temp::dir::inline
         [[ -d "${REPLY}" ]] || cli::assert
         echo "${REPLY}"
 
         # create a temp dir to explicitly delete
-        main
+        ::cli::temp::dir::inline
         [[ -d "${REPLY}" ]] || cli::assert
         rm -r "${REPLY}"
 
         # create a temp dir returned via a custom name
-        main MY_REPLY
+        ::cli::temp::dir::inline MY_REPLY
         [[ -d "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"
 

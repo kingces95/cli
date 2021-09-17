@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli subshell temp fifo
-cli::import_inline cli subshell temp remove
+cli::import_inline cli temp fifo
+cli::import_inline cli temp remove
 
 help() {
     cat << EOF | cli::help::sourceable | cli::help::global
@@ -15,11 +15,11 @@ Description
     The fields are one based. Default is one.
 
     Return a record for each unique key discovered in the records read
-    from stdin. The retuned record contains two fields. The first field is
-    the key for the group and the second field is a file descriptor which 
-    must be drained before the next records is produced. The file descriptor
-    contians only the fields that follow the key of the grouped record read
-    from stdin.
+    from stdin. The retuned records contain as many fields as are present
+    in the key plus one for a file descriptor which contains the group 
+    members and be drained before the next group record is produced. 
+    The file descriptor contians only the fields that follow the key of 
+    the grouped record read from stdin.
 EOF
     cat << EOF
 Examples
@@ -28,10 +28,6 @@ EOF
 
 cli::meta::declare() {
     cli::meta::allow_positional
-}
-
-main() {
-    ::cli::bash::group::inline "$@"
 }
 
 ::cli::bash::group::inline() {
@@ -70,7 +66,7 @@ main() {
     for (( i=0; i<${#keys[@]}; i++ )); do
 
         # activate pipe
-        ::cli::subshell::temp::fifo::inline fifo
+        ::cli::temp::fifo::inline fifo
 
         # publish group
         echo "${keys[$i]}" "${fifo}"
@@ -80,7 +76,7 @@ main() {
         printf '%s\n' "${group_ref[@]}" > "${fifo}"
     
         # delete pipe
-        ::cli::subshell::temp::remove::inline "${fifo}"
+        ::cli::temp::remove::inline "${fifo}"
     done
 }
 

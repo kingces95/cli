@@ -18,11 +18,6 @@ Arguments
 EOF
 }
 
-main() {  
-    emit "$@"
-    cli::dump "ARG_*"
-}
-
 emit() {   
     local _ARG_ARGS
     local _ARG_META

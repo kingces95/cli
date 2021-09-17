@@ -9,18 +9,12 @@ Summary
     Return true if the function is declared, otherwise false.
 
 Arguments
-    --name -n    [Required] : The name of the function.
-EOF
-    cat << EOF
-
-Examples
-    Test for the function 'inline'.
-        ${CLI_COMMAND[@]} --name inline
+    Argumetn $1 is the name of the function.
 EOF
 }
 
 cli::meta::declare() {
-    cli::meta::add_required 'name'
+    cli::meta::allow_positional
 }
 
 ::cli::bash::is_function_declared::inline() {
@@ -31,14 +25,7 @@ cli::meta::declare() {
     fi
 }
 
-main() {
-    ::cli::bash::is_function_declared::inline "${arg_name}"
-}
-
 self_test() {
-    ${CLI_COMMAND[@]} --name inline
-    assert::ok
-
-    ${CLI_COMMAND[@]} --name missing
-    assert::failed
+    ::cli::bash::is_function_declared::inline self_test || cli::assert
+    ! ::cli::bash::is_function_declared::inline missing || cli::assert
 }
