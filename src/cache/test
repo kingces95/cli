@@ -9,50 +9,35 @@ Summary
     Test if a file exists and is older than another file.
 
 Description
-    The loader caches results, like generation of the initialize function
-    from a source file's help, and uses this function to test if the cache
-    is stale. For example, if the cache of the initialize function exists
-    and is older than the source file, then the cache is fresh, otherwise
-    the cache is stale. Returns success if the cache is fresh, otherwise
-    returns a failure code if the cache is stale or the arguments are bad.
+    Argument $1 is the path to the generated file.
 
-Arguments
-    --cache -c    [Required] : Path to the cache.
-    --source -s   [Required] : Path to the source file.
+    Argument $2 is the source from which the generated file depends.
+    
+    Succeeds if the generated file exists and is older than the source file,
+    otherwise false.
 EOF
 }
 
 cli::meta::declare() {
-    cli::meta::add_required 'cache'
-    cli::meta::add_required 'source'
+    cli::meta::allow_positional
 }
 
-cli::cache::test::inline() {
-    if [[ ! -f "${arg_cache}" ]] \
-        || [[ "${arg_cache}" -ot "${arg_source}" ]]; then
-        false
-    else
-        true
-    fi
+::cli::cache::test::inline() {
+    local CACHE="$1"
+    local SOURCE="$2"
+
+    [[ -f "${CACHE}" ]] && [[ "${SOURCE}" -ot "${CACHE}" ]]
 }
 
 self_test() {
-    local source_path=$(mktemp "/tmp/source.XXXXXX")
-    local cache_path=$(mktemp "/tmp/cache.XXXXXX")
+    local OLD
+    cli::temp::file OLD
+    
+    local NEW
+    cli::temp::file NEW
 
-    if ! ${CLI_COMMAND[@]} --source "${source_path}" --cache "${cache_path}"; then
-        assert::fail 'Fresh cache reported stale.'
-    fi
-
-    touch "$source_path"
-    if ${CLI_COMMAND[@]} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
-        assert::fail 'Stale cache reported fresh.'
-    fi
-
-    rm "${cache_path}"
-    if ${CLI_COMMAND[@]} --source "${source_path}" --cache "${cache_path}" 2> /dev/null; then
-        assert::fail 'Missing cache reported fresh.'
-    fi
-
-    rm "${source_path}"
+    ! ::cli::cache::test::inline 'no_cache_file' "${OLD}" || cli::assert
+    ! ::cli::cache::test::inline "${OLD}" "${OLD}" || cli::assert
+    ! ::cli::cache::test::inline "${OLD}" "${NEW}" || cli::assert
+    ::cli::cache::test::inline "${NEW}" "${OLD}" || cli::assert
 }

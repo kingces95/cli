@@ -1,4 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import cli path dir
+cli::import cli temp file
 
 help() {
     cat << EOF | cli::help::global
@@ -6,43 +8,41 @@ Command
     ${CLI_COMMAND[@]}
 
 Summary
-    Read from stdin and write to a temp file that is moved to a cache path.
+    Copy stdin to a temp file and then move the file to a cache path.
 
 Description
-    The loader caches results, like generation of the initialize function
-    from a source file's help, and uses this function to atomically place
-    a cache file. The content is read from stdin, written to a temp file,
-    and then that temp file is moved to the cache path. 
-
-Arguments
-    --cache -c    [Required] : Path to the cache.
+    Argument $1 is the path to replace with the content read from stdin.
 EOF
 }
 
 cli::meta::declare() {
-    cli::meta::add_required 'cache'
+    cli::meta::allow_positional
 }
 
-cli::cache::put::inline() {
-    mkdir -p "${arg_cache%/*}"
+::cli::cache::put::inline() {
+    local CACHE="$1"
 
-    # read content into temp file and then atomically update cache
-    local temp_path=$(mktemp "/tmp/cli.cache.put.XXXXXX")
-    cat > "${temp_path}"
-    mv "${temp_path}" "${arg_cache}"
+    local DIR
+    ::cli::path::dir::inline DIR "${CACHE}"
+    mkdir -p "${DIR}"
+
+    local TEMP
+    ::cli::temp::file::inline TEMP
+    cat > "${TEMP}"
+
+    mv "${TEMP}" "${CACHE}"
 }
 
 self_test() {
-    local cache_dir='/tmp/cache_dir'
-    local cache_path="${cache_dir}/cache"
+    local CACHE
+    cli::temp::file CACHE
+    rm "${CACHE}"
+
+    local DIR="$(dirname "${CACHE}")"
 
     echo 'content' \
-        | cli cache put --cache "${cache_path}"
+        | ::cli::cache::put::inline "${CACHE}"
 
-    cat "${cache_path}" \
-        | assert::pipe_eq \
-            'content'
-
-    rm "${cache_path}"
-    rmdir "${cache_dir}"
+    [[ -f "${CACHE}" ]] || cli::assert
+    diff "${CACHE}" - <<< 'content' || cli::assert
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli bash declare
+cli::import cli bash declare
 
 help() {
     cat << EOF |  cli::core::variable::help

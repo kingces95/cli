@@ -1,0 +1,69 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import cli bash which
+cli::import cli bash is-function-declared
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Source the cli shim.
+
+Description
+    Argument $1 is the name of the shim (e.g. 'cli').
+
+    Searches PATH for $1 and then sources the file or fails
+    if the shim is not found on PATH.
+EOF
+}
+
+::cli::shim::source::inline() {
+    local NAME="$1"
+    local SHIM_ROOT_DIR_NAME="CLI_SHIM_ROOT_DIR_${NAME^^}"
+
+    if [[ ! -v "${SHIM_ROOT_DIR_NAME}" ]]; then
+            
+        local SHIM_PATH
+
+        # resolve the path to the shim by searching PATH
+        ::cli::bash::which::inline SHIM_PATH "$1" \
+            || return 1
+        
+        # source the shim
+        source "${SHIM_PATH}"
+
+        # verify shim published the path to the root of its commands
+        [[ -v "${SHIM_ROOT_DIR_NAME}" ]] \
+            || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
+
+        # verify the shim published a function of the same name.
+        ::cli::bash::is_function_declared::inline "${NAME}" \
+            || cli::assert "Shim '$1' failed to define function ${NAME}."
+    fi
+}
+
+self_test() {
+    cli::temp::dir DIR
+    local FOO_SHIM="${DIR}/foo"
+    
+    # emit a shim
+    cat <<-EOF > "${FOO_SHIM}"
+		#!/usr/bin/env bash-cli-shim
+        declare -rg CLI_SHIM_ROOT_DIR_FOO="\${BASH_SOURCE%/*}/src"
+		foo() {
+		    echo ok
+		}
+		EOF
+    chmod a+x "${FOO_SHIM}"
+
+    ! ::cli::shim::source::inline foo || cli::assert
+
+    # update PATH
+    PATH+=":${DIR}"
+
+    # resolve the command
+    ::cli::shim::source::inline foo
+
+    diff <(foo) - <<< 'ok' || cli::assert
+}

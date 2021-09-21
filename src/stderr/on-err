@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli stderr dump
-cli::import_inline cli bash stack trace
+cli::import cli stderr dump
+cli::import cli bash stack trace
 
 help() {
     cat << EOF | cli::help::global

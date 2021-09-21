@@ -1,10 +1,10 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli bash write
-cli::import_inline cli core type is-scaler
-cli::import_inline cli core type is-builtin
-cli::import_inline cli core type is-modified
-cli::import_inline cli core type is-user-defined
-cli::import_inline cli core type unmodify
+cli::import cli bash write
+cli::import cli core type is-scaler
+cli::import cli core type is-builtin
+cli::import cli core type is-modified
+cli::import cli core type is-user-defined
+cli::import cli core type unmodify
 
 help() {
     cat << EOF | cli::core::help

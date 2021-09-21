@@ -1,4 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import cli path dir
+cli::import cli path name
 
 help() {
     cat << EOF | cli::help::global
@@ -6,32 +8,39 @@ Command
     ${CLI_COMMAND[@]}
 
 Summary
-    Print cache directory for an unpacked command.
+    Set a variable to the cache directory given the path to a command.
 
 Arguments
-    --path -p  [Required] : Path to the command.
-EOF
-    cat << EOF
+    Argument $1 is the name of the variable to set.
 
-Examples
-    Print cache directory for '${CLI_COMMAND[@]}'
-        ${CLI_COMMAND[@]} --path \$(${CLI_COMMAND[@]} ---which)
+    Argument $2 is the path to the command whose cache directory will be
+    assigned to the variable named by $1.
 EOF
 }
 
 cli::meta::declare() {
-    cli::meta::add_required 'path'
+    cli::meta::allow_positional
 }
 
-cli::cache::path::inline() {
-    local name="${arg_path##*/}"
-    local dir="${arg_path%/*}"
-    echo "${dir}/.cli/${name}"
+::cli::cache::path::inline() {
+    local -n REPLY_REF=$1
+    shift
+
+    local name
+    ::cli::path::name::inline name "$1"
+
+    local dir
+    ::cli::path::dir::inline dir "$1"
+
+    REPLY_REF="${dir}/.cli/${name}"
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} --path '/base/command' \
-    | assert::pipe_eq \
-        '/base/.cli/command'
+    path() {
+        local REPLY
+        ::cli::cache::path::inline REPLY "$@"
+        echo "${REPLY}"
+    }
 
+    [[ "$(path foo/bar)" == 'foo/.cli/bar' ]] || cli::assert
 }

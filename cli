@@ -1,8 +1,6 @@
-#!/usr/bin/env bash
-source $( "$(dirname $0)/src/loader" ---exports )
-[[ -d "${CLI_SHIM_ROOT_DIR_CLI-}" ]] || cli::assert
+#!/usr/bin/env bash-cli-shim
+declare -rg CLI_SHIM_ROOT_DIR_CLI="${BASH_SOURCE%/*}/src"
 cli() {
     local CLI_NAME='cli'
-    cli::loader::shim "$@"
+    cli::loader::shim "$@"; 
 }
-cli "$@"

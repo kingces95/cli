@@ -42,11 +42,11 @@ cli::imports::recurse() {
         fi
 
         ( 
-            local -a CLI_LOADER_IMPORTS=()
+            local -a CLI_LOADER_IMPORT=()
             source $(${import} '---exports')
 
-            if (( ${#CLI_LOADER_IMPORTS[*]} > 0 )); then
-                printf '%s\n' "${CLI_LOADER_IMPORTS[@]}"
+            if (( ${#CLI_LOADER_IMPORT[*]} > 0 )); then
+                printf '%s\n' "${CLI_LOADER_IMPORT[@]}"
             fi
         ) | mapfile -t
 

@@ -1,0 +1,74 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import cli shim source
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Resolve a cli command to a path.
+
+Arguments
+    Argument $1 is the name of a variable to receive the result path.
+
+    Argument $2 is the name of the cli. A shim must exist for the cli.
+    When sourced the shim msut declare CLI_SHIM_ROOT_DIR_XXX where XXX is 
+    the name of the cli and the value of the variable is the root directory
+    of the commands.
+
+    Arguments $3 and greater are joined together with forward shashes. That
+    relative path is then joined to the root directory of the commands with
+    a forward slash.
+
+    If the shim for $2 is not found, the call fails.
+EOF
+}
+
+::cli::shim::which::inline() {
+    local -n REPLY_REF=$1
+    shift
+
+    local NAME="$1"
+    shift
+
+    ::cli::shim::source::inline "${NAME}" \
+        || return 1
+
+    local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${NAME^^}"
+    [[ "${SHIM_ROOT_DIR_REF-}" ]] || cli::assert
+
+    local IFS=/
+    REPLY_REF="${SHIM_ROOT_DIR_REF}/$*"
+}
+
+self_test() {
+    which() {
+        local REPLY
+        ::cli::shim::which::inline REPLY "$@" || return 1
+        echo "${REPLY-}"
+    }
+
+    diff <(echo $0) <(which cli shim which) || cli::assert
+
+    cli::temp::dir DIR
+    local FOO_SHIM="${DIR}/foo"
+    local FOO_SRC_DIR="${DIR}/src"
+    local FOO_BAR="${DIR}/src/bar"
+    
+    # emit foo shim
+    cat <<-EOF > "${FOO_SHIM}"
+		#!/usr/bin/env bash-cli-shim
+        declare -rg CLI_SHIM_ROOT_DIR_FOO="\${FOO_SRC_DIR}"
+		foo() { cli::assert; }
+		EOF
+    chmod a+x "${FOO_SHIM}"
+
+    ! which foo bar || cli::assert
+
+    # update PATH
+    PATH+=":${DIR}"
+
+    # which foo
+    diff <(which foo bar) - <<< "${FOO_BAR}" || cli::assert
+}

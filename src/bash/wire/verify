@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli bash declare
-cli::import_inline cli bash write
-cli::import_inline cli core variable initialize
-cli::import_inline cli core type is-builtin
+cli::import cli bash declare
+cli::import cli bash write
+cli::import cli core variable initialize
+cli::import cli core type is-builtin
 
 help() {
     cat << EOF

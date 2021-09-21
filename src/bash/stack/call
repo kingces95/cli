@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli bash literal
-cli::import_inline cli attribute is-defined
+cli::import cli bash literal
+cli::import cli attribute is-defined
 
 help() {
     cat << EOF | cli::help::global

@@ -1,8 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import cli-assert
-cli::import_inline cli bash emit
-cli::import_inline cli core type is-builtin
-cli::import_inline cli core type unmodify
+cli::import cli bash emit
+cli::import cli core type is-builtin
+cli::import cli core type unmodify
 
 help() {
     cat << EOF | cli::help::sourceable | cli::help::global

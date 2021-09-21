@@ -1,5 +1,4 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import cli-assert
 cli::import cli-emit
 
 help() {

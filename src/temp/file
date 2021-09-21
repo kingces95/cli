@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli temp remove
-cli::import_inline cli subshell on-exit
+cli::import cli temp remove
+cli::import cli subshell on-exit
 
 help() {
     cat << EOF | cli::help::global

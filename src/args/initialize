@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli args check
+cli::import cli args check
 
 help() {
     cat << EOF | cli::help::global

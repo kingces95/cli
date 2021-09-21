@@ -1,15 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import cli-util
+cli::import cli bash declare-enum
 
 help() {
     cat << EOF | cli::help::global
 Command
     ${CLI_COMMAND[@]}
 EOF
-}
-
-cli::meta::declare() {
-    :
 }
 
 readonly CLI_DSL_ARG_CHAR_GLOB="[a-zA-Z0-9_-]"
@@ -28,44 +24,44 @@ readonly CLI_DSL_LITERAL_LIST='[List]'
 readonly CLI_DSL_LITERAL_PROPERTIES='[Properties]'
 readonly CLI_DSL_LITERAL_DASHDASH='--'
 
-main() {
+cli::meta::declare() {
     :
+}
 
-    readonly CLI_DSL_TOKEN=(
-        'DEFAULT'
-        'FLAG'
-        'LIST'
-        'PROPERTIES'
-        'ALLOWED_VALUES'
-        'VALUE_COMMA'
-        'VALUE_PERIOD'
-        'IDENTIFIER'
-        'NAME'
-        'ALIAS'
-        'COLON'
-        'REGEX'
-        'REQUIRED'
-        'EOF' 
-        'ERROR' 
-        'DASHDASH' 
-        'ARGUMENTS' 
-    ) && util::declare_enums CLI_DSL_TOKEN
-
-    readonly CLI_DSL_PRODUCTION=(
-        'NAME'
-        'ALIAS'
-        'DEFAULT'
-        'REGEX'
-        'REQUIRED'
-        'FLAG'
-        'TYPE'
-        'ALLOWED'
-        'ALLOWED_VALUE'
-        'ALLOWED_END'
-        'ERROR'
-        'ANYARGS'
+main() {
+    ::cli::bash::declare_enum::inline CLI_DSL_TOKEN \
+        'DEFAULT' \
+        'FLAG' \
+        'LIST' \
+        'PROPERTIES' \
+        'ALLOWED_VALUES' \
+        'VALUE_COMMA' \
+        'VALUE_PERIOD' \
+        'IDENTIFIER' \
+        'NAME' \
+        'ALIAS' \
+        'COLON' \
+        'REGEX' \
+        'REQUIRED' \
+        'EOF' \
+        'ERROR' \
+        'DASHDASH' \
         'ARGUMENTS'
-    ) && util::declare_enums CLI_DSL_PRODUCTION
+
+    ::cli::bash::declare_enum::inline CLI_DSL_PRODUCTION \
+        'NAME' \
+        'ALIAS' \
+        'DEFAULT' \
+        'REGEX' \
+        'REQUIRED' \
+        'FLAG' \
+        'TYPE' \
+        'ALLOWED' \
+        'ALLOWED_VALUE' \
+        'ALLOWED_END' \
+        'ERROR' \
+        'ANYARGS' \
+        'ARGUMENTS'
 
     cli::export cli dsl
 }

@@ -1,0 +1,52 @@
+
+#!/usr/bin/env CLI_NAME=cli bash-cli
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Search PATH for an executable file.
+
+Description
+    Argument $1 is the name of the variable to write the discovered path.
+    Argument $2 is the name of the executable for which to search.
+    Returns success if an executable is found, otherwise fails.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+::cli::bash::which::inline() {
+    local -n PATH_REF=$1
+    shift
+
+    local NAME="$1"
+    shift
+
+    local IFS=:
+    local -a DIRS=( ${PATH} )
+
+    for dir in "${DIRS[@]}"; do
+        local PROBE="${dir}/${NAME}"
+        [[ -f "${PROBE}" && -x "${PROBE}" ]] || continue
+        PATH_REF="${PROBE}"
+        return 0
+    done
+
+    return 1
+}
+
+self_test() {
+    bash_which() {
+        local REPLY
+        ::cli::bash::which::inline REPLY "$@" || return 1
+        echo ${REPLY}
+    }
+
+    diff <(which bash) <(bash_which bash) || cli::assert
+    ! bash_which does_not_exist || cli::assert
+}

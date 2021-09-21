@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
-cli::import_inline cli bash emit
-cli::import_inline cli core type is-scaler
-cli::import_inline cli core struct emit
-cli::import_inline cli core variable declare
-cli::import_inline cli core variable put
+cli::import cli bash emit
+cli::import cli core type is-scaler
+cli::import cli core struct emit
+cli::import cli core variable declare
+cli::import cli core variable put
 
 help() {
     cat << EOF | cli::core::help

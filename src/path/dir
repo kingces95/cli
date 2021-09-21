@@ -1,0 +1,44 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+    Set variable to the directory of the path.
+
+Description
+    Argument $1 is the name of the variable to set with the directory of the path.
+    
+    Argument $2 is a unix path. 
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+::cli::path::dir::inline() { 
+    local -n REPLY_REF=$1
+    REPLY_REF="$(dirname $2)"
+}
+
+self_test() {
+    dir() { 
+        local REPLY
+        ::cli::path::dir::inline REPLY "$@"
+        echo ${REPLY}
+    }
+
+    [[ "$(dir /foo)" == "/" ]] || cli::assert
+    [[ "$(dir /foo/)" == "/" ]] || cli::assert
+    [[ "$(dir foo/)" == "." ]] || cli::assert
+    [[ "$(dir ./foo-bar)" == "." ]] || cli::assert
+    [[ "$(dir foo/bar)" == "foo" ]] || cli::assert
+    [[ "$(dir ../..)" == ".." ]] || cli::assert
+    [[ "$(dir ../)" == "." ]] || cli::assert
+    [[ "$(dir ..)" == "." ]] || cli::assert
+    [[ "$(dir /)" == "/" ]] || cli::assert
+    [[ "$(dir ///)" == "/" ]] || cli::assert
+}

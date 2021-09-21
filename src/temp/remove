@@ -30,7 +30,7 @@ cli::meta::declare() {
             continue
         fi
           
-        unset "CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]"
+        unset CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]
 
         if [[ ! -a "${FILE}" ]]; then
             :

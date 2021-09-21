@@ -1,0 +1,85 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli
+cli::import cli path make-absolute
+cli::import cli path name
+cli::import cli shim source
+
+help() {
+    cat << EOF | cli::help::global
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Shebang logic to enable a command to be invoked by the file.
+
+Details
+    The variable CLI_NAME must be declared and set to the name of the shim.
+
+    Argument $1 is the path to the command file. The remaining positional 
+    arguments are to be passed to the command.
+
+    Construct the equivalent command invocation using the shim and invoke that.
+EOF
+}
+
+::cli::shim::shebang::inline() {    
+    [[ "${CLI_NAME}" ]] \
+        || cli::assert "Shebang failed to declare 'CLI_NAME'." 
+
+    ::cli::shim::source::inline "${CLI_NAME}" \
+        || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
+
+    local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
+
+    local SOURCE_PATH
+    ::cli::path::make_absolute::inline SOURCE_PATH "$1"
+    shift
+
+    local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
+    (( ${#REL_PATH} < ${#SOURCE_PATH} )) \
+        || cli::assert "Source path '${SOURCE_PATH}' is not a subpath of '${SHIM_ROOT_DIR_REF}'." 
+
+    local IFS=/
+    local -a CLI_COMMAND=( ${CLI_NAME} ${REL_PATH} )
+    IFS=${CLI_IFS}
+
+    ${CLI_COMMAND[@]} "$@" 
+}
+
+self_test() {
+    shebang() {
+        ::cli::shim::shebang::inline "$@"
+    }
+
+    cli::temp::dir DIR
+    local FOO_SHIM="${DIR}/foo"
+    local FOO_SRC_DIR="${DIR}/src"
+    local FOO_BAR="${DIR}/src/bar"
+    
+    # emit foo shim
+    cat <<-EOF > "${FOO_SHIM}"
+		#!/usr/bin/env bash-cli-shim
+		declare -rg CLI_SHIM_ROOT_DIR_FOO="\${BASH_SOURCE%/*}/src"
+		foo() {
+		    local CLI_NAME='foo'
+		    cli::loader::shim "\$@"
+		}
+		EOF
+    chmod a+x "${FOO_SHIM}"
+
+    # update PATH
+    PATH+=":${DIR}"
+
+    # shim /src
+    mkdir "${FOO_SRC_DIR}"
+
+    # emit bar command
+    cat <<-EOF > "${FOO_BAR}"
+		#!/usr/bin/env CLI_NAME=foo bash-cli
+		::foo::bar::inline() { echo "\$@"; }
+		EOF
+    chmod a+x "${FOO_BAR}"
+
+    # invoke foo as if called from the tty
+    diff <(CLI_NAME=foo shebang "${FOO_BAR}" --- a0 a1 a2) - <<< 'a0 a1 a2' \
+        || cli::assert
+}
