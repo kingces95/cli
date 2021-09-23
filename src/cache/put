@@ -22,20 +22,20 @@ cli::meta::declare() {
 ::cli::cache::put::inline() {
     local CACHE="$1"
 
-    local DIR
-    ::cli::path::dir::inline DIR "${CACHE}"
+    ::cli::path::dir::inline "${CACHE}"
+    local DIR="${REPLY}"
     mkdir -p "${DIR}"
 
-    local TEMP
-    ::cli::temp::file::inline TEMP
+    ::cli::temp::file::inline
+    local TEMP="${REPLY}"
     cat > "${TEMP}"
 
     mv "${TEMP}" "${CACHE}"
 }
 
 self_test() {
-    local CACHE
-    cli::temp::file CACHE
+    cli::temp::file
+    local CACHE="${REPLY}"
     rm "${CACHE}"
 
     local DIR="$(dirname "${CACHE}")"

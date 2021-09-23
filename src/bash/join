@@ -6,11 +6,11 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Print a line to stdout composed of the arguments joined 
-    using the first argument as the delimiter.
+    Join arguments with a possibly multi-character delimiter.
 
 Description
-    Argument $1 is a delimiter used to join the remaining arguments.
+    Argument $1 is the name of the variable to return the result.
+    Argument $2 is a delimiter used to join the remaining arguments.
 EOF
 }
 
@@ -19,22 +19,29 @@ cli::meta::declare() {
 }
 
 ::cli::bash::join::inline() {
-    local delimiter=${1?'Missing delimiter'}
+    local DELIMITER=${1?'Missing delimiter'}
     shift
 
-    local -a segment=()
+    REPLY=""
     while (( $# > 0 )); do
-        segment+=( "$1" )
+        REPLY+="$1"
         shift
-        if (( $# == 0 )); then break; fi
-        segment+=( "${delimiter}" )
-    done
 
-    printf %s "${segment[@]}"
-    echo
+        if (( $# > 0 )); then 
+            REPLY+="${DELIMITER}"
+        fi
+    done
 }
 
 self_test() {
-    diff <(::cli::bash::join::inline . a b c) - <<< 'a.b.c' || cli::assert
-    diff <(::cli::bash::join::inline .) - <<< '' || cli::assert
+    join() {
+        ::cli::bash::join::inline "$@"
+        echo "${REPLY}"
+        
+        ::cli::bash::join::inline "$@"
+        local MY_REPLY="${REPLY}"
+        [[ "${MY_REPLY}" == "${REPLY}" ]] || cli::assert
+    }
+    diff <(join . a b c) - <<< 'a.b.c' || cli::assert
+    diff <(join .) - <<< '' || cli::assert
 }

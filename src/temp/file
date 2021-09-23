@@ -24,10 +24,9 @@ cli::meta::declare() {
 }
 
 ::cli::temp::file::inline() {
-
+    
     # create and return a temporary file
-    local -n REPLY_REF=${1-'REPLY'}
-    REPLY_REF=$(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
+    local TEMP_FILE=$(mktemp "${1-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
 
     # record the temporary file 
     declare -gA "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
@@ -46,7 +45,8 @@ cli::meta::declare() {
             ::cli::temp::file::on_exit
     fi
 
-    CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${REPLY_REF}"]='true' )
+    CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${TEMP_FILE}"]='true' )
+    REPLY="${TEMP_FILE}"
 }
 
 self_test() {
@@ -58,7 +58,8 @@ self_test() {
         echo "${REPLY}"
 
         # create a temp file returned via a custom name
-        ::cli::temp::file::inline MY_REPLY
+        ::cli::temp::file::inline
+        local MY_REPLY="${REPLY}"
         [[ -f "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"
 

@@ -20,14 +20,12 @@ cli::meta::declare() {
 }
 
 ::cli::path::name::inline() { 
-    local -n REPLY_REF=$1
-    REPLY_REF="${2##*/}"; 
+    REPLY="${1##*/}"; 
 }
 
 self_test() {
     name() { 
-        local REPLY
-        ::cli::path::name::inline REPLY "$@"
+        ::cli::path::name::inline "$@"
         echo ${REPLY}
     }
 

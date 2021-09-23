@@ -23,10 +23,9 @@ cli::meta::declare() {
 }
 
 ::cli::temp::fifo::inline() {
-    declare -n REPLY_REF=${1-'REPLY'}
     ::cli::temp::file::inline "$@"
-    rm -f "${REPLY_REF}"
-    mkfifo "${REPLY_REF}"
+    rm -f "${REPLY}"
+    mkfifo "${REPLY}"
 }
 
 self_test() {
@@ -43,7 +42,8 @@ self_test() {
         rm "${REPLY}"
 
         # create a temp file returned via a custom name
-        ::cli::temp::fifo::inline MY_REPLY
+        ::cli::temp::fifo::inline
+        local MY_REPLY="${REPLY}"
         [[ -p "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"
     )

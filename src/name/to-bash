@@ -6,57 +6,37 @@ Command
     ${CLI_COMMAND[@]}
 
 Summary
-    Converts a stream of cli names to bash names.
+    Verifies cli names convert them to bash names.
 
 Description
-    Converts a stream of cli names to bash names. Fails if any of the
-    cli names do not match regex ${CLI_REGEX_NAME}.
+    Argument $1 is the name of the array to append results. 
+    
+    Assert remaining positional arguments match regex ${CLI_REGEX_NAME}.
 
-Arguments
-    --result -r             : Array to store command name. Default: RESULT.
-EOF
-    cat << EOF
-
-Examples
-    Convert '.foo-bar' 'baz' to '_foo_bar' 'baz'
-        ${CLI_COMMAND[@]} <<< $'.foo-bar\nbaz'
-
+    Replace dashes and period with underbar and store the result in $1.
 EOF
 }
 
 cli::meta::declare() {
-    cli::meta::add_optional result 'RESULT'
+    cli::meta::allow_positional
 }
 
 ::cli::name::to_bash::inline() {
-    mapfile
-    if (( ${#MAPFILE} == 0 )); then return; fi
-
-    set ${MAPFILE[@]}
+    MAPFILE=()
     while (( $# > 0 )); do
-        if [[ ! "$1" =~ ${CLI_REGEX_NAME} ]]; then
-            cli::fail "Unexpected cli name \"$1\"" \
-                "found in \"${MAPFILE[@]}\"" \
-                "does not match regex ${CLI_REGEX_NAME}."
-        fi
-        echo "${1//[-.]/_}"
+        [[ "$1" =~ ${CLI_REGEX_NAME} ]] || cli::assert \
+            "Unexpected cli name \"$1\" does not match regex ${CLI_REGEX_NAME}."
+
+        MAPFILE+=( "${1//[-.]/_}" )
         shift
     done
 }
 
-main() {
-    declare -a RESULT=()
-
-    mapfile -t
-    inline "${MAPFILE[@]}"
-    IFS=$'\n'; echo "${RESULT[*]}"; unset IFS
-}
-
 self_test() {
-    ${CLI_COMMAND[@]} <<< $'.foo-bar\nbaz' \
-    | assert::pipe_eq \
-        "_foo_bar" \
-        "baz"
+    to_bash() {
+        ::cli::name::to_bash::inline "$@"
+        echo "${MAPFILE[@]}"
+    }
 
-    assert::fails "${CLI_COMMAND[@]} <<< $'foo_bar'"
+    diff <(to_bash foo foo-bar .foo) - <<< 'foo foo_bar _foo' || cli::assert
 }

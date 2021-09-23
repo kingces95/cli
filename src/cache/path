@@ -23,22 +23,18 @@ cli::meta::declare() {
 }
 
 ::cli::cache::path::inline() {
-    local -n REPLY_REF=$1
-    shift
+    ::cli::path::name::inline "$1"
+    local NAME="${REPLY}"
 
-    local name
-    ::cli::path::name::inline name "$1"
+    ::cli::path::dir::inline "$1"
+    local DIR="${REPLY}"
 
-    local dir
-    ::cli::path::dir::inline dir "$1"
-
-    REPLY_REF="${dir}/.cli/${name}"
+    REPLY="${DIR}/.cli/${NAME}"
 }
 
 self_test() {
     path() {
-        local REPLY
-        ::cli::cache::path::inline REPLY "$@"
+        ::cli::cache::path::inline "$@"
         echo "${REPLY}"
     }
 

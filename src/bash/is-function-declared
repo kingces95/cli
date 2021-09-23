@@ -18,11 +18,7 @@ cli::meta::declare() {
 }
 
 ::cli::bash::is_function_declared::inline() {
-    if declare -F "${1-}" > /dev/null; then 
-        true
-    else 
-        false
-    fi
+    declare -F "${1-}" > /dev/null
 }
 
 self_test() {

@@ -24,11 +24,9 @@ EOF
 
     if [[ ! -v "${SHIM_ROOT_DIR_NAME}" ]]; then
             
-        local SHIM_PATH
-
         # resolve the path to the shim by searching PATH
-        ::cli::bash::which::inline SHIM_PATH "$1" \
-            || return 1
+        ::cli::bash::which::inline "$1" || return 1
+        local SHIM_PATH="${REPLY}"
         
         # source the shim
         source "${SHIM_PATH}"
@@ -44,7 +42,8 @@ EOF
 }
 
 self_test() {
-    cli::temp::dir DIR
+    cli::temp::dir 
+    local DIR="${REPLY}"
     local FOO_SHIM="${DIR}/foo"
     
     # emit a shim

@@ -185,6 +185,9 @@ declare -A CLI_LOADER_IMPORTED=()
 declare -A CLI_LOADER_SOURCED=()
 declare -a CLI_LOADER_SOURCED_PATHS=()
 
+# debug
+declare -a CLI_COMMAND_STACK=()
+
 # frame
 declare -A CLI_SCOPE=(
     [CLI_IMPORT]='array'
@@ -262,6 +265,22 @@ bgen
 
 import() {
 
+    ::cli::name::to_bash::inline() {
+        MAPFILE=()
+        while (( $# > 0 )); do
+            [[ "$1" =~ ${CLI_REGEX_NAME} ]] || cli::assert \
+                "Unexpected cli name \"$1\" does not match regex ${CLI_REGEX_NAME}."
+
+            MAPFILE+=( "${1//[-.]/_}" )
+            shift
+        done
+    }
+
+    ::cli::name::to_inline::inline() {
+        ::cli::name::to_bash::inline "$@"
+        ::cli::bash::join::inline '::' '' "${MAPFILE[@]}" 'inline'
+    }
+
     ::cli::attribute::is_defined::inline() {
         local target_type=${1-}; shift
         local target=${1-}; shift
@@ -289,52 +308,47 @@ import() {
     }
 
     ::cli::path::dir::inline() { 
-        local -n REPLY_REF=$1
-        REPLY_REF="$(dirname $2)"
+        REPLY="$(dirname $1)"
     }
 
     ::cli::path::name::inline() { 
-        local -n REPLY_REF=$1
-        REPLY_REF="${2##*/}"; 
+        REPLY="${1##*/}"; 
     }
 
     ::cli::path::make_absolute::inline() {
-        local -n REPLY_REF=$1
-        shift
 
         if [[ ! "${1-}" ]]; then
-            REPLY_REF="${PWD}"
+            REPLY="${PWD}"
 
         elif [[ ! "$1" =~ ^/ ]]; then
-            REPLY_REF="${PWD}/${1##./}"
+            REPLY="${PWD}/${1##./}"
 
         else
-            REPLY_REF="$1"
+            REPLY="$1"
         fi
     }
 
     ::cli::cache::path::inline() {
-        local -n REPLY_REF=$1
-        shift
+        ::cli::path::name::inline "$1"
+        local NAME="${REPLY}"
 
-        local name
-        ::cli::path::name::inline name "$1"
+        ::cli::path::dir::inline "$1"
+        local DIR="${REPLY}"
 
-        local dir
-        ::cli::path::dir::inline dir "$1"
-
-        REPLY_REF="${dir}/.cli/${name}"
+        REPLY="${DIR}/.cli/${NAME}"
     }
 
     ::cli::cache::put::inline() {
         local CACHE="$1"
 
-        local DIR
-        ::cli::path::dir::inline DIR "${CACHE}"
+        ::cli::path::dir::inline "${CACHE}"
+        local DIR="${REPLY}"
+
         mkdir -p "${DIR}"
 
-        local TEMP
-        ::cli::temp::file::inline TEMP
+        ::cli::temp::file::inline
+        local TEMP="${REPLY}"
+
         cat > "${TEMP}"
 
         mv "${TEMP}" "${CACHE}"
@@ -356,9 +370,6 @@ import() {
     }
 
     ::cli::bash::which::inline() {
-        local -n PATH_REF=$1
-        shift
-
         local NAME="$1"
         shift
 
@@ -368,7 +379,7 @@ import() {
         for dir in "${DIRS[@]}"; do
             local PROBE="${dir}/${NAME}"
             [[ -f "${PROBE}" && -x "${PROBE}" ]] || continue
-            PATH_REF="${PROBE}"
+            REPLY="${PROBE}"
             return 0
         done
 
@@ -380,19 +391,18 @@ import() {
     }
 
     ::cli::bash::join::inline() {
-        local delimiter=${1?'Missing delimiter'}
+        local DELIMITER=${1?'Missing delimiter'}
         shift
 
-        local -a segment=()
+        REPLY=""
         while (( $# > 0 )); do
-            segment+=( "$1" )
+            REPLY+="$1"
             shift
-            if (( $# == 0 )); then break; fi
-            segment+=( "${delimiter}" )
-        done
 
-        printf %s "${segment[@]}"
-        echo
+            if (( $# > 0 )); then 
+                REPLY+="${DELIMITER}"
+            fi
+        done
     }
 
     ::cli::bash::stack::call::inline() {
@@ -486,11 +496,7 @@ import() {
     }
 
     ::cli::bash::is_function_declared::inline() {
-        if declare -F "${1-}" > /dev/null; then 
-            true
-        else 
-            false
-        fi
+        declare -F "${1-}" > /dev/null
     }
 
     ::cli::bash::literal::inline() {
@@ -568,11 +574,11 @@ import() {
 
         # unlink files/directories
         for FILE in "$@"; do
-            if ! ${CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]-}; then
+            if ! ${CLI_SUBSHELL_TEMP_FILE_BASHPID[${FILE}]-}; then
                 continue
             fi
             
-            unset CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]
+            unset "CLI_SUBSHELL_TEMP_FILE_BASHPID[${FILE}]"
 
             if [[ ! -a "${FILE}" ]]; then
                 :
@@ -588,8 +594,7 @@ import() {
     ::cli::temp::file::inline() {
 
         # create and return a temporary file
-        local -n REPLY_REF=${1-'REPLY'}
-        REPLY_REF=$(mktemp "${2-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
+        local TEMP_FILE=$(mktemp "${1-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
 
         # record the temporary file 
         declare -gA "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
@@ -608,21 +613,20 @@ import() {
                 ::cli::temp::file::on_exit
         fi
 
-        CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${REPLY_REF}"]='true' )
+        CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${TEMP_FILE}"]='true' )
+        REPLY="${TEMP_FILE}"
     }
 
     ::cli::temp::dir::inline() {
-        declare -n REPLY_REF=${1-'REPLY'}
         ::cli::temp::file::inline "$@"
-        rm -f "${REPLY_REF}"
-        mkdir "${REPLY_REF}"
+        rm -f "${REPLY}"
+        mkdir "${REPLY}"
     }
 
     ::cli::temp::fifo::inline() {
-        declare -n REPLY_REF=${1-'REPLY'}
         ::cli::temp::file::inline "$@"
-        rm -f "${REPLY_REF}"
-        mkfifo "${REPLY_REF}"
+        rm -f "${REPLY}"
+        mkfifo "${REPLY}"
     }
 
     ::cli::subshell::signal_group::inline() {
@@ -702,11 +706,9 @@ import() {
 
         if [[ ! -v "${SHIM_ROOT_DIR_NAME}" ]]; then
                 
-            local SHIM_PATH
-
             # resolve the path to the shim by searching PATH
-            ::cli::bash::which::inline SHIM_PATH "$1" \
-                || return 1
+            ::cli::bash::which::inline "$1" || return 1
+            local SHIM_PATH="${REPLY}"
             
             # source the shim
             source "${SHIM_PATH}"
@@ -722,9 +724,6 @@ import() {
     }
 
     ::cli::shim::which::inline() {
-        local -n REPLY_REF=$1
-        shift
-
         local NAME="$1"
         shift
 
@@ -735,7 +734,7 @@ import() {
         [[ "${SHIM_ROOT_DIR_REF-}" ]] || cli::assert
 
         local IFS=/
-        REPLY_REF="${SHIM_ROOT_DIR_REF}/$*"
+        REPLY="${SHIM_ROOT_DIR_REF}/$*"
     }
 
     ::cli::shim::shebang::inline() {    
@@ -747,8 +746,8 @@ import() {
 
         local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
 
-        local SOURCE_PATH
-        ::cli::path::make_absolute::inline SOURCE_PATH "$1"
+        ::cli::path::make_absolute::inline "$1"
+        local SOURCE_PATH="${REPLY}"
         shift
 
         local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
@@ -760,6 +759,34 @@ import() {
         IFS=${CLI_IFS}
 
         ${CLI_COMMAND[@]} "$@" 
+    }
+
+    ::cli::shim::main::inline() {
+
+        # CLI_NAME
+        local CLI_NAME="${FUNCNAME[1]}"
+        [[ "${CLI_NAME}" =~ ${CLI_REGEX_NAME} ]] \
+            || cli::assert "Shim '${CLI_NAME}' does not match regex '${CLI_REGEX_NAME}'."
+
+        # CLI_COMMAND
+        local -a CLI_COMMAND=( "${CLI_NAME}" )
+        while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do
+            CLI_COMMAND+=( "$1" )
+            shift
+        done
+
+        # BASH_ARGV0
+        ::cli::shim::which::inline "${CLI_COMMAND[@]}" \
+            || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
+        BASH_ARGV0="${REPLY}"
+
+        [[ -f "$0" ]] \
+            || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' does not exist."
+
+        [[ -x "$0" ]] \
+            || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' is not executable."
+
+        cli::loader::main "$@"
     }
 }
 import
@@ -808,28 +835,18 @@ declare_export() {
             | while read; do declare -f "${REPLY}"; done
     }
 
-    cli::export::variable() {
-        while (( $# > 0 )); do
-            declare -p "$1" #| sed 's/^declare -/declare -g/'
-            shift
-        done
-    }
-
     cli::export::variables() {
-        local -u glob
+        local -u GLOB
 
         for i in "$@"; do 
-            glob+="${i}_"; 
+            GLOB+="${i}_"; 
         done
 
-        for i in $(eval echo "\${!${glob}@}"); do
-            cli::export::variable "${i}"
-        done
+        declare -p $(eval "echo \${!${GLOB}@}")
     }
 
     cli::export::variable::merge() {
-        cli::export::variable "$@" \
-            | sed 's/=/+=/'
+        declare -p "$@" | sed 's/=/+=/'
     }
 
     cli::export() {
@@ -999,39 +1016,22 @@ declare_core() {
 declare_core
 
 # loader
-cli::loader::to_bash() {
-    local -n ARRAY_REF=$1
-    shift
-
-    while (( $# > 0 )); do
-        [[ "$1" =~ ${CLI_REGEX_NAME} ]] || cli::assert \
-            "Unexpected cli name \"$1\" does not match regex ${CLI_REGEX_NAME}."
-
-        ARRAY_REF+=( "${1//[-.]/_}" )
-        shift
-    done
-}
-
-cli::loader::to_inline() {
-    local -a BASH_NAMES=()
-    cli::loader::to_bash BASH_NAMES "$@"
-
-    ::cli::bash::join::inline '::' '' "${BASH_NAMES[@]}" 'inline'
-}
-
 cli::loader::inline() (
 
     # known case; 'cli loader' itself is not an inline command
     [[ ! "$@" == 'cli loader' ]] || exit 1
 
-    local path="$("$@" ---which)"
-    local fqn=$(cli::loader::to_inline "$@")
+    ::cli::shim::which::inline "$@"
+    local COMMAND_PATH="${REPLY}"
+
+    ::cli::name::to_inline::inline "$@"
+    local COMMAND_BASH_NAME="${REPLY}"
 
     local -a CLI_IMPORT=()
     local -a CLI_COMMAND=( $@ )
 
     # unset any pre-imported definition
-    unset -f ${fqn}
+    unset -f ${COMMAND_BASH_NAME}
 
     # capture imports upon which the inlined function depends
     cli::import() {
@@ -1039,16 +1039,16 @@ cli::loader::inline() (
     }
 
     # source file
-    source "${path}"
+    source "${COMMAND_PATH}"
 
     # emit nothing if no inlined function discovered
-    ::cli::bash::is_function_declared::inline ${fqn} || exit 1
+    ::cli::bash::is_function_declared::inline ${COMMAND_BASH_NAME} || exit 1
 
     # emit dependencies
     cli::loader::print::import "${CLI_IMPORT[@]}"
 
     # emit function
-    declare -f ${fqn}
+    declare -f ${COMMAND_BASH_NAME}
 )
 
 cli::loader::print::import() {
@@ -1075,10 +1075,9 @@ cli::loader::cache::exports() {
     local -n GENERATED_PATH_REF="$1"
     shift
 
-    local SOURCE_PATH
-    ::cli::shim::which::inline SOURCE_PATH "$@" \
+    ::cli::shim::which::inline "$@" \
         || cli::assert "Failed to find shim import '$@'."
-
+    local SOURCE_PATH="${REPLY}"
 
     if [[ ! -f "${SOURCE_PATH}" ]]; then
 
@@ -1094,8 +1093,8 @@ cli::loader::cache::exports() {
     [[ -x "${SOURCE_PATH}" ]] \
         || cli::assert "Source file '${SOURCE_PATH}' for import '$@' is not executable."
 
-    local CACHE_DIR=
-    ::cli::cache::path::inline CACHE_DIR "${SOURCE_PATH}"
+    ::cli::cache::path::inline "${SOURCE_PATH}"
+    local CACHE_DIR="${REPLY}"
 
     GENERATED_PATH_REF="${CACHE_DIR}/exports.sh"
 
@@ -1144,7 +1143,7 @@ cli::source() {
         import=( ${CLI_LOADER_IMPORT[i]} )
 
         # if import previously seen, continue
-        if [[ ! ${CLI_LOADER_SOURCED[${import[@]}]-false} ]]; then
+        if [[ ${CLI_LOADER_SOURCED[${import[@]}]+hit} == 'hit' ]]; then
             continue
         fi
         CLI_LOADER_SOURCED[${import[@]}]=true
@@ -1270,31 +1269,11 @@ cli::loader::dsl::bgen() { cli::loader::dsl::load | cli dsl bgen; }
 cli::loader::dsl::wire() { cli::loader::dsl::load | cli core wire load -- CLI_META cli_meta | sort -u; }
 cli::loader::dsl::wire_bash() { cli::loader::dsl::wire | cli core wire read | sort -u; }
 
-cli::loader::shim() {
-
-    # CLI_NAME
-    [[ ${CLI_NAME-} ]] \
-        || cli::assert "Shim failed to set CLI_NAME."
-
-    # CLI_COMMAND
-    local -a CLI_COMMAND=( "${CLI_NAME}" )
-    while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do
-        CLI_COMMAND+=( "$1" )
-        shift
-    done
-
-    # BASH_ARGV0
-    ::cli::shim::which::inline BASH_ARGV0 "${CLI_COMMAND[@]}" \
-        || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
-
-    [[ -f "$0" ]] \
-        || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' does not exist."
-
-    [[ -x "$0" ]] \
-        || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' is not executable."
+cli::loader::main() {
 
     # optimization; skip creating subshell if we are the root
-    if (( $$ == ${BASHPID} )); then 
+    if (( ${#CLI_COMMAND_STACK[@]} == 0 )); then
+        (( $$ == ${BASHPID} )) || cli::assert
         cli::main "$@"
         return
     fi
@@ -1323,6 +1302,9 @@ cli::main() {
         [CLI_COMMAND]='array'
         [CLI_IMPORT]='array'
     )
+
+    # stack
+    declare -ag CLI_COMMAND_STACK+=( "${CLI_COMMAND[@]}" )
 
     # error testing
     if [[ "${1-}" == ---* ]]; then
@@ -1504,10 +1486,15 @@ loader_source() {
 
     alias_inline_import() {
         local COMMAND="$1"
-        local ALIAS="${2-$(::cli::bash::join::inline '::' ${COMMAND})}"
+        local ALIAS="${2-}"
 
-        local TARGET=$(cli::loader::to_inline ${COMMAND})
-        eval "${ALIAS}() { ${TARGET} \"\$@\"; }"
+        if [[ ! "${ALIAS}" ]]; then
+            ::cli::bash::join::inline '::' ${COMMAND}
+            ALIAS="${REPLY}" 
+        fi
+
+        ::cli::name::to_inline::inline ${COMMAND}
+        eval "${ALIAS}() { ${REPLY} \"\$@\"; }"
     }
 
     diff_import_then_export_as() {
@@ -1530,7 +1517,12 @@ loader_source() {
         cli::loader::import "$1"
 
         if [[ -n "${CLI_LOADER_IMPORT_DISABLE-}" ]]; then
-            diff_import "$@"
+            while (( $# > 0 )); do 
+                CLI_LOADER_SOURCED[$1]=true
+                shift
+            done
+
+            return
         fi
 
         local COMMAND="$1"
@@ -1539,12 +1531,14 @@ loader_source() {
         # capture inline function    
         local INLINE_FUNCTION
         INLINE_FUNCTION=$(cli::loader::inline ${COMMAND}) \
-            || ::cli::stderr::assert::inline "Expected command '${COMMAND}' to export inline function."
+            || cli::assert "Expected command '${COMMAND}' to export inline function."
 
         # capture existing function
-        local FQN=$(cli::loader::to_inline ${COMMAND})
+        ::cli::name::to_inline::inline ${COMMAND}
+        FQN="${REPLY}"
+
         ::cli::bash::is_function_declared::inline ${FQN} \
-            || ::cli::stderr::assert::inline "Expected ${FQN} to be inlined into loader."
+            || cli::assert "Expected ${FQN} to be inlined into loader."
         local EXISTING_FUNCTION=$(
             cli::loader::print::import "$@"
             declare -f ${FQN}
@@ -1552,12 +1546,13 @@ loader_source() {
 
         # assert exiting function matches inlined function
         local DIFF=$(diff <(echo "${EXISTING_FUNCTION}") <(echo "${INLINE_FUNCTION}") || true)
+        ::cli::shim::which::inline ${COMMAND}
         if [[ -n "${DIFF}" ]]; then
-            echo "EXISTING_FUNCTION != INLINE_FUNCTION, FQN=${FQN}"
+            echo "EXISTING_FUNCTION != INLINE_FUNCTION, FQN=${FQN}, ${REPLY}"
             echo "to disable check declare -x CLI_LOADER_IMPORT_DISABLE=1"
             echo "${DIFF}"
             exit 1
-        fi > /dev/stderr
+        fi >&2
     }
 
     # these functions pre-imported because the import logic itself depends on them.
@@ -1611,6 +1606,11 @@ loader_source() {
     diff_import_then_export_as 'cli bash emit' 'cli::dump'
     diff_import_then_export_as 'cli bash is-function-declared' 'cli::is_function_declared'
 
+    diff_import 'cli name to-bash'
+    diff_import 'cli name to-inline' \
+        'cli name to-bash' \
+        'cli bash join'
+
     diff_import_then_export 'cli attribute is-defined'
     diff_import_then_export_as 'cli bash stack call' 'cli::stacktrace' \
         'cli bash literal' \
@@ -1632,6 +1632,8 @@ loader_source() {
         'cli path make-absolute' \
         'cli path name' \
         'cli shim source'
+    diff_import 'cli shim main' \
+        'cli shim which'
 
     cli::import cli run-as
 
@@ -1653,9 +1655,6 @@ loader_source() {
     }
 
     main() {
-        # echo MAIN >&2
-        # ::cli::bash::stack::trace::inline | sed 's/^/  /' >&2
-
         echo "set -$-"
         echo
 
@@ -1680,6 +1679,8 @@ loader_source() {
             declare -p CLI_LOADER_IMPORTED
             declare -p CLI_LOADER_SOURCED
             declare -p CLI_LOADER_SOURCED_PATHS
+
+            declare -p CLI_COMMAND_STACK
 
             declare -p CLI_SCOPE
             declare -p CLI_IMPORT
@@ -1760,7 +1761,8 @@ loader_source() {
         echo
 
         for import in "${CLI_LOADER_DEPENDENCIES[@]}"; do
-            cli::loader::to_inline ${import}
+            ::cli::name::to_inline::inline ${import}
+            echo "${REPLY}" 
         done | mapfile -t CLI_LOADER_INLINES
         printf '# %s\n' "${CLI_LOADER_INLINES[@]}"
         echo
@@ -1780,8 +1782,8 @@ cli::initialize() {
     # ${bash_source[1]} '.cli/loader/exports.sh'
     # ${bash_source[2]} the command itself
     declare -g CLI_LOADER_COMMAND_PATH="${BASH_SOURCE[1]}"
-    declare -g CLI_LOADER_CACHE_DIR
-    ::cli::cache::path::inline CLI_LOADER_CACHE_DIR "${CLI_LOADER_COMMAND_PATH}"
+    ::cli::cache::path::inline "${CLI_LOADER_COMMAND_PATH}"
+    declare -g CLI_LOADER_CACHE_DIR="${REPLY}"
 
     declare -g CLI_LOADER_BGEN_PATH="${CLI_LOADER_CACHE_DIR}/bgen.sh"
     declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
@@ -1789,11 +1791,13 @@ cli::initialize() {
 
 trap '::cli::stderr::on_err::inline $?' ERR
 
+cli::assert() {
+    ::cli::stderr::assert::inline "$@"
+}
+
 cli::initialize
 
 # shim
 source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
 
 cli loader "$@"
-# ps -al >&2
-# exit 1

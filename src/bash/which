@@ -21,9 +21,6 @@ cli::meta::declare() {
 }
 
 ::cli::bash::which::inline() {
-    local -n PATH_REF=$1
-    shift
-
     local NAME="$1"
     shift
 
@@ -33,7 +30,7 @@ cli::meta::declare() {
     for dir in "${DIRS[@]}"; do
         local PROBE="${dir}/${NAME}"
         [[ -f "${PROBE}" && -x "${PROBE}" ]] || continue
-        PATH_REF="${PROBE}"
+        REPLY="${PROBE}"
         return 0
     done
 
@@ -42,8 +39,7 @@ cli::meta::declare() {
 
 self_test() {
     bash_which() {
-        local REPLY
-        ::cli::bash::which::inline REPLY "$@" || return 1
+        ::cli::bash::which::inline "$@" || return 1
         echo ${REPLY}
     }
 

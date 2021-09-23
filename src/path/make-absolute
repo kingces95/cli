@@ -27,24 +27,20 @@ cli::meta::declare() {
 }
 
 ::cli::path::make_absolute::inline() {
-    local -n REPLY_REF=$1
-    shift
-
     if [[ ! "${1-}" ]]; then
-        REPLY_REF="${PWD}"
+        REPLY="${PWD}"
 
     elif [[ ! "$1" =~ ^/ ]]; then
-        REPLY_REF="${PWD}/${1##./}"
+        REPLY="${PWD}/${1##./}"
 
     else
-        REPLY_REF="$1"
+        REPLY="$1"
     fi
 }
 
 self_test() {
     make_absolute() {
-        local REPLY
-        ::cli::path::make_absolute::inline REPLY "$@"
+        ::cli::path::make_absolute::inline "$@"
         echo "${REPLY}"
     }
 

@@ -26,9 +26,6 @@ EOF
 }
 
 ::cli::shim::which::inline() {
-    local -n REPLY_REF=$1
-    shift
-
     local NAME="$1"
     shift
 
@@ -39,19 +36,20 @@ EOF
     [[ "${SHIM_ROOT_DIR_REF-}" ]] || cli::assert
 
     local IFS=/
-    REPLY_REF="${SHIM_ROOT_DIR_REF}/$*"
+    REPLY="${SHIM_ROOT_DIR_REF}/$*"
 }
 
 self_test() {
     which() {
-        local REPLY
-        ::cli::shim::which::inline REPLY "$@" || return 1
+        ::cli::shim::which::inline "$@" || return 1
         echo "${REPLY-}"
     }
 
     diff <(echo $0) <(which cli shim which) || cli::assert
 
-    cli::temp::dir DIR
+    cli::temp::dir 
+    local DIR="${REPLY}"
+
     local FOO_SHIM="${DIR}/foo"
     local FOO_SRC_DIR="${DIR}/src"
     local FOO_BAR="${DIR}/src/bar"

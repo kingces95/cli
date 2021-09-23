@@ -30,8 +30,8 @@ EOF
 
     local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
 
-    local SOURCE_PATH
-    ::cli::path::make_absolute::inline SOURCE_PATH "$1"
+    ::cli::path::make_absolute::inline "$1"
+    local SOURCE_PATH="${REPLY}"
     shift
 
     local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
@@ -50,7 +50,8 @@ self_test() {
         ::cli::shim::shebang::inline "$@"
     }
 
-    cli::temp::dir DIR
+    cli::temp::dir 
+    local DIR="${REPLY}"
     local FOO_SHIM="${DIR}/foo"
     local FOO_SRC_DIR="${DIR}/src"
     local FOO_BAR="${DIR}/src/bar"
@@ -59,10 +60,7 @@ self_test() {
     cat <<-EOF > "${FOO_SHIM}"
 		#!/usr/bin/env bash-cli-shim
 		declare -rg CLI_SHIM_ROOT_DIR_FOO="\${BASH_SOURCE%/*}/src"
-		foo() {
-		    local CLI_NAME='foo'
-		    cli::loader::shim "\$@"
-		}
+		foo() { ::cli::shim::main::inline "\$@"; }
 		EOF
     chmod a+x "${FOO_SHIM}"
 

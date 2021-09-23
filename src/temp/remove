@@ -26,11 +26,11 @@ cli::meta::declare() {
 
     # unlink files/directories
     for FILE in "$@"; do
-        if ! ${CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]-}; then
+        if ! ${CLI_SUBSHELL_TEMP_FILE_BASHPID[${FILE}]-}; then
             continue
         fi
           
-        unset CLI_SUBSHELL_TEMP_FILE_BASHPID["${FILE}"]
+        unset "CLI_SUBSHELL_TEMP_FILE_BASHPID[${FILE}]"
 
         if [[ ! -a "${FILE}" ]]; then
             :

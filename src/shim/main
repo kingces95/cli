@@ -12,10 +12,11 @@ EOF
 }
 
 ::cli::shim::main::inline() {
-    
+
     # CLI_NAME
-    [[ ${CLI_NAME-} ]] \
-        || cli::assert "Shim failed to set CLI_NAME."
+    local CLI_NAME="${FUNCNAME[1]}"
+    [[ "${CLI_NAME}" =~ ${CLI_REGEX_NAME} ]] \
+        || cli::assert "Shim '${CLI_NAME}' does not match regex '${CLI_REGEX_NAME}'."
 
     # CLI_COMMAND
     local -a CLI_COMMAND=( "${CLI_NAME}" )
@@ -25,8 +26,9 @@ EOF
     done
 
     # BASH_ARGV0
-    ::cli::shim::which::inline BASH_ARGV0 "${CLI_COMMAND[@]}" \
+    ::cli::shim::which::inline "${CLI_COMMAND[@]}" \
         || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
+    BASH_ARGV0="${REPLY}"
 
     [[ -f "$0" ]] \
         || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' does not exist."
@@ -34,52 +36,28 @@ EOF
     [[ -x "$0" ]] \
         || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' is not executable."
 
-    # optimization; skip creating subshell if we are the root
-    if (( $$ == ${BASHPID} )); then 
-        cli::main "$@"
-        return
-    fi
-
-    ( cli::main "$@" )
+    cli::loader::main "$@"
 }
 
 self_test() {
-    which() {
-        ::cli::which::inline REPLY "$@"
-        echo "${REPLY}"
-    }
-
-    diff <(echo $0) <(which cli which) || cli::assert
-
-    cli::temp::dir DIR
-    local FOO_SHIM="${DIR}/foo"
+    cli::temp::dir
+    local DIR="${REPLY}"
     local FOO_SRC_DIR="${DIR}/src"
     local FOO_BAR="${DIR}/src/bar"
     
     # emit foo shim
-    cat <<-EOF > "${FOO_SHIM}"
-		#!/usr/bin/env bash-cli-shim
-		CLI_SHIM_ROOT_DIR+='/src'
-		foo() {
-		    local CLI_NAME=${FUNCNAME}
-		    cli::loader::shim "$@"
-		}
-		EOF
-    chmod a+x "${FOO_SHIM}"
+    declare -rg CLI_SHIM_ROOT_DIR_FOO="${FOO_SRC_DIR}"
+    foo() { ::cli::shim::main::inline "$@"; }
 
     # shim /src
     mkdir "${FOO_SRC_DIR}"
 
     # emit bar command
     cat <<-EOF > "${FOO_BAR}"
-		#!/usr/bin/env CLI_NAME=cli bash-cli
-		::foo::bar() { :; }
+		::foo::bar::inline() { echo "\$@"; }
 		EOF
     chmod a+x "${FOO_BAR}"
 
-    # update PATH
-    PATH+=":${DIR}"
-
-    # which foo
-    resolve foo bar
+    # foo
+    diff <(foo bar --- a0 a1 a2) - <<< 'a0 a1 a2' || cli::assert
 }
