@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
 EOF
@@ -9,16 +9,6 @@ EOF
 
 cli::meta::declare() {
     :
-}
-
-cli::help::global() {
-    cat
-    cat << EOF
-
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-EOF
 }
 
 cli::help::sourceable() {
@@ -71,7 +61,6 @@ cli::meta::allow_positional() {
 }
 
 main() {
-    declare -f cli::help::global
     declare -f cli::help::sourceable
     echo
 

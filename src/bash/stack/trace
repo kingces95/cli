@@ -3,7 +3,7 @@ cli::import cli bash stack process
 cli::import cli bash stack call
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

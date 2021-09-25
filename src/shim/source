@@ -3,7 +3,7 @@ cli::import cli bash which
 cli::import cli bash is-function-declared
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

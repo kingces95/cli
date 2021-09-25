@@ -3,7 +3,7 @@ cli::import cli path dir
 cli::import cli path name
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
 

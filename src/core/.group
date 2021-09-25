@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
 EOF
@@ -19,7 +19,6 @@ Core Arguments
     --type -t               : The variable type. Regex: ${CLI_REGEX_TYPE_NAME}.
 EOF
     cli::help::sourceable
-    cli::help::global
 }
 
 cli::core::cli::meta::declare() {

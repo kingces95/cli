@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
-    cat << EOF | cli::help::sourceable | cli::help::global
+    cat << EOF | cli::help::sourceable
 Command
     ${CLI_COMMAND[@]}
     

@@ -5,7 +5,7 @@ cli::import cli bash literal
 cli::import cli-assert
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

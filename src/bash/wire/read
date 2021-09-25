@@ -3,7 +3,7 @@ cli::import cli bash declare
 cli::import cli bash wire verify
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

@@ -6,7 +6,7 @@ cli::import cli-assert
 help() {
     cat << EOF
 Command
-    cat << EOF | cli::help::global
+    cat << EOF
 
 Summary
     Emit a function whose body is the main function of a command.

@@ -3,7 +3,7 @@ cli::import cli stderr cat
 cli::import cli subshell signal-group
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

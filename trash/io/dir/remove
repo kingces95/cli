@@ -3,7 +3,7 @@ source $(cli loader ---exports)
 cli::import_parent_group
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

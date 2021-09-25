@@ -2,7 +2,7 @@
 cli::import cli_emit
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
 

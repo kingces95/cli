@@ -5,7 +5,7 @@ cli::import cli-assert
 cli::import_inline cli bash stack trace
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

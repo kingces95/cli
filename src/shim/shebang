@@ -4,7 +4,7 @@ cli::import cli path name
 cli::import cli shim source
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     
@@ -28,11 +28,11 @@ EOF
     ::cli::shim::source::inline "${CLI_NAME}" \
         || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
 
-    local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
-
     ::cli::path::make_absolute::inline "$1"
     local SOURCE_PATH="${REPLY}"
     shift
+
+    local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
 
     local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
     (( ${#REL_PATH} < ${#SOURCE_PATH} )) \

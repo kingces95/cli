@@ -4,7 +4,7 @@ cli::import_group
 cli::import cli-assert
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
 

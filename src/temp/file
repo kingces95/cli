@@ -3,7 +3,7 @@ cli::import cli temp remove
 cli::import cli subshell on-exit
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

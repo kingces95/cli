@@ -4,7 +4,7 @@ cli::import cli bash wire verify
 cli::import cli-emit
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

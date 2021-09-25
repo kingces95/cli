@@ -4,7 +4,7 @@ cli::import cli core type is-builtin
 cli::import cli core type unmodify
 
 help() {
-    cat << EOF | cli::help::sourceable | cli::help::global
+    cat << EOF | cli::help::sourceable
 Command
     ${CLI_COMMAND[@]}
     

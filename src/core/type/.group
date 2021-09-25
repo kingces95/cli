@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
 EOF
@@ -14,7 +14,6 @@ cli::core::type::help() {
 Arguments
     First argument is the type under investigation.
 EOF
-    cli::help::global   
 }
 
 cli::core::type::import() {

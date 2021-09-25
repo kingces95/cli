@@ -2,7 +2,7 @@
 cli::import_inline cli bash emit
 
 help() {
-    cat << EOF | cli::help::sourceable | cli::help::global
+    cat << EOF | cli::help::sourceable
 Command
     ${CLI_COMMAND[@]}
     

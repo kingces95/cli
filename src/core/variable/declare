@@ -5,7 +5,7 @@ cli::import cli core type is-builtin
 cli::import cli core type is-user-defined
 
 help() {
-    cat << EOF | cli::help::global
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     
