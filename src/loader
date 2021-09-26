@@ -764,7 +764,6 @@ inline() {
     ::cli::shim::main::inline() {
 
         # CLI_NAME
-        local CLI_NAME="${FUNCNAME[1]}"
         [[ "${CLI_NAME}" =~ ${CLI_REGEX_NAME} ]] \
             || cli::assert "Shim '${CLI_NAME}' does not match regex '${CLI_REGEX_NAME}'."
 
@@ -998,6 +997,23 @@ declare_core() {
 }
 declare_core
 
+cli::shim::shebang() {
+    ::cli::path::make_absolute::inline "$1"
+    BASH_ARGV0="${REPLY}"
+    shift
+
+    ::cli::path::name::inline "$0"
+    local CLI_NAME=${REPLY}
+
+    local -a CLI_COMMAND=( ${CLI_NAME} )
+
+    cli::loader::main "$@" 
+}
+
+# loader (public)
+cli::source() { cli::loader::source "$@"; }
+cli::shim() { ::cli::shim::main::inline "$@"; }
+
 # loader
 cli::loader::inline() (
 
@@ -1068,7 +1084,7 @@ cli::loader::cache::exports() {
         # declarative; print inline function
         elif ! cli::loader::inline "$@"; then
 
-            # procedural; execute main generate content
+            # procedural; execute main to generate content
             "$@" 
         fi | ::cli::cache::put::inline "${GENERATED_PATH}"
     fi
@@ -1098,7 +1114,7 @@ cli::loader::cache::bgen() {
     fi
 }
 
-cli::source() {
+cli::loader::source() {
     if (( $# > 0 )); then
         CLI_LOADER_IMPORT+=("$*");
     fi
@@ -1118,10 +1134,6 @@ cli::source() {
             continue
         fi
         CLI_LOADER_SOURCED[${IMPORT[@]}]=true
-
-        # TODO: inline shim; e.g. if import is 'cli ...', then use shim to 
-        # resolve unix path, then define function cli() that caches that 
-        # result; e.g. cli() { ~/git/cli/src/cli/"$1/.../$n" "${@:n+1}"; }
 
         # refresh import codegen cache
         cli::loader::cache::exports "${IMPORT[@]}"
@@ -1324,11 +1336,13 @@ cli::main() {
         fi
     fi
 
-    # ---imports, ---dependencies
+    # ---type, ---imports, ---dependencies
     if [[ "${1-}" == ---* ]]; then
 
         while true; do
             case "$1" in
+                '---type')
+                    echo "${CLI_TYPE}" ;;
                 '---imports')
                     for i in "${CLI_IMPORT[@]}"; do echo "${i}"; done ;;
                 '---dependencies')
@@ -1340,11 +1354,11 @@ cli::main() {
         done
     fi
 
-    cli::source
+    cli::loader::source
 
-    cli::main::help "$@"
+    cli::main::global "$@"
 
-    # declarative commands; e.g. inline, library 
+    # dispatch declarative commands; e.g. inline, library 
     while true; do
         case ${CLI_TYPE} in
             'inline') cli::main::inline "$@" ;;
@@ -1417,9 +1431,6 @@ cli::main() {
                 cli::dump 'ARG_*' ;;
             '---cli')
                 cli::dump 'CLI_*' ;;
-            '---source')
-                shift; source "$1"; shift
-                continue ;;
             '---read')
                 shift
                 while read -a REPLY; do main "$@" "${REPLY[@]}"; done ;;
@@ -1443,7 +1454,7 @@ cli::main() {
     main "${CLI_ARGS_POSITIONAL[@]}"
 }
 
-cli::main::help() {
+cli::main::global() {
     local ARG
 
     # --help, -h, --self-test
@@ -1475,11 +1486,25 @@ cli::main::inline() {
                 '---exports')
                     cli::loader::cache::exports ${CLI_COMMAND[@]}
                     echo "${REPLY}" ;;
-                '---')
+                '---source')
+                    shift
+                    source "${1?'Missing source file'}"
+                    shift
+                    continue ;;
+                '---reply')
                     shift
                     ${CLI_FUNCTION} "$@" || exit 1
                     echo "${REPLY-}" ;;
-                *) break ;;
+                '---mapfile')
+                    shift
+                    ${CLI_FUNCTION} "$@" || exit 1
+                    for REPLY in "${MAPFILE[@]}"; do
+                        echo "${REPLY-}" 
+                    done ;;
+                '---')
+                    shift
+                    ${CLI_FUNCTION} "$@" || exit 1 ;;
+                *) cli::fail "Unexpected unknown internal option \"$1\"."
             esac 
             exit
         done
@@ -1493,12 +1518,12 @@ cli::main::inline() {
 }
 
 cli::help() {
-    cat << EOF
+    cat <<-EOF
 
-Global Arguments
-    --help -h        [Flag] : Show this message and exit.
-    --self-test      [Flag] : Runs a self test.
-EOF
+		Global Arguments
+		    --help -h        [Flag] : Show this message and exit.
+		    --self-test      [Flag] : Runs a self test.
+		EOF
 }
 
 loader_source() {
@@ -1651,7 +1676,7 @@ loader_source() {
         'cli path make-absolute' \
         'cli path name' \
         'cli shim source'
-    diff_import 'cli shim main' \
+    diff_import_then_export_as 'cli shim main' 'cli::shim' \
         'cli shim which'
 
     cli::import cli run-as

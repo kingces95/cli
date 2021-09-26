@@ -1,5 +1,5 @@
 
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 
 help() {
     cat << EOF

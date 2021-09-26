@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli path dir
 cli::import cli path name
 
@@ -11,9 +11,9 @@ Summary
     Set a variable to the cache directory given the path to a command.
 
 Arguments
-    Argument $1 is the name of the variable to set.
+    Argument \$1 is the name of the variable to set.
 
-    Argument $2 is the path to the command whose cache directory will be
+    Argument \$2 is the path to the command whose cache directory will be
     assigned to the variable named by $1.
 EOF
 }

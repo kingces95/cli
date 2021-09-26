@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash write
 cli::import cli core type is-scaler
 cli::import cli core type is-builtin

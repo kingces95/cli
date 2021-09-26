@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 
 help() {
     cat << EOF
@@ -11,7 +11,7 @@ Summary
 Description
     Argument \$1 is the name of the array to append results. 
     
-    Assert remaining positional arguments match regex ${CLI_REGEX_NAME}.
+    Assert remaining positional arguments match regex \${CLI_REGEX_NAME}.
 
     Replace dashes and period with underbar and store the result in \$1.
 EOF

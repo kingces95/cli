@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core variable declare
 cli::import cli core type is-builtin
 cli::import cli core type is-modified

@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash declare
 cli::import cli bash wire verify
 
@@ -68,4 +68,4 @@ EOF
         "declare -- MY_STRING=\"'Hello world!'\""
 }
 
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part

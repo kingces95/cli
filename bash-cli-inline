@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-source $( "$(dirname $0)/src/loader" ---exports )
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-main() { 
-    cli::export::inline_function "$@"; 
-}
-cli::shebang "$@"

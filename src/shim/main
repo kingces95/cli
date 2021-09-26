@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli shim which
 
 help() {
@@ -14,7 +14,6 @@ EOF
 ::cli::shim::main::inline() {
 
     # CLI_NAME
-    local CLI_NAME="${FUNCNAME[1]}"
     [[ "${CLI_NAME}" =~ ${CLI_REGEX_NAME} ]] \
         || cli::assert "Shim '${CLI_NAME}' does not match regex '${CLI_REGEX_NAME}'."
 
@@ -47,7 +46,10 @@ self_test() {
     
     # emit foo shim
     declare -rg CLI_SHIM_ROOT_DIR_FOO="${FOO_SRC_DIR}"
-    foo() { ::cli::shim::main::inline "$@"; }
+    foo() { 
+        local CLI_NAME="${FUNCNAME}"
+        ::cli::shim::main::inline "$@"
+    }
 
     # shim /src
     mkdir "${FOO_SRC_DIR}"
