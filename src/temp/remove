@@ -44,7 +44,7 @@ cli::meta::declare() {
 }
 
 self_test() {
-    cli::source cli temp file
+    cli::import cli temp file
 
     mapfile -t < <(
         # create temp file

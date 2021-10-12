@@ -18,7 +18,7 @@ cli::meta::declare() {
 }
 
 ::cli::stderr::lock::inline() {
-    flock -x "${CLI_LOCK_FILE}" cat
+    flock -x "${CLI_LOADER_LOCK}" cat
 }
 
 self_test() {

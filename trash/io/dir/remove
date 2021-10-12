@@ -25,7 +25,7 @@ main() {
 }
 
 self_test() {
-    cli::source cli-assert
+    cli::import cli-assert
 
     # create an empty temp dir
     local tempDirA="$(mktemp -d "${TMPDIR:-/tmp/}${CLI_TEMP_TEMPLATE}")"

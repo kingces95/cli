@@ -1,0 +1,37 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+    Return arguments that conform to a cli name.
+
+Description
+    Arguments are whatever the user passed on the command line.
+
+    MAPFILE contains the first arguments that match "${CLI_REGEX_NAME}".
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+::cli::name::parse::inline() {
+    MAPFILE=()
+    while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do
+        MAPFILE+=( "$1" )
+        shift
+    done
+}
+
+self_test() {
+    parse() {
+        ::cli::name::parse::inline "$@"
+        echo "${MAPFILE[@]}"
+    }
+
+    diff <(parse foo foo-bar .foo --arg) - <<< 'foo foo-bar .foo' || cli::assert
+}

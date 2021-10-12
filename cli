@@ -2,5 +2,5 @@
 declare -rg CLI_SHIM_ROOT_DIR_CLI="${BASH_SOURCE%/*}/src"
 cli() { 
     local CLI_NAME="${FUNCNAME}"
-    cli::shim "$@"
+    cli::loader::main "$@"
 }

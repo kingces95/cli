@@ -37,7 +37,7 @@ main() {
 }
 
 self_test() {
-    cli::source cli-assert
+    cli::import cli-assert
 
     ::cli::process::tree::inline
     [[ "${MAP[$$]-}" ]] || cli::assert

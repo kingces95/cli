@@ -6,7 +6,7 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Copies stdin to a temporary file and echos the path to the file.
+    Test.
 EOF
 }
 
@@ -14,10 +14,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-::cli::bash::dump::inline() {
-    
-}
-
-self_test() {
-    cli::import cli-assert
+::cli::test_inline::inline() {
+    echo 'Hello world!' "$@"
 }

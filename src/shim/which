@@ -10,18 +10,13 @@ Summary
     Resolve a cli command to a path.
 
 Arguments
-    Argument $1 is the name of a variable to receive the result path.
+    Argument \$1 is the name of the cli. If the shim for \$1 is not found, 
+    the call fails, otherwise succeeds.
 
-    Argument $2 is the name of the cli. A shim must exist for the cli.
-    When sourced the shim msut declare CLI_SHIM_ROOT_DIR_XXX where XXX is 
-    the name of the cli and the value of the variable is the root directory
-    of the commands.
-
-    Arguments $3 and greater are joined together with forward shashes. That
-    relative path is then joined to the root directory of the commands with
-    a forward slash.
-
-    If the shim for $2 is not found, the call fails.
+    Arguments \$2 and greater are the groups leading to the command. They are
+    joined together with forward shashes and that string is joined to the root 
+    directory of the commands for the cli again with a forward slash and that 
+    string is then assigned to REPLY.
 EOF
 }
 

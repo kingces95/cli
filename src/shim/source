@@ -15,6 +15,11 @@ Description
 
     Searches PATH for $1 and then sources the file or fails
     if the shim is not found on PATH.
+
+    When sourced the shim must 1) declare CLI_SHIM_ROOT_DIR_XXX where XXX is 
+    the name of the cli and the value of the variable is the root directory
+    of commands and 2) declare a function which sets CLI_NAME and then calls
+    cli::name with the user supplied arguments.
 EOF
 }
 

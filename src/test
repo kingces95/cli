@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+# cli::import cli test-inline
 
 help() {
     cat << EOF
@@ -15,7 +16,9 @@ cli::meta::declare() {
 }
 
 main() {
+    echo "TESTING!"
     echo "CLI_COMMAND=${CLI_COMMAND-}, \$0=$0, args=$@"
-    declare -p CLI_LOADER_IMPORT CLI_LOADER_SOURCED CLI_LOADER_SOURCED_PATHS CLI_TYPE
+    # declare -p CLI_LOADER_IMPORT CLI_LOADER_SOURCED CLI_LOADER_SOURCED_PATHS CLI_TYPE
     # cli::assert 'WE DID IT!'
+    # ::cli::test_inline::inline a b c
 }

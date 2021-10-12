@@ -24,16 +24,10 @@ EOF
         shift
     done
 
-    # BASH_ARGV0
+    # CLI_SOURCE
     ::cli::shim::which::inline "${CLI_COMMAND[@]}" \
         || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
-    BASH_ARGV0="${REPLY}"
-
-    [[ -f "$0" ]] \
-        || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' does not exist."
-
-    [[ -x "$0" ]] \
-        || cli::assert "Source file '$0' for command '${CLI_COMMAND[@]}' is not executable."
+    local CLI_SOURCE="${REPLY}"
 
     cli::loader::main "$@"
 }

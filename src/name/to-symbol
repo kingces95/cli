@@ -1,0 +1,38 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli name to-bash
+cli::import cli bash join
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+    Verifies cli names convert them to bash names.
+
+Description
+    Argument \$1 is the name of the array to append results. 
+    
+    Assert remaining positional arguments match regex \${CLI_REGEX_NAME}.
+
+    Replace dashes and period with underbar and store the result in \$1.
+EOF
+}
+
+cli::meta::declare() {
+    cli::meta::allow_positional
+}
+
+::cli::name::to_symbol::inline() {
+    ::cli::name::to_bash::inline "$@"
+    ::cli::bash::join::inline '_' "${MAPFILE[@]^^}"
+}
+
+self_test() {
+    to_symbol() {
+        ::cli::name::to_symbol::inline "$@"
+        echo "${REPLY}"
+    }
+
+    diff <(to_symbol foo foo-bar .foo) - <<< 'FOO_FOO_BAR__FOO' || cli::assert
+}
