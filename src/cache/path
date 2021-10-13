@@ -33,10 +33,5 @@ cli::meta::declare() {
 }
 
 self_test() {
-    path() {
-        ::cli::cache::path::inline "$@"
-        echo "${REPLY}"
-    }
-
-    [[ "$(path foo/bar)" == 'foo/.cli/bar' ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply foo/bar)" == 'foo/.cli/bar' ]] || cli::assert
 }

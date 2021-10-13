@@ -43,7 +43,7 @@ self_test() {
     local DIR="$(dirname "${CACHE}")"
 
     echo 'content' \
-        | ::cli::cache::put::inline "${CACHE}"
+        | ${CLI_COMMAND[@]} -- "${CACHE}"
 
     [[ -f "${CACHE}" ]] || cli::assert
     diff "${CACHE}" - <<< 'content' || cli::assert

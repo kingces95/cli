@@ -30,14 +30,14 @@ cli::meta::declare() {
 }
 
 self_test() {
-    local OLD
-    cli::temp::file OLD
+    cli::temp::file 
+    local OLD="${REPLY}"
     
-    local NEW
-    cli::temp::file NEW
+    cli::temp::file
+    local NEW="${REPLY}"
 
-    ! ::cli::cache::test::inline 'no_cache_file' "${OLD}" || cli::assert
-    ! ::cli::cache::test::inline "${OLD}" "${OLD}" || cli::assert
-    ! ::cli::cache::test::inline "${OLD}" "${NEW}" || cli::assert
-    ::cli::cache::test::inline "${NEW}" "${OLD}" || cli::assert
+    ! ${CLI_COMMAND[@]} -- 'no_cache_file' "${OLD}" || cli::assert
+    ! ${CLI_COMMAND[@]} -- "${OLD}" "${OLD}" || cli::assert
+    ! ${CLI_COMMAND[@]} -- "${OLD}" "${NEW}" || cli::assert
+    ${CLI_COMMAND[@]} -- "${NEW}" "${OLD}" || cli::assert
 }

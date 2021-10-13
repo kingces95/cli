@@ -46,17 +46,16 @@ cli::meta::declare() {
 }
 
 self_test() {
-    write() { ::cli::bash::write::inline "$@"; }
 
-    diff <(write 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY) \
+    diff <(${CLI_COMMAND[@]} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY) \
         - <<< "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")" \
         || cli::assert
 
-    diff <(write $'\a' | read -a ARRAY; declare -p ARRAY) \
+    diff <(${CLI_COMMAND[@]} -- $'\a' | read -a ARRAY; declare -p ARRAY) \
         - <<< "declare -a ARRAY=([0]=\$'\a')" \
         || cli::assert
 
-    diff <(write 'a b' | read -a ARRAY; declare -p ARRAY) \
+    diff <(${CLI_COMMAND[@]} -- 'a b' | read -a ARRAY; declare -p ARRAY) \
         - <<< "declare -a ARRAY=([0]=\"a b\")" \
         || cli::assert
 }

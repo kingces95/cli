@@ -32,7 +32,7 @@ EOF
     cat << EOF
 
 Examples
-    cli args check -- value "hello world" 'string' true '[a-z ]*' '' '' ''
+    ${CLI_COMMAND[@]} -- value "hello world" 'string' true '[a-z ]*' '' '' ''
 EOF
 }
 
@@ -113,54 +113,54 @@ cli::meta::declare() {
 }
 
 self_test() {
-    cli args check -- myname myvalue
-    cli args check -- myname true 'boolean'
-    cli args check -- myname false 'boolean'
-    cli args check -- myname '' 'boolean'
-    cli args check -- myname myvalue 'string' '.*' 'myvalue myothervalue' 0 100
-    cli args check -- myname myothervalue 'string' '.*' 'myvalue myothervalue' 0 100
+    ${CLI_COMMAND[@]} -- myname myvalue
+    ${CLI_COMMAND[@]} -- myname true 'boolean'
+    ${CLI_COMMAND[@]} -- myname false 'boolean'
+    ${CLI_COMMAND[@]} -- myname '' 'boolean'
+    ${CLI_COMMAND[@]} -- myname myvalue 'string' '.*' 'myvalue myothervalue' 0 100
+    ${CLI_COMMAND[@]} -- myname myothervalue 'string' '.*' 'myvalue myothervalue' 0 100
 
     test() {
         ! { set -m; (::cli::args::check::inline "$@") } 2>&1 1>/dev/stderr || cli::assert
     }
 
     diff <(test myname 'two' 'integer') <(echo \
-        "Unexpected value 'two' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value 'two' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value that matches regex '^[-]?[0-9]+$'."
     ) || cli::assert
 
     diff <(test myname 'ok' 'boolean') <(echo \
-        "Unexpected value 'ok' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value 'ok' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value that matches regex '^true$|^false$|^$'."
     ) || cli::assert
 
     diff <(test myname Foo string "^[a-z]$") <(echo \
-        "Unexpected value 'Foo' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value 'Foo' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value that matches regex '^[a-z]$'."
     ) || cli::assert
 
     diff <(test myname Foo string '' "Bar") <(echo \
-        "Unexpected value 'Foo' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value 'Foo' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value in the set { Bar }."
     ) || cli::assert
 
     diff <(test myname Foo string '' '' 10) <(echo \
-        "Unexpected value 'Foo' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value 'Foo' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value whose length is at least 10."
     ) || cli::assert
 
     diff <(test myname Foo string '' '' 0 2) <(echo \
-        "Unexpected value 'Foo' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value 'Foo' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value whose length is no more than 2."
     ) || cli::assert
 
     diff <(test myname 5 integer '' '' 10) <(echo \
-        "Unexpected value '5' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value '5' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value that is at least 10."
     ) || cli::assert
 
     diff <(test myname 5 integer '' '' 0 2) <(echo \
-        "Unexpected value '5' for argument '--myname' passed to command 'cli args check'." \
+        "Unexpected value '5' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value that is no more than 2."
     ) || cli::assert
 }

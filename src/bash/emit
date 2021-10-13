@@ -56,7 +56,7 @@ cli::meta::declare() {
 
 self_test() {
     echo \
-        | ${CLI_COMMAND[@]} \
+        | ${CLI_COMMAND[@]} -- \
         | diff <(:) - || cli::assert
 
     echo \

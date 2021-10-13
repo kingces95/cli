@@ -42,7 +42,7 @@ cli::meta::declare() {
     while read -a reply; do
         (( ${#reply[@]} > 0 )) || cli::assert "Records must contain a key."
 
-        key="${reply[*]:0:${ARG_KEYS}}"
+        key="${reply[@]:0:${ARG_KEYS}}"
 
         if [[ ! "${key}" == "${current_key}" ]]; then
 
@@ -66,17 +66,18 @@ cli::meta::declare() {
     for (( i=0; i<${#keys[@]}; i++ )); do
 
         # activate pipe
-        ::cli::temp::fifo::inline fifo
+        ::cli::temp::fifo::inline
+        set -- "${REPLY}"
 
         # publish group
-        echo "${keys[$i]}" "${fifo}"
+        echo "${keys[$i]}" "$1"
 
         # publish members
         local -n group_ref=GROUP_${i}
-        printf '%s\n' "${group_ref[@]}" > "${fifo}"
+        printf '%s\n' "${group_ref[@]}" > "$1"
     
         # delete pipe
-        ::cli::temp::remove::inline "${fifo}"
+        ::cli::temp::remove::inline "$1"
     done
 }
 
@@ -85,7 +86,7 @@ self_test() {
         echo a 0 x
         echo a 1 y
         echo b 2 z
-    } | ${CLI_COMMAND[@]} | {
+    } | ${CLI_COMMAND[@]} -- | {
         while read -a reply; do
             echo group ${reply}
             cat ${reply[1]}

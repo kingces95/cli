@@ -46,17 +46,15 @@ cli::meta::declare() {
 }
 
 self_test() {
-    is_defined() { ::cli::attributes::is_defined::inline "$@"; }
-
     CLI_META_ATTRIBUTES_METHOD['acme::my_function']=0
 
-    is_defined \
+    ${CLI_COMMAND[@]} -- \
         'METHOD' \
         'acme::my_function' \
         'cli_bash_stack_hidden_attribute' \
         || cli::assert
 
-    ! is_defined \
+    ! ${CLI_COMMAND[@]} -- \
         'METHOD' \
         'acme::my_other_function' \
         'cli_bash_stack_hidden_attribute' \
