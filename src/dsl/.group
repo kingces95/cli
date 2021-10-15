@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash declare-enum
+cli::import cli bash variable declare-enum
 
 help() {
     cat << EOF
@@ -29,7 +29,7 @@ cli::meta::declare() {
 }
 
 main() {
-    ::cli::bash::declare_enum::inline CLI_DSL_TOKEN \
+    ::cli::bash::variable::declare_enum::inline CLI_DSL_TOKEN \
         'DEFAULT' \
         'FLAG' \
         'LIST' \
@@ -48,7 +48,7 @@ main() {
         'DASHDASH' \
         'ARGUMENTS'
 
-    ::cli::bash::declare_enum::inline CLI_DSL_PRODUCTION \
+    ::cli::bash::variable::declare_enum::inline CLI_DSL_PRODUCTION \
         'NAME' \
         'ALIAS' \
         'DEFAULT' \

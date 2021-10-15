@@ -187,7 +187,7 @@ bgen() {
     cli::bash::declare::type::cli_meta_tables() {
         cli::core::scope::add $1 CLI_META_TABLES
 
-        cli::bash::declare \
+        cli::bash::variable::declare \
             map $1_ALIAS \
             map $1_ALLOW \
             map $1_DEFAULT \
@@ -199,7 +199,7 @@ bgen() {
     cli::bash::declare::type::cli_meta_group() {
         cli::core::scope::add $1 CLI_META_GROUP
 
-        cli::bash::declare \
+        cli::bash::variable::declare \
             map $1_ALLOW \
             map $1_DEFAULT \
             map $1_REGEX \
@@ -211,7 +211,7 @@ bgen() {
     cli::bash::declare::type::cli_meta() {
         cli::core::scope::add $1 CLI_META
 
-        cli::bash::declare \
+        cli::bash::variable::declare \
             map $1_ALIAS \
             map $1_GROUP \
             map $1_BASH_NAME
@@ -219,21 +219,21 @@ bgen() {
     cli::bash::declare::type::cli_meta_attributes() {
         cli::core::scope::add $1 CLI_META_ATTRIBUTES
 
-        cli::bash::declare \
+        cli::bash::variable::declare \
             map $1_TYPE \
             map $1_BLOB
     }
     cli::bash::declare::type::cli_tokens() {
         cli::core::scope::add $1 CLI_TOKENS
 
-        cli::bash::declare \
+        cli::bash::variable::declare \
             array $1_ID \
             array $1_IDENTIFIER
     }
     cli::bash::declare::type::cli_args() {
         cli::core::scope::add $1 CLI_ARGS
 
-        cli::bash::declare \
+        cli::bash::variable::declare \
             string $1_FIRST_NAMED \
             map $1_NAMED \
             array $1_PATH \
@@ -566,7 +566,7 @@ inline() {
         done
     }
 
-    ::cli::bash::declare::inline() {
+    ::cli::bash::variable::declare::inline() {
 
         while (( $# > 0 )); do
 
@@ -592,8 +592,8 @@ inline() {
         done
     }
 
-    ::cli::bash::initialize::inline() {
-        ::cli::bash::declare::inline "$@"
+    ::cli::bash::variable::initialize::inline() {
+        ::cli::bash::variable::declare::inline "$@"
 
         while (( $# > 0 )); do
 
@@ -1040,7 +1040,7 @@ cli::meta::default() {
     cli::core::scope::add \
         CLI_META CLI_META
 
-    cli::bash::declare \
+    cli::bash::variable::declare \
         map CLI_META_BASH_NAME \
         map CLI_META_ALIAS \
         map CLI_META_GROUP \
@@ -1268,7 +1268,7 @@ cli::loader::import() {
 
     # emit inline stub
     if [[ "${TYPE}" == 'inline' ]]; then
-        eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${CLI_COMMAND[@]} -- \"\$@\"; }"
+        eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${CLI_COMMAND[@]} --- \"\$@\"; }"
         ::cli::bash::is_function_declared::inline "${FUNCTION}" || cli::assert
         return
     fi
@@ -1578,9 +1578,8 @@ cli::main::inline() {
                     declare -f ${CLI_FUNCTION_INLINE} ;;
                 '---source')
                     shift
-                    source "${1?'Missing source file'}"
-                    shift
-                    continue ;;
+                    source /dev/stdin
+                    if [[ "${1-}" == ---* ]]; then continue; else break; fi ;;
                 '---reply')
                     shift
                     ${CLI_FUNCTION_INLINE} "$@"
@@ -1703,6 +1702,10 @@ cli::main::command() {
         || cli::assert "Unexpected missing '${CLI_FUNCTION_MAIN}' in '$0'."
 
     ${CLI_FUNCTION_MAIN} "${CLI_ARGS_POSITIONAL[@]}"
+}
+
+cli::dump() {
+    ::cli::bash::variable::emit::inline "$@"
 }
 
 cli::loader::dsl::tokenize() { help | cli dsl tokenize; }
@@ -1845,16 +1848,15 @@ loader_source() {
         'cli stderr dump' \
         'cli bash stack trace'
 
-    diff_import 'cli bash declare'
-    diff_import_then_export_as 'cli bash initialize' 'cli::bash::declare' \
-        'cli bash declare'
+    diff_import 'cli bash variable declare'
+    diff_import_then_export_as 'cli bash variable initialize' 'cli::bash::variable::declare' \
+        'cli bash variable declare'
 
     diff_import_then_export_as 'cli bash which' 'cli::which'
     diff_import_then_export_as 'cli bash log' 'cli::log'
     diff_import_then_export_as 'cli bash return' 'cli::return'
     diff_import_then_export_as 'cli bash join' 'cli::join'
     diff_import_then_export_as 'cli bash literal' 'cli::literal'
-    diff_import_then_export_as 'cli bash emit' 'cli::dump'
     diff_import_then_export_as 'cli bash is-function-declared' 'cli::is_function_declared'
 
     diff_import 'cli name parse'
@@ -1887,6 +1889,9 @@ loader_source() {
         'cli path make-absolute' \
         'cli path name' \
         'cli shim source'
+
+    cli::import cli bash variable list
+    cli::import cli bash variable emit
 
     cli::import cli run-as
 

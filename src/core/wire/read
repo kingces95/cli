@@ -214,7 +214,7 @@ self_test() {
         declare MY_STRING=""
         declare -p MY_STRING \
             | ${CLI_COMMAND[@]} -s --name MY_STRING --type string -- 'Hello world!' \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_STRING="Hello world!"'
 
@@ -222,7 +222,7 @@ self_test() {
         declare -a MY_ARRAY
         declare -p MY_ARRAY \
             | ${CLI_COMMAND[@]} -s --name MY_ARRAY --type array -- "a b c" \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -a MY_ARRAY=([0]="a b c")'
 
@@ -230,7 +230,7 @@ self_test() {
         declare -A MY_MAP
         declare -p MY_MAP \
             | ${CLI_COMMAND[@]} -s --name MY_MAP --type map -- a "b c" \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP=([a]="b c" )'
     }
@@ -241,7 +241,7 @@ self_test() {
         declare MY_STRING=""
         declare -p MY_STRING \
             | ${CLI_COMMAND[@]} -s --name MY_STRING --type string -- 'Hello' \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_STRING="Hello"'
 
@@ -249,7 +249,7 @@ self_test() {
         declare MY_BOOLEAN=false
         declare -p MY_BOOLEAN \
             | ${CLI_COMMAND[@]} -s --name MY_BOOLEAN --type boolean -- true \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_BOOLEAN="true"'
 
@@ -257,7 +257,7 @@ self_test() {
         declare -i MY_INTEGER=0
         declare -p MY_INTEGER \
             | ${CLI_COMMAND[@]} -s --name MY_INTEGER --type integer -- 42 \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -i MY_INTEGER="42"'
 
@@ -267,7 +267,7 @@ self_test() {
             | ${CLI_COMMAND[@]} -s --name MY_ARRAY --type array -- a \
             | ${CLI_COMMAND[@]} -s --name MY_ARRAY --type array -- b \
             | ${CLI_COMMAND[@]} -s --name MY_ARRAY --type array -- c \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -a MY_ARRAY=([0]="a" [1]="b" [2]="c")'
 
@@ -277,7 +277,7 @@ self_test() {
             | ${CLI_COMMAND[@]} -s --name MY_MAP --type map -- a 0 \
             | ${CLI_COMMAND[@]} -s --name MY_MAP --type map -- b 1 \
             | ${CLI_COMMAND[@]} -s --name MY_MAP --type map -- c 2 \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP=([c]="2" [b]="1" [a]="0" )'
     }
@@ -289,7 +289,7 @@ self_test() {
         declare -p MY_STRING \
             | ${CLI_COMMAND[@]} -s --name MY_STRING --type string -- 'Hello world!' \
             | ${CLI_COMMAND[@]} -s --name MY_STRING --type string \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -- MY_STRING=\"\""
 
@@ -299,7 +299,7 @@ self_test() {
         declare -p MY_BOOLEAN \
             | ${CLI_COMMAND[@]} -s --name MY_BOOLEAN --type boolean -- true \
             | ${CLI_COMMAND[@]} -s --name MY_BOOLEAN --type boolean \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -- MY_BOOLEAN="false"'
 
@@ -308,7 +308,7 @@ self_test() {
         declare -p MY_INTEGER \
             | ${CLI_COMMAND[@]} -s --name MY_INTEGER --type integer -- 42 \
             | ${CLI_COMMAND[@]} -s --name MY_INTEGER --type integer \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -i MY_INTEGER="0"'
 
@@ -316,7 +316,7 @@ self_test() {
         declare -a MY_ARRAY=()
         declare -p MY_ARRAY \
             | ${CLI_COMMAND[@]} -s --name MY_ARRAY --type array \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -a MY_ARRAY=()'
 
@@ -324,7 +324,7 @@ self_test() {
         declare -A MY_MAP=()
         declare -p MY_MAP \
             | ${CLI_COMMAND[@]} -s --name MY_MAP --type map \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP=()'
     }
@@ -335,7 +335,7 @@ self_test() {
         declare -A MY_MAP_OF_STRING=()
         declare -p MY_MAP_OF_STRING \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_STRING --type 'map_of string' -- x 'Hello World' \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_STRING=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_STRING_0=\"Hello World\""
@@ -344,7 +344,7 @@ self_test() {
         declare -A MY_MAP_OF_BOOLEAN=()
         declare -p MY_MAP_OF_BOOLEAN \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_BOOLEAN --type 'map_of boolean' -- x true \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_BOOLEAN=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_BOOLEAN_0=\"true\""
@@ -353,7 +353,7 @@ self_test() {
         declare -A MY_MAP_OF_INTEGER=()
         declare -p MY_MAP_OF_INTEGER \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_INTEGER --type 'map_of integer' -- x 42 \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_INTEGER=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_INTEGER_0=\"42\""
@@ -362,7 +362,7 @@ self_test() {
         declare -A MY_MAP_OF_ARRAY=()
         declare -p MY_MAP_OF_ARRAY \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_ARRAY --type 'map_of array' -- x a b c \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_ARRAY=([x]=\"0\" )" \
                 "declare -a MY_MAP_OF_ARRAY_0=([0]=\"a\" [1]=\"b\" [2]=\"c\")"
@@ -374,7 +374,7 @@ self_test() {
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_MAP --type 'map_of map' -- x b 1 \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_MAP --type 'map_of map' -- y a 0 \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_MAP --type 'map_of map' -- y a \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP_OF_MAP=([y]="1" [x]="0" )' \
                 'declare -A MY_MAP_OF_MAP_0=([b]="1" [a]="0" )' \
@@ -387,7 +387,7 @@ self_test() {
         declare -A MY_MAP_OF_STRING=()
         declare -p MY_MAP_OF_STRING \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_STRING --type 'map_of string' -- x \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_STRING=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_STRING_0=\"\""
@@ -396,7 +396,7 @@ self_test() {
         declare -A MY_MAP_OF_BOOLEAN=()
         declare -p MY_MAP_OF_BOOLEAN \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_BOOLEAN --type 'map_of boolean' -- x \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_BOOLEAN=([x]=\"0\" )" \
                 "declare -- MY_MAP_OF_BOOLEAN_0=\"false\""
@@ -405,7 +405,7 @@ self_test() {
         declare -A MY_MAP_OF_INTEGER=()
         declare -p MY_MAP_OF_INTEGER \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_INTEGER --type 'map_of integer' -- x \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_INTEGER=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_INTEGER_0=\"0\""
@@ -414,7 +414,7 @@ self_test() {
         declare -A MY_MAP_OF_ARRAY=()
         declare -p MY_MAP_OF_ARRAY \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_ARRAY --type 'map_of array' -- x \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_ARRAY=([x]=\"0\" )" \
                 "declare -a MY_MAP_OF_ARRAY_0=()"
@@ -423,7 +423,7 @@ self_test() {
         declare -A MY_MAP_OF_MAP=()
         declare -p MY_MAP_OF_MAP \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_MAP --type 'map_of map' -- x \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_MAP_OF_MAP=([x]="0" )' \
                 'declare -A MY_MAP_OF_MAP_0=()'
@@ -439,7 +439,7 @@ self_test() {
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major 1 \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x minor 2 \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"1\"" \
@@ -452,7 +452,7 @@ self_test() {
             CLI_TYPE_VERSION \
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_VERSION --type 'map_of version' \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_VERSION=()" \
 
@@ -463,7 +463,7 @@ self_test() {
             CLI_TYPE_VERSION \
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"0\"" \
@@ -477,7 +477,7 @@ self_test() {
             MY_MAP_OF_VERSION \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major 1 \
             | ${CLI_COMMAND[@]} -s --name MY_MAP_OF_VERSION --type 'map_of version' -- x major \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 "declare -A MY_MAP_OF_VERSION=([x]=\"0\" )" \
                 "declare -i MY_MAP_OF_VERSION_0_MAJOR=\"0\"" \
@@ -501,7 +501,7 @@ self_test() {
             | ${CLI_COMMAND[@]} -s --name MY_UDT --type udt -- version major 1 \
             | ${CLI_COMMAND[@]} -s --name MY_UDT --type udt -- allow color white \
             | ${CLI_COMMAND[@]} -s --name MY_UDT --type udt -- allow color black \
-            | cli bash emit --source -- 'MY_*' \
+            | cli bash variable emit --source -- 'MY_*' \
             | assert::pipe_eq \
                 'declare -A MY_UDT_ALLOW=([color]="0" )' \
                 'declare -A MY_UDT_ALLOW_0=([black]="" [white]="" )' \

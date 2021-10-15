@@ -9,7 +9,7 @@ EOF
 
 declare CLI_CORE_TYPE_ARG_NAME=
 
-main() {
+cli::core::struct::_group::main() {
     :
 
     CLI_CORE_TYPE_ARG_NAME="--name -n     [Require] : Name of the type. Regex: ${CLI_REGEX_STRUCT_NAME}."

@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash declare
+cli::import cli bash variable declare
 
 
 help() {
@@ -30,8 +30,8 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-cli::bash::initialize::main() {
-    ::cli::bash::initialize::inline "$@"
+cli::bash::variable::initialize::main() {
+    ::cli::bash::variable::initialize::inline "$@"
 
     while (( $# > 0 )); do
         shift
@@ -40,8 +40,8 @@ cli::bash::initialize::main() {
     done
 }
 
-::cli::bash::initialize::inline() {
-    ::cli::bash::declare::inline "$@"
+::cli::bash::variable::initialize::inline() {
+    ::cli::bash::variable::declare::inline "$@"
 
     while (( $# > 0 )); do
 

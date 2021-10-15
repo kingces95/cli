@@ -30,8 +30,8 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-cli::bash::declare::main() {
-    ::cli::bash::declare::inline "$@" || return 1
+cli::bash::variable::declare::main() {
+    ::cli::bash::variable::declare::inline "$@" || return 1
 
     while (( $# > 0 )); do
         shift
@@ -40,7 +40,7 @@ cli::bash::declare::main() {
     done
 }
 
-::cli::bash::declare::inline() {
+::cli::bash::variable::declare::inline() {
 
     while (( $# > 0 )); do
 

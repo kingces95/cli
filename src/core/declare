@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash emit
+cli::import cli bash variable emit
 cli::import cli core type is-scaler
 cli::import cli core struct emit
 cli::import cli core variable declare

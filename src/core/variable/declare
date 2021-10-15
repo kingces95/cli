@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash initialize
+cli::import cli bash variable initialize
 cli::import cli core type is-scaler
 cli::import cli core type is-builtin
 cli::import cli core type is-modified
@@ -48,7 +48,7 @@ cli::core::variable::declare::main() {
         fi
 
         if ::cli::core::type::is_builtin::inline "${type[@]}"; then
-            ::cli::bash::initialize::inline "${type[@]}" "${name}"
+            ::cli::bash::variable::initialize::inline "${type[@]}" "${name}"
         else
             ::cli::core::type::is_user_defined::inline "${type[@]}" \
                 || cli::assert

@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash declare
+cli::import cli bash variable declare
 cli::import cli bash wire verify
 
 help() {
@@ -39,7 +39,7 @@ main() {
     local ARG_TYPE=$1; shift
 
     # declare bash variable
-    ::cli::bash::declare::inline ${ARG_NAME} ${ARG_TYPE}
+    ::cli::bash::variable::declare::inline ${ARG_NAME} ${ARG_TYPE}
 
     # reference variable
     local -n REF=${ARG_NAME}

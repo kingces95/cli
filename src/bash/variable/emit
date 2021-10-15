@@ -1,16 +1,16 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash variable list
 
 help() {
-    cat << EOF | cli::help::sourceable
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Like 'declare -p' except only prints variables for which 'test -v' is true
-    and with out failures for undefined variables.
+    Like 'declare -p' except accepts wild cards.
 
 Description
-    Positional arguments $1, $2, etc are variable names that optionally end in '*'.
+    Positional arguments \$1, \$2, etc are variable names that optionally end in '*'.
 
     All variables which match any of the positional arguments are printed like 
     they would be with 'declare -p. If a variable does not exist, nothing is printed.
@@ -23,17 +23,14 @@ EOF
 Examples
     Emit the embedded variable 'MY_STRING'.
         declare MY_STRING='Hello World!'
-        declare -p MY_STRING \
-            | ${CLI_COMMAND[@]} -- MY_STRING
+        declare -p MY_STRING \\
+            | ${CLI_COMMAND[@]} ---source MY_STRING
 
     Emit the embedded variables that start with 'MY_'.
         declare MY_STRING='Hello World!'
         declare -i MY_NUMBER=42
-        declare -p MY_STRING MY_NUMBER \
-            | ${CLI_COMMAND[@]} -- MY_* \
-
-    Emit nothing.
-        ${CLI_COMMAND[@]}
+        declare -p MY_STRING MY_NUMBER \\
+            | ${CLI_COMMAND[@]} ---source MY_* \
 
     Emit nothing.
         ${CLI_COMMAND[@]} -- ''
@@ -44,26 +41,15 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-::cli::bash::emit::inline() {
-    for name in "$@"; do
-        if [[ "${name}" =~ ^.*[*]$ ]]; then
-            for match in $(eval "echo \${!${name}}"); do
-                # do not recurse! test -v arr=() is false
-                declare -p ${match}
-            done
-        elif [[ -v "${name}" ]]; then
-            declare -p "${name}"
-        else
-            # declare -a arr=()
-            for match in $(eval "echo \${!${name}*}"); do
-                if [[ "${match}" == "${name}" ]]; then
-                    declare -p "${name}"
-                fi
-            done
-        fi
-    done
-}
+::cli::bash::variable::emit::inline() {
+    ::cli::bash::variable::list::inline "$@"
+    
+    if (( ${#MAPFILE[@]} == 0 )); then
+        return
+    fi
 
+    declare -p "${MAPFILE[@]}"
+}
 
 self_test() {
     ${CLI_COMMAND[@]} -- \
@@ -75,26 +61,22 @@ self_test() {
     ${CLI_COMMAND[@]} -- MY_NOT_DEFINED* \
         | diff <(:) - || cli::assert
 
-    local -A MY_UNINIT_MAP
-    local -a MY_UNINIT_ARRAY
-
-    ${CLI_COMMAND[@]} -- MY_UNINIT_MAP MY_UNINIT_ARRAY \
-        | diff <(:) - || cli::assert
-
-    local MY_STRING='Hello world!'
-    local MY_EMPTY_STRING=""
+    # declared
     local MY_DECL_STRING
-
-    local -a MY_ARRAY=(a)
-    local -a MY_EMPTY_ARRAY=()
     local -a MY_DECL_ARRAY
-
-    local -A MY_MAP=([a]=0)
-    local -A MY_EMPTY_MAP=()
     local -A MY_DECL_MAP
-
-    local -i MY_NUMBER=42
     local -i MY_DECL_NUMBER
+
+    # declared and initialized
+    local MY_EMPTY_STRING=""
+    local -a MY_EMPTY_ARRAY=()
+    local -A MY_EMPTY_MAP=()
+
+    # declared, initialized, and set
+    local MY_STRING='Hello world!'
+    local -a MY_ARRAY=(a)
+    local -A MY_MAP=([a]=0)
+    local -i MY_NUMBER=42
 
     ${CLI_COMMAND[@]} -- 'MY_STRING' \
         | diff <(echo 'declare -- MY_STRING="Hello world!"') -
@@ -127,5 +109,4 @@ self_test() {
 			declare -- MY_STRING="Hello world!"
 			EOF
         ) -
-
 }
