@@ -16,6 +16,11 @@ Description
     printed as is. Otherwise, the bash string is harvested from 'declare -p'
     for the value of an array element. So spaces are wrapped in double quoes,
     the 'bell' character is printed as $'\a' and the dollar symbol as "\$".
+
+Examples
+    ${CLI_COMMAND[@]} -- hello
+    ${CLI_COMMAND[@]} -- hello world
+    ${CLI_COMMAND[@]} -- \$
 EOF
 }
 
@@ -43,10 +48,8 @@ cli::meta::declare() {
 }
 
 self_test() {
-    cmd() { ::cli::bash::literal::inline "$@"; }
-
-    diff <(cmd hello) - <<< 'hello' || cli::assert
-    diff <(cmd hello world) - <<< '"hello world"' || cli::assert
-    diff <(cmd $'\a') - <<< "\$'\\a'" || cli::assert
-    diff <(cmd "\$") - <<< '"\$"' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- hello) - <<< 'hello' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- hello world) - <<< '"hello world"' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- $'\a') - <<< "\$'\\a'" || cli::assert
+    diff <(${CLI_COMMAND[@]} -- "\$") - <<< '"\$"' || cli::assert
 }

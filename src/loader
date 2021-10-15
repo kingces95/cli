@@ -42,7 +42,7 @@ shopt -s nullglob
 shopt -s extdebug
 
 # optimization
-main() {
+cli::loader::main() {
     if [[ ! "${1-}" == '---exports' ]]; then
         return
     fi
@@ -55,8 +55,8 @@ main() {
     echo "${exports_path}"
     exit
 }
-main "$@"
-unset main
+cli::loader::main "$@"
+unset -f cli::loader::main
 
 # lock
 [[ ! -v CLI_IFS ]] || cli::assert
@@ -286,6 +286,11 @@ inline() {
     ::cli::name::to_inline::inline() {
         ::cli::name::to_bash::inline "$@"
         ::cli::bash::join::inline '::' '' "${MAPFILE[@]}" 'inline'
+    }
+
+    ::cli::name::to_main::inline() {
+        ::cli::name::to_bash::inline "$@"
+        ::cli::bash::join::inline "::" "${MAPFILE[@]}" 'main'
     }
 
     ::cli::name::to_symbol::inline() {
@@ -544,9 +549,19 @@ inline() {
     ::cli::bash::emit::inline() {
         for name in "$@"; do
             if [[ "${name}" =~ ^.*[*]$ ]]; then
-                ::cli::bash::emit::inline $(eval "echo \${!${name}}")
+                for match in $(eval "echo \${!${name}}"); do
+                    # do not recurse! test -v arr=() is false
+                    declare -p ${match}
+                done
             elif [[ -v "${name}" ]]; then
                 declare -p "${name}"
+            else
+                # declare -a arr=()
+                for match in $(eval "echo \${!${name}*}"); do
+                    if [[ "${match}" == "${name}" ]]; then
+                        declare -p "${name}"
+                    fi
+                done
             fi
         done
     }
@@ -555,25 +570,25 @@ inline() {
 
         while (( $# > 0 )); do
 
-            local ARG_TYPE=${1?'Missing variable type.'}
+            local type=${1?'Missing variable type.'}
             shift
 
-            local ARG_NAME=${1?'Missing variable name.'}
+            local name=${1?'Missing variable name.'}
             shift
 
             # initialize declare flags
             local flags=g
-            case ${ARG_TYPE} in
+            case ${type} in
                 'integer') flags+=i ;;
                 'array') flags+=a ;;
                 'map') flags+=A ;;
                 'boolean') ;&
                 'string') ;;
-                *) cli::fail "Cannot declare variable of type '${ARG_TYPE}'."
+                *) cli::assert "Unknown bash type '${type}'."
             esac
 
             # declare the bash variable
-            declare -${flags} ${ARG_NAME}
+            declare -${flags} ${name}
         done
     }
 
@@ -582,19 +597,20 @@ inline() {
 
         while (( $# > 0 )); do
 
-            local ARG_TYPE=$1
+            local type=$1
             shift
 
-            local ARG_NAME=$1
+            local name=$1
             shift
 
-            local -n ref=${ARG_NAME}
-            case ${ARG_TYPE} in
+            local -n ref=${name}
+            case ${type} in
                 'integer') ref=0 ;;
                 'array') ;&
                 'map') ref=() ;;
                 'boolean') ref='false' ;;
                 'string') ref='' ;;
+                *) cli::assert "Unknown bash type '${type}'."
             esac
         done
     }
@@ -786,27 +802,43 @@ inline() {
     }
 
     ::cli::shim::shebang::inline() {
+
+        # CLI_NAME
         [[ "${CLI_NAME}" ]] \
             || cli::assert "Shebang failed to declare 'CLI_NAME'." 
 
+        # SHIM_ROOT_DIR_REF
         ::cli::shim::source::inline "${CLI_NAME}" \
             || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
+        local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
 
+        # SOURCE_PATH
         ::cli::path::make_absolute::inline "$1"
         local SOURCE_PATH="${REPLY}"
         shift
 
-        local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
-
+        # REL_PATH
         local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
         (( ${#REL_PATH} < ${#SOURCE_PATH} )) \
             || cli::assert "Source path '${SOURCE_PATH}' is not a subpath of '${SHIM_ROOT_DIR_REF}'." 
 
+        # COMMAND
         local IFS=/
-        local -a CLI_COMMAND=( ${CLI_NAME} ${REL_PATH} )
+        local -a COMMAND=( ${CLI_NAME} ${REL_PATH} )
         IFS=${CLI_IFS}
 
-        ${CLI_COMMAND[@]} "$@" 
+        set "${COMMAND[@]}" "$@"
+
+        # epilog
+        unset REL_PATH
+        unset SOURCE_PATH
+        unset COMMAND
+        unset -n SHIM_ROOT_DIR_REF
+
+        # post conditions
+        [[ -v CLI_NAME ]] || cli::assert
+
+        "$@" 
     }
 }
 inline
@@ -936,20 +968,6 @@ declare_core() {
     }
 }
 declare_core
-
-# shims
-cli::shim::shebang() {
-    ::cli::path::make_absolute::inline "$1"
-    CLI_SOURCE="${REPLY}"
-    shift
-
-    ::cli::path::name::inline "$0"
-    local CLI_NAME=${REPLY}
-
-    local -a CLI_COMMAND=( ${CLI_NAME} )
-
-    cli::loader::main "$@" 
-}
 
 # public
 cli::help() {
@@ -1250,7 +1268,7 @@ cli::loader::import() {
 
     # emit inline stub
     if [[ "${TYPE}" == 'inline' ]]; then
-        eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${CLI_COMMAND[@]} \"\$@\"; }"
+        eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${CLI_COMMAND[@]} -- \"\$@\"; }"
         ::cli::bash::is_function_declared::inline "${FUNCTION}" || cli::assert
         return
     fi
@@ -1268,6 +1286,10 @@ cli::loader::import() {
 }
 
 cli::loader::source::exports() {
+    if ! cli::loader::cache::test 'exports.sh'; then 
+        ${CLI_COMMAND[@]} ---exports > /dev/null
+    fi
+
     cli::loader::cache::path 'exports.sh'
     cli::loader::source "${REPLY}"
 }
@@ -1283,7 +1305,7 @@ cli::loader::source() {
     source "$1"
 }
 
-cli::loader::main() {
+cli::loader::shim() {
 
     # error handling should work before doing anything
     if [[ "${1-}" == ---* ]]; then
@@ -1307,7 +1329,7 @@ cli::loader::main() {
 
     # CLI_NAME
     [[ -v CLI_NAME ]] || cli::assert "Shim failed to define CLI_NAME."
-     set "${CLI_NAME}" "$@"
+    set "${CLI_NAME}" "$@"
 
     # CLI_COMMAND
     ::cli::name::parse::inline "$@"
@@ -1334,6 +1356,10 @@ cli::loader::main() {
             || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
     fi
 
+    # CLI_FUNCTION_MAIN
+    ::cli::name::to_main::inline "${CLI_COMMAND[@]}"
+    local CLI_FUNCTION_MAIN="${REPLY}"
+
     if [[ "${1-}" == ---* ]]; then
         while true; do
             case "$1" in
@@ -1352,7 +1378,7 @@ cli::loader::main() {
         done
     fi
 
-    # CLI_IMPORT
+    # CLI_IMPORT_MY_FOO_COMMAND
     ::cli::name::to_symbol::inline "${CLI_COMMAND[@]}"
     local REF="CLI_IMPORT_${REPLY}"
     declare -a "${REF}=()"
@@ -1388,7 +1414,8 @@ cli::loader::main() {
 cli::main::thunk() {
     
     # optimization; skip creating subshell if we are the root
-    if (( ${#CLI_COMMAND_STACK[@]} == 0 )); then
+    if (( ${#CLI_COMMAND_STACK[@]} == 0 )) \
+        || [[ "${1-}" == '---' ]]; then
         cli::main::prolog "$@"
         return
     fi
@@ -1422,7 +1449,6 @@ cli::main::source() {
     cli::loader::import_parent
 
     unset -f help
-    unset -f main
     unset -f self_test
 
     # source the code!
@@ -1432,20 +1458,12 @@ cli::main::source() {
     ::cli::name::to_inline::inline "${CLI_COMMAND[@]}"
     if ::cli::bash::is_function_declared::inline ${REPLY}; then
         CLI_TYPE=inline
-        local CLI_FUNCTION="${REPLY}"
+        local CLI_FUNCTION_INLINE="${REPLY}"
     
         if ! ::cli::bash::is_function_declared::inline 'main'; then
-            main() { ${CLI_FUNCTION} "$@"; }
+            main() { ${CLI_FUNCTION_INLINE} "$@"; }
         fi
     fi
-
-    cli::main "$@"
-}
-
-cli::main() {
-    [[ -v CLI_NAME ]] || cli::assert
-    [[ -v CLI_TYPE ]] || cli::assert
-    [[ -v CLI_COMMAND ]] || cli::assert
 
     # imports
     if [[ "${1-}" == ---* ]]; then
@@ -1460,8 +1478,6 @@ cli::main() {
                     cli::main \
                         | ::cli::cache::put::inline "${REPLY}"
                     echo "${REPLY}" ;;
-                '---imports')
-                    for i in "${CLI_IMPORT[@]}"; do echo "${i}"; done ;;
                 '---dependencies')
                     cli imports -c "${CLI_COMMAND[@]}" ;;
                 *) break ;;
@@ -1470,17 +1486,16 @@ cli::main() {
         done
     fi
 
-    # --help, -h, --self-test
-    local -a CLI_ARGS_ALL=( "$@" )
+    cli::main "$@"
+}
+
+cli::main::help() {
+
+    # -h anywhere (except after --) prints help and exits
     while (( $# > 0 )); do
         case "$1" in
             '--') 
                 break ;;
-            '--self-test')
-                ::cli::bash::is_function_declared::inline 'self_test' \
-                    || cli::assert "Unexpected missing 'self_test' in '${CLI_COMMAND[@]}'."
-                self_test
-                return ;;
             '-h') ;& '--help')
                 ::cli::bash::is_function_declared::inline 'help' \
                     || cli::assert "Unexpected missing 'help' in '${CLI_COMMAND[@]}'."
@@ -1490,7 +1505,40 @@ cli::main() {
         esac
         shift
     done
-    set -- "${CLI_ARGS_ALL[@]}"
+
+    return 1
+}
+
+cli::main() {
+    
+    [[ -v CLI_NAME ]] || cli::assert
+    [[ -v CLI_TYPE ]] || cli::assert
+    [[ -v CLI_COMMAND ]] || cli::assert
+
+    # help
+    if cli::main::help "$@"; then
+        return
+    fi
+
+    # imports
+    if [[ "${1-}" == ---* ]]; then
+        while true; do
+            case "$1" in
+                '---imports')
+                    for i in "${CLI_IMPORT[@]}"; do echo "${i}"; done ;;
+                *) break ;;
+            esac 
+            return
+        done
+    fi
+
+    # self test
+    if [[ "${1-}" == '--self-test' ]]; then
+        ::cli::bash::is_function_declared::inline 'self_test' \
+            || cli::assert "Unexpected missing 'self_test' in '${CLI_COMMAND[@]}'."
+        self_test
+        return
+    fi
 
     # inline
     if [[ "${CLI_TYPE}" == 'inline' ]]; then
@@ -1514,18 +1562,20 @@ cli::main::group() {
         cli::assert "Unexpected arguments passed to '${CLI_COMMAND[*]}': $@"
     fi
 
-    main
+    ::cli::bash::is_function_declared::inline ${CLI_FUNCTION_MAIN} \
+        || cli::assert "Command '${CLI_COMMAND[@]}' missing entrypoint '${CLI_FUNCTION_MAIN}'."
+    ${CLI_FUNCTION_MAIN}
 }
 
 cli::main::inline() {
-    [[ "${CLI_FUNCTION}" ]] || cli::assert
+    [[ "${CLI_FUNCTION_INLINE}" ]] || cli::assert
 
     # well-known options that require imports
     if [[ "${1-}" == ---* ]]; then
         while true; do
             case "$1" in
                 '---function')
-                    declare -f ${CLI_FUNCTION} ;;
+                    declare -f ${CLI_FUNCTION_INLINE} ;;
                 '---source')
                     shift
                     source "${1?'Missing source file'}"
@@ -1533,29 +1583,40 @@ cli::main::inline() {
                     continue ;;
                 '---reply')
                     shift
-                    ${CLI_FUNCTION} "$@" || return 1
+                    ${CLI_FUNCTION_INLINE} "$@"
                     echo "${REPLY-}" ;;
                 '---mapfile')
                     shift
-                    ${CLI_FUNCTION} "$@" || return 1
+                    ${CLI_FUNCTION_INLINE} "$@"
                     for REPLY in "${MAPFILE[@]}"; do
                         echo "${REPLY-}" 
                     done ;;
+                '---') 
+                    break ;;
                 *) cli::assert "Unexpected unknown internal option \"$1\" for command '${CLI_COMMAND[*]}'."
             esac 
             return
         done
     fi
 
-    if [[ "${1-}" == -- ]]; then
-        shift
-        main "$@" || return 1
+    if (( $# > 0 )); then
+        if [[ "${1-}" == '--' ]] \
+            || [[ "${1-}" == '---' ]]; then
+            shift
+        fi
+
+        if ::cli::bash::is_function_declared::inline ${CLI_FUNCTION_MAIN}; then
+            ${CLI_FUNCTION_MAIN} "$@"
+        else
+            ${CLI_FUNCTION_INLINE} "$@"
+        fi
+
         return
     fi
 
     # emit dependencies and function
     cli::export::imports "${CLI_IMPORT[@]}"
-    declare -f ${CLI_FUNCTION}
+    declare -f ${CLI_FUNCTION_INLINE}
 }
 
 cli::main::command() {
@@ -1623,7 +1684,7 @@ cli::main::command() {
                 cli::dump 'CLI_*' ;;
             '---read')
                 shift
-                while read -a REPLY; do main "$@" "${REPLY[@]}"; done ;;
+                while read -a REPLY; do ${CLI_FUNCTION_MAIN} "$@" "${REPLY[@]}"; done ;;
             *) cli::fail "Unexpected unknown internal option \"$1\"."
         esac 
         return
@@ -1638,10 +1699,10 @@ cli::main::command() {
         return
     fi
 
-    ::cli::bash::is_function_declared::inline 'main' \
-        || cli::assert "Unexpected missing 'main' in '$0'."
+    ::cli::bash::is_function_declared::inline ${CLI_FUNCTION_MAIN} \
+        || cli::assert "Unexpected missing '${CLI_FUNCTION_MAIN}' in '$0'."
 
-    main "${CLI_ARGS_POSITIONAL[@]}"
+    ${CLI_FUNCTION_MAIN} "${CLI_ARGS_POSITIONAL[@]}"
 }
 
 cli::loader::dsl::tokenize() { help | cli dsl tokenize; }
@@ -1801,6 +1862,9 @@ loader_source() {
     diff_import 'cli name to-inline' \
         'cli name to-bash' \
         'cli bash join'
+    diff_import 'cli name to-main' \
+        'cli name to-bash' \
+        'cli bash join'
     diff_import 'cli name to-symbol' \
         'cli name to-bash' \
         'cli bash join'
@@ -1826,6 +1890,15 @@ loader_source() {
 
     cli::import cli run-as
 
+    cli::import cli core type is-builtin
+    cli::import cli core type is-modified
+    cli::import cli core type is-scaler
+    cli::import cli core type is-user-defined
+    cli::import cli core type unmodified
+    cli::import cli core type unmodify
+    
+    cli::import cli core variable declare
+
     cli::import cli core declare
     cli::import cli core load
     cli::import cli core save
@@ -1843,7 +1916,7 @@ loader_source() {
         :
     }
 
-    main() {
+    cli::loader::main() {
         echo "set -$-"
         echo
 
@@ -1908,7 +1981,35 @@ loader_source() {
         echo
     }
 
-    self_test() { :; }
+    self_test() {
+        local -A disabled=(
+            ['cli subshell signal-group']=true
+            ['cli stderr dump']=true
+            ['cli stderr assert']=true
+            ['cli stderr fail']=true
+            ['cli bash stack call']=true
+            ['cli bash stack process']=true
+            ['cli bash stack trace']=true
+            ['cli core declare']=true
+            ['cli core load']=true
+            ['cli core save']=true
+            ['cli core write']=true
+            ['cli args tokenize']=true
+            ['cli args parse']=true
+            ['cli args initialize']=true
+            ['cli args emit']=true
+        )
+
+        for i in "${CLI_IMPORT_CLI_LOADER[@]}"; do
+            if ::cli::set::test::inline disabled "$i"; then continue; fi
+            echo $i
+            $i --self-test
+        done
+
+        echo -- disabled --
+        printf '%s\n' "${!disabled[@]}" | sort
+        
+    }
 }
 
 cli::initialize() {

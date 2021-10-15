@@ -29,10 +29,6 @@ cli::meta::declare() {
 }
 
 self_test() {
-    to_symbol() {
-        ::cli::name::to_symbol::inline "$@"
-        echo "${REPLY}"
-    }
-
-    diff <(to_symbol foo foo-bar .foo) - <<< 'FOO_FOO_BAR__FOO' || cli::assert
+    diff <(${CLI_COMMAND[@]} ---reply foo foo-bar .foo) - \
+        <<< 'FOO_FOO_BAR__FOO' || cli::assert
 }

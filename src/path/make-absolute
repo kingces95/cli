@@ -9,15 +9,15 @@ Summary
     Make a path absolute.
 
 Description
-    Argument $1 is the name of the variable to store the absolute path.
+    Argument \$1 is the name of the variable to store the absolute path.
 
-    Argument $2 is the path. If the path is already absolute, then it
-    is assigned to the variable named by $1, otherwise the present working
-    directory is prepened and then assigned to $1.
+    Argument \$2 is the path. If the path is already absolute, then it
+    is assigned to the variable named by \$1, otherwise the present working
+    directory is prepened and then assigned to \$1.
 
-    If $2 is empty, then the present working directory is returned.
+    If \$2 is empty, then the present working directory is returned.
 
-    If $2 begins with './', then that is stripped before prepending the
+    If \$2 begins with './', then that is stripped before prepending the
     present working directory.
 EOF
 }
@@ -39,13 +39,8 @@ cli::meta::declare() {
 }
 
 self_test() {
-    make_absolute() {
-        ::cli::path::make_absolute::inline "$@"
-        echo "${REPLY}"
-    }
-
-    [[ "$(make_absolute)" == "${PWD}" ]] || cli::assert
-    [[ "$(make_absolute "foo/bar")" == "${PWD}/foo/bar" ]] || cli::assert
-    [[ "$(make_absolute "./foo/bar")" == "${PWD}/foo/bar" ]] || cli::assert
-    [[ "$(make_absolute "/foo/bar")" == "/foo/bar" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply)" == "${PWD}" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply "foo/bar")" == "${PWD}/foo/bar" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply "./foo/bar")" == "${PWD}/foo/bar" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply "/foo/bar")" == "/foo/bar" ]] || cli::assert
 }

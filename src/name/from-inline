@@ -32,11 +32,6 @@ cli::meta::declare() {
 }
 
 self_test() {
-    from_inline() {
-        ::cli::name::from_inline::inline "$@"
-        echo "${REPLY}"
-    }
-
-    diff <(from_inline ::foo::foo_bar::_foo::inline) - \
+    diff <(${CLI_COMMAND[@]} ---reply ::foo::foo_bar::_foo::inline) - \
         <<< 'foo foo-bar .foo' || cli::assert
 }

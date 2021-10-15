@@ -33,7 +33,7 @@ report() {
     # cat <(echo ${result}) - | sed 's/^/>   /'
 }
 
-main() {
+cli::self_test::main() {
     local exit_code=0
 
     # search for commands starting at --dir

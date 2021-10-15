@@ -24,10 +24,6 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::path::make_relative::inline "$@"
-}
-
 ::cli::path::make_relative::inline() {
     local source=$1
     local target=$2
@@ -68,14 +64,14 @@ main() {
 }
 
 self_test() {
-    [[ $(main "/A/B/C" "/A") == "../.." ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/B") == ".." ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/B/C") == "" ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/B/C/D") == "D" ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/B/C/D/E") == "D/E" ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/B/D") == "../D" ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/B/D/E") == "../D/E" ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/D") == "../../D" ]] || cli::assert
-    [[ $(main "/A/B/C" "/A/D/E") == "../../D/E" ]] || cli::assert
-    [[ $(main "/A/B/C" "/D/E/F") == "../../../D/E/F" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A") == "../.." ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/B") == ".." ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/B/C") == "" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/B/C/D") == "D" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/B/C/D/E") == "D/E" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/B/D") == "../D" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/B/D/E") == "../D/E" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/D") == "../../D" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/A/D/E") == "../../D/E" ]] || cli::assert
+    [[ $(${CLI_COMMAND[@]} -- "/A/B/C" "/D/E/F") == "../../../D/E/F" ]] || cli::assert
 }

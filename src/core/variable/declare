@@ -2,6 +2,7 @@
 cli::import cli bash initialize
 cli::import cli core type is-scaler
 cli::import cli core type is-builtin
+cli::import cli core type is-modified
 cli::import cli core type is-user-defined
 
 help() {
@@ -22,88 +23,68 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    local ARG_NAME=${@: -1}
-    local ARG_TYPE=${@:1:(($#-1))}
+cli::core::variable::declare::main() {
+    ::cli::core::variable::declare::inline "$@"
 
-    ::cli::core::variable::declare::inline
-        
-    cli::dump "${ARG_NAME}" "${ARG_NAME}_*"
+    while (( $# > 0 )); do
+        shift
+        cli::dump "$1" "$1_*"
+        shift
+    done
 }
 
 ::cli::core::variable::declare::inline() {
-    : ${ARG_TYPE:?}
-    : ${ARG_NAME:?}
 
-    local -a type=( ${ARG_TYPE} )
+    while (( $# > 0 )); do
 
-    # builtin type
-    if arg_type=${ARG_TYPE} ::cli::core::type::is_builtin::inline; then
-        ::cli::bash::initialize::inline ${type} ${ARG_NAME}
+        local -a type=( ${1?'Missing variable type.'} )
+        shift
 
-    # modified type (e.g. map_of)
-    elif arg_type=${ARG_TYPE} ::cli::core::type::is_modified::inline; then
-        ::cli::bash::initialize::inline 'map' ${ARG_NAME}
+        local name=${1?'Missing variable name.'}
+        shift
 
-    # user defined type
-    else
-
-        # bgen optimization
-        local bgen=${CLI_BGEN_DECLARE[CLI_TYPE_${ARG_TYPE^^}]-}
-        if [[ -n ${bgen} ]]; then
-            ${bgen} ${ARG_NAME}
-            return
+        if ::cli::core::type::is_modified::inline "${type[@]}"; then
+            type=( map )
         fi
-        # echo "--- MISSING BGEN FOR CLI_TYPE_${ARG_TYPE^^} ---" > /dev/stderr
 
-        cli::assert arg_type=${ARG_TYPE} ::cli::core::type::is_user_defined::inline
-  
-        local -n type_ref=CLI_TYPE_${ARG_TYPE^^}
+        if ::cli::core::type::is_builtin::inline "${type[@]}"; then
+            ::cli::bash::initialize::inline "${type[@]}" "${name}"
+        else
+            ::cli::core::type::is_user_defined::inline "${type[@]}" \
+                || cli::assert
 
-        # layout fields
-        local field
-        for field in ${!type_ref[@]}; do
-            local field_type=${type_ref[$field]}
+            # bgen optimization
+            # local bgen=${CLI_BGEN_DECLARE[CLI_TYPE_${ARG_TYPE^^}]-}
+            # if [[ -n ${bgen} ]]; then
+            #     ${bgen} ${ARG_NAME}
+            #     return
+            # fi
+            # echo "--- MISSING BGEN FOR CLI_TYPE_${ARG_TYPE^^} ---" > /dev/stderr
 
-            # recursively declare fields
-            ARG_NAME=${ARG_NAME}_${field^^} \
-            ARG_TYPE=${field_type} \
-                ::cli::core::variable::declare::inline 
-        done
-    fi
+            local -n "type_ref=CLI_TYPE_${type[@]^^}"
+
+            # layout fields
+            local field
+            for field in "${!type_ref[@]}"; do
+                local "field_type=${type_ref[$field]}"
+
+                # recursively declare fields
+                ::cli::core::variable::declare::inline \
+                    "${field_type}" \
+                    "${name}_${field^^}"
+            done
+        fi
+    done
 }
 
 self_test() {
 
-    # string
-    ${CLI_COMMAND[@]} -- string VAR \
-        | assert::pipe_eq \
-            'declare -- VAR=""'
-
-    # integer
-    ${CLI_COMMAND[@]} -- integer VAR \
-        | assert::pipe_eq \
-            'declare -i VAR="0"'
-
-    # boolean
-    ${CLI_COMMAND[@]} -- boolean VAR \
-        | assert::pipe_eq \
-            'declare -- VAR="false"'
-
-    # array
-    ${CLI_COMMAND[@]} -- array VAR \
-        | assert::pipe_eq \
-            'declare -a VAR=()'
-
-    # map
-    ${CLI_COMMAND[@]} -- map VAR \
-        | assert::pipe_eq \
-            'declare -A VAR=()'
-
-    # map_of
-    ${CLI_COMMAND[@]} -- map_of integer VAR \
-        | assert::pipe_eq \
-            'declare -A VAR=()'
+    diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'declare -- VAR=""' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- integer VAR) - <<< 'declare -i VAR="0"' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- boolean VAR) - <<< 'declare -- VAR="false"' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'declare -a VAR=()' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- map VAR) - <<< 'declare -A VAR=()' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- 'map_of integer' VAR) - <<< 'declare -A VAR=()' || cli::assert
 
     # udt
     declare -A CLI_TYPE_VERSION=(
@@ -123,16 +104,28 @@ self_test() {
         [my_map_of_version]='map_of version'
     )
 
-    ${CLI_COMMAND[@]} ---source <( declare -p CLI_TYPE_VERSION CLI_TYPE_UDT ) \
-        -- udt VAR \
-        | assert::pipe_eq \
-            'declare -a VAR_MY_ARRAY=()' \
-            'declare -- VAR_MY_BOOLEAN="false"' \
-            'declare -i VAR_MY_INTEGER="0"' \
-            'declare -A VAR_MY_MAP=()' \
-            'declare -A VAR_MY_MAP_OF_STRING=()' \
-            'declare -A VAR_MY_MAP_OF_VERSION=()' \
-            'declare -- VAR_MY_STRING=""' \
-            'declare -i VAR_MY_VERSION_MAJOR="0"' \
-            'declare -i VAR_MY_VERSION_MINOR="0"'
+    ${CLI_COMMAND[@]} --- udt VAR \
+        | sort -k3 \
+        | diff <(cat <<-EOF
+			declare -a VAR_MY_ARRAY=()
+			declare -- VAR_MY_BOOLEAN="false"
+			declare -i VAR_MY_INTEGER="0"
+			declare -A VAR_MY_MAP=()
+			declare -A VAR_MY_MAP_OF_STRING=()
+			declare -A VAR_MY_MAP_OF_VERSION=()
+			declare -- VAR_MY_STRING=""
+			declare -i VAR_MY_VERSION_MAJOR="0"
+			declare -i VAR_MY_VERSION_MINOR="0"
+			EOF
+        ) -
+
+    ${CLI_COMMAND[@]} --- \
+        string MY_STRING_0 \
+        string MY_STRING_1 \
+        | sort -k3 \
+        | diff <(cat <<-EOF
+			declare -- MY_STRING_0=""
+			declare -- MY_STRING_1=""
+			EOF
+        ) -
 }

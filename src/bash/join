@@ -9,13 +9,21 @@ Summary
     Join arguments with a possibly multi-character delimiter.
 
 Description
-    Argument $1 is the name of the variable to return the result.
-    Argument $2 is a delimiter used to join the remaining arguments.
+    Argument \$1 is the name of the variable to return the result.
+    Argument \$2 is a delimiter used to join the remaining arguments.
+
+Examples
+    ${CLI_COMMAND[@]} :: a b c
 EOF
 }
 
 cli::meta::declare() {
     cli::meta::allow_positional
+}
+
+cli::bash::join::main() {
+    ::cli::bash::join::inline "$@"
+    echo "${REPLY}"
 }
 
 ::cli::bash::join::inline() {
@@ -34,14 +42,6 @@ cli::meta::declare() {
 }
 
 self_test() {
-    join() {
-        ::cli::bash::join::inline "$@"
-        echo "${REPLY}"
-        
-        ::cli::bash::join::inline "$@"
-        local MY_REPLY="${REPLY}"
-        [[ "${MY_REPLY}" == "${REPLY}" ]] || cli::assert
-    }
-    diff <(join . a b c) - <<< 'a.b.c' || cli::assert
-    diff <(join .) - <<< '' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- . a b c) - <<< 'a.b.c' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- .) - <<< '' || cli::assert
 }

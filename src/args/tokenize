@@ -65,7 +65,7 @@ Examples
 EOF
 }
 
-main() {    
+cli::args::tokenize::main() {   
     cli::declare 'cli_tokens' TOKENS
 
     ARG_TOKENS=TOKENS \

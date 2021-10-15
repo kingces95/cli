@@ -24,12 +24,7 @@ cli::meta::declare() {
 }
 
 self_test() {
-    name() { 
-        ::cli::path::name::inline "$@"
-        echo ${REPLY}
-    }
-
-    [[ "$(name /foo)" == "foo" ]] || cli::assert
-    [[ "$(name ./foo-bar)" == "foo-bar" ]] || cli::assert
-    [[ "$(name foo/bar)" == "bar" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply /foo)" == "foo" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply ./foo-bar)" == "foo-bar" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply foo/bar)" == "bar" ]] || cli::assert
 }

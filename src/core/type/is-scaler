@@ -20,30 +20,30 @@ EOF
 }
 
 cli::meta::declare() {
-    cli::core::type::import
+    cli::meta::allow_positional
 }
 
 ::cli::core::type::is_scaler::inline() {
-    local -a TYPE=( ${1-''} )
 
-    case ${TYPE} in
-        'integer') ;&
-        'boolean') ;&
-        'string') true ;;
-        *) false ;;
-    esac
-}
-
-main() {
-    ::cli::core::type::is_scaler::inline "$@"
+    if (( $# != 1 )); then
+        false
+    else
+        case "$1" in
+            'integer') ;&
+            'boolean') ;&
+            'string') true ;;
+            *) false ;;
+        esac
+    fi
 }
 
 self_test() {
-    main 'boolean' || cli::assert
-    main 'string' || cli::assert
-    main 'integer' || cli::assert
+    ${CLI_COMMAND[@]} -- boolean || cli::assert
+    ${CLI_COMMAND[@]} -- string || cli::assert
+    ${CLI_COMMAND[@]} -- integer || cli::assert
 
-    ! main 'map' || cli::assert
-    ! main 'user_defined' || cli::assert
-    ! main 'map_of string' || cli::assert
+    ! ${CLI_COMMAND[@]} -- map  || cli::assert
+    ! ${CLI_COMMAND[@]} -- user_defined  || cli::assert
+    ! ${CLI_COMMAND[@]} -- map_of string || cli::assert
+    ! ${CLI_COMMAND[@]} -- string string || cli::assert
 }

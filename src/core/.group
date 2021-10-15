@@ -27,7 +27,7 @@ cli::core::cli::meta::declare() {
     cli::meta::add_optional 'type' '' "${CLI_REGEX_TYPE_NAME}"
 }
 
-main() {
+cli::core::_group::main() {
     :
-    cli::export cli core
+    # cli::export cli core
 }

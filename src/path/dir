@@ -24,19 +24,14 @@ cli::meta::declare() {
 }
 
 self_test() {
-    dir() { 
-        ::cli::path::dir::inline "$@"
-        echo ${REPLY}
-    }
-
-    [[ "$(dir /foo)" == "/" ]] || cli::assert
-    [[ "$(dir /foo/)" == "/" ]] || cli::assert
-    [[ "$(dir foo/)" == "." ]] || cli::assert
-    [[ "$(dir ./foo-bar)" == "." ]] || cli::assert
-    [[ "$(dir foo/bar)" == "foo" ]] || cli::assert
-    [[ "$(dir ../..)" == ".." ]] || cli::assert
-    [[ "$(dir ../)" == "." ]] || cli::assert
-    [[ "$(dir ..)" == "." ]] || cli::assert
-    [[ "$(dir /)" == "/" ]] || cli::assert
-    [[ "$(dir ///)" == "/" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply /foo)" == "/" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply /foo/)" == "/" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply foo/)" == "." ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply ./foo-bar)" == "." ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply foo/bar)" == "foo" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply ../..)" == ".." ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply ../)" == "." ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply ..)" == "." ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply /)" == "/" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply ///)" == "/" ]] || cli::assert
 }

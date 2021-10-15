@@ -30,8 +30,8 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
-    ::cli::bash::declare::inline "$@"
+cli::bash::declare::main() {
+    ::cli::bash::declare::inline "$@" || return 1
 
     while (( $# > 0 )); do
         shift
@@ -44,36 +44,39 @@ main() {
 
     while (( $# > 0 )); do
 
-        local ARG_TYPE=${1?'Missing variable type.'}
+        local type=${1?'Missing variable type.'}
         shift
 
-        local ARG_NAME=${1?'Missing variable name.'}
+        local name=${1?'Missing variable name.'}
         shift
 
         # initialize declare flags
         local flags=g
-        case ${ARG_TYPE} in
+        case ${type} in
             'integer') flags+=i ;;
             'array') flags+=a ;;
             'map') flags+=A ;;
             'boolean') ;&
             'string') ;;
-            *) cli::fail "Cannot declare variable of type '${ARG_TYPE}'."
+            *) cli::assert "Unknown bash type '${type}'."
         esac
 
         # declare the bash variable
-        declare -${flags} ${ARG_NAME}
+        declare -${flags} ${name}
     done
 }
 
 self_test() {
-    [[ "$(main string VAR)" == "declare -- VAR" ]] || cli::assert
-    [[ "$(main boolean VAR)" == "declare -- VAR" ]] || cli::assert
-    [[ "$(main integer VAR)" == "declare -i VAR" ]] || cli::assert
-    [[ "$(main array VAR)" == "declare -a VAR" ]] || cli::assert
-    [[ "$(main map VAR)" == "declare -A VAR" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} -- string VAR)" == "declare -- VAR" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} -- boolean VAR)" == "declare -- VAR" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} -- integer VAR)" == "declare -i VAR" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} -- array VAR)" == "declare -a VAR" ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} -- map VAR)" == "declare -A VAR" ]] || cli::assert
 
-    diff <( main string MY_STRING map MY_MAP ) - <<-EOF || cli::assert
+    diff <( ${CLI_COMMAND[@]} -- \
+        string MY_STRING \
+        map MY_MAP \
+    ) - <<-EOF || cli::assert
 		declare -- MY_STRING
 		declare -A MY_MAP
 		EOF

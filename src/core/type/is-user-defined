@@ -28,29 +28,22 @@ EOF
 }
 
 cli::meta::declare() {
-    cli::core::type::import
+    cli::meta::allow_positional
 }
 
 ::cli::core::type::is_user_defined::inline() {   
-    if ::cli::core::type::is_builtin::inline "$@" || \
-        ::cli::core::type::is_modified::inline "$@"; then
-        false
-    else
-        true
-    fi
-}
-
-main() {
-    ::cli::core::type::is_user_defined::inline "$@"
+    ! ::cli::core::type::is_modified::inline "$@" \
+        && ! ::cli::core::type::is_builtin::inline "$1"
 }
 
 self_test() {
-    main 'user_defined' || cli::assert
+    ${CLI_COMMAND[@]} -- user_defined || cli::assert
 
-    ! main 'boolean' || cli::assert
-    ! main 'string' || cli::assert
-    ! main 'integer' || cli::assert
-    ! main 'map' || cli::assert
-    ! main 'array' || cli::assert
-    ! main 'map_of string' || cli::assert
+    ! ${CLI_COMMAND[@]} -- boolean || cli::assert
+    ! ${CLI_COMMAND[@]} -- string || cli::assert
+    ! ${CLI_COMMAND[@]} -- integer || cli::assert
+    ! ${CLI_COMMAND[@]} -- map || cli::assert
+    ! ${CLI_COMMAND[@]} -- array || cli::assert
+    ! ${CLI_COMMAND[@]} -- map_of string || cli::assert
+    ! ${CLI_COMMAND[@]} -- string string || cli::assert
 }

@@ -28,10 +28,10 @@ cli::meta::declare() {
 }
 
 self_test() {
-    parse() {
-        ::cli::name::parse::inline "$@"
-        echo "${MAPFILE[@]}"
-    }
-
-    diff <(parse foo foo-bar .foo --arg) - <<< 'foo foo-bar .foo' || cli::assert
+    diff <(${CLI_COMMAND[@]} ---mapfile foo foo-bar .foo --arg) - \
+        <<-EOF || cli::assert
+			foo
+			foo-bar
+			.foo
+		EOF
 }

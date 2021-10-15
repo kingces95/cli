@@ -9,7 +9,7 @@ Summary
     Return true if the function is declared, otherwise false.
 
 Arguments
-    Argumetn $1 is the name of the function.
+    Argumetn \$1 is the name of the function.
 EOF
 }
 

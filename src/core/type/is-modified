@@ -23,27 +23,15 @@ EOF
 }
 
 cli::meta::declare() {
-    cli::core::type::import
+    cli::meta::allow_positional
 }
 
 ::cli::core::type::is_modified::inline() {
-    local -a type=( ${1-} )
-
-    if (( ${#type[@]} > 1 )); then
-        [[ ${type} == 'map_of' ]] || cli::assert
-        true
-    else
-        ! [[ ${type} == 'map_of' ]] || cli::assert
-        false
-    fi
-}
-
-main() {
-    ::cli::core::type::is_modified::inline "$@"
+    (( ${#@} > 1 )) &&  [[ $1 == 'map_of' ]]
 }
 
 self_test() {
 
-    main 'map_of map' || cli::assert
-    ! main 'map' || cli::assert
+    ${CLI_COMMAND[@]} -- map_of map || cli::assert
+    ! ${CLI_COMMAND[@]} -- map || cli::assert
 }

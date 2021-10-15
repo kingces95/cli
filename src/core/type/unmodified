@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core type is-modified
 
 help() {
     cat << EOF | cli::core::type::help
@@ -20,24 +21,21 @@ EOF
 }
 
 cli::meta::declare() {
-    cli::core::type::import
+    cli::meta::allow_positional
 }
 
 ::cli::core::type::unmodified::inline() {
-    set ${1-}
+    MAPFILE=()
+    
+    while ::cli::core::type::is_modified::inline "$@"; do
+        shift
+    done
 
-    if (( $# > 1 )); then
-        eval "echo \$$#"
-    else
-        echo "$@"
-    fi
-}
-
-main() {
-    ::cli::core::type::unmodified::inline "$@"  
+    MAPFILE=( "$@" )
 }
 
 self_test() {
-    [[ "$(main 'boolean')" == 'boolean' ]] || cli::assert
-    [[ "$(main 'map_of map_of boolean')" == 'boolean' ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---mapfile boolean)" == 'boolean' ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---mapfile map_of map_of boolean)" == 'boolean' ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---mapfile string string)" == $'string\nstring' ]] || cli::assert
 }

@@ -11,24 +11,7 @@ cli::meta::declare() {
     :
 }
 
-cli::core::variable::help() {
-    cat
-    cat << EOF
-
-Variable Arguments
-    --name -n   [Required]  : The variable name. Regex: ${CLI_REGEX_GLOBAL_NAME}.
-    --type -t   [Required]  : The variable type. Regex: ${CLI_REGEX_TYPE_NAME}.
-EOF
-    cli::help::sourceable 
-}
-
-cli::core::variable::cli::meta::declare() {
-    cli::meta::add_required 'type' '' "${CLI_REGEX_TYPE_NAME}"
-    cli::meta::add_required 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
-    cli::meta::add_flag 'source'
-}
-
-main() {
+cli::core::variable::_group::main() {
     :
-    cli::export cli core variable
+    # cli::export cli core variable
 }

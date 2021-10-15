@@ -20,6 +20,16 @@ cli::core::type::import() {
     cli::meta::allow_positional
 }
 
-main() {
-    cli::export cli core type
+cli::core::type::_group::main() {
+    :
+    # cli::export cli core type
+}
+
+self_test() {
+    cli core type is-builtin --self-test
+    cli core type is-modified --self-test
+    cli core type is-scaler --self-test
+    cli core type is-user-defined --self-test
+    cli core type unmodified --self-test
+    cli core type unmodify --self-test
 }

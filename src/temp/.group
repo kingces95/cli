@@ -20,6 +20,6 @@ cli::meta::declare() {
     :
 }
 
-main() {
+cli::temp::_group::main() {
     :
 }

@@ -19,8 +19,6 @@ cli::meta::declare() {
 }
 
 self_test() {
-    log() { ::cli::bash::log::inline "$@"; }
-
-    diff <(log a b c 2> /dev/null; echo) - <<< '' || cli::assert
-    diff <(log a b c 2>&1) - <<< 'a b c' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- a b c 2> /dev/null; echo) - <<< '' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- a b c 2>&1) - <<< 'a b c' || cli::assert
 }

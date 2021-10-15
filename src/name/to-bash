@@ -33,10 +33,10 @@ cli::meta::declare() {
 }
 
 self_test() {
-    to_bash() {
-        ::cli::name::to_bash::inline "$@"
-        echo "${MAPFILE[@]}"
-    }
-
-    diff <(to_bash foo foo-bar .foo) - <<< 'foo foo_bar _foo' || cli::assert
+    diff <(${CLI_COMMAND[@]} ---mapfile foo foo-bar .foo) - \
+        <<-EOF || cli::assert
+			foo
+			foo_bar
+			_foo
+		EOF
 }

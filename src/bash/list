@@ -44,20 +44,22 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-::cli::bash::emit::inline() {
+::cli::bash::list::inline() {
+    MAPFILE=()
+
     for name in "$@"; do
         if [[ "${name}" =~ ^.*[*]$ ]]; then
             for match in $(eval "echo \${!${name}}"); do
                 # do not recurse! test -v arr=() is false
-                declare -p ${match}
+                MAPFILE+=( "${match}" )
             done
         elif [[ -v "${name}" ]]; then
-            declare -p "${name}"
+            MAPFILE+=( "${name}" )
         else
             # declare -a arr=()
             for match in $(eval "echo \${!${name}*}"); do
                 if [[ "${match}" == "${name}" ]]; then
-                    declare -p "${name}"
+                    MAPFILE+=( "${name}" )
                 fi
             done
         fi

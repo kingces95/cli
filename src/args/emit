@@ -18,7 +18,7 @@ Arguments
 EOF
 }
 
-emit() {   
+cli::args::emit::main() {   
     local _ARG_ARGS
     local _ARG_META
     local _ARG_TYPE
