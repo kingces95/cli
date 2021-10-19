@@ -7,27 +7,20 @@ Command
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
+main() {
+    readonly CLI_CORE_REGEX_TYPE_NAME="^[a-z][a-z0-9_]*$"
+    readonly CLI_CORE_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 
-cli::core::help() {
-    cat << EOF
+    cli::core::help() {
+        cat <<-EOF 
 
-Core Arguments
-    --name -n    [Required] : The variable name. Regex: ${CLI_REGEX_GLOBAL_NAME}.
-    --type -t               : The variable type. Regex: ${CLI_REGEX_TYPE_NAME}.
-EOF
-    cli::help::sourceable
-}
+			Core Arguments
+			    --name -n    [Required] : The variable name. Regex: ${CLI_CORE_REGEX_GLOBAL_NAME}.
+			    --type -t               : The variable type. Regex: ${CLI_CORE_REGEX_TYPE_NAME}.
+			EOF
+        
+        cli::help::sourceable
+    }
 
-cli::core::cli::meta::declare() {
-    cli::meta::add_flag 'source'
-    cli::meta::add_required 'name' '' "${CLI_REGEX_GLOBAL_NAME}"
-    cli::meta::add_optional 'type' '' "${CLI_REGEX_TYPE_NAME}"
-}
-
-cli::core::_group::main() {
-    :
-    # cli::export cli core
+    cli::export cli core
 }

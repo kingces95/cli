@@ -185,7 +185,7 @@ declare -n CLI_IMPORT='CLI_IMPORT_CLI_LOADER'
 # emulate bgen
 bgen() {
     cli::bash::declare::type::cli_meta_tables() {
-        cli::core::scope::add $1 CLI_META_TABLES
+        cli::loader::scope::add $1 CLI_META_TABLES
 
         cli::bash::variable::declare \
             map $1_ALIAS \
@@ -197,7 +197,7 @@ bgen() {
             map $1_TYPE
     }
     cli::bash::declare::type::cli_meta_group() {
-        cli::core::scope::add $1 CLI_META_GROUP
+        cli::loader::scope::add $1 CLI_META_GROUP
 
         cli::bash::variable::declare \
             map $1_ALLOW \
@@ -209,7 +209,7 @@ bgen() {
             boolean $1_POSITIONAL
     }
     cli::bash::declare::type::cli_meta() {
-        cli::core::scope::add $1 CLI_META
+        cli::loader::scope::add $1 CLI_META
 
         cli::bash::variable::declare \
             map $1_ALIAS \
@@ -217,21 +217,21 @@ bgen() {
             map $1_BASH_NAME
     }
     cli::bash::declare::type::cli_meta_attributes() {
-        cli::core::scope::add $1 CLI_META_ATTRIBUTES
+        cli::loader::scope::add $1 CLI_META_ATTRIBUTES
 
         cli::bash::variable::declare \
             map $1_TYPE \
             map $1_BLOB
     }
     cli::bash::declare::type::cli_tokens() {
-        cli::core::scope::add $1 CLI_TOKENS
+        cli::loader::scope::add $1 CLI_TOKENS
 
         cli::bash::variable::declare \
             array $1_ID \
             array $1_IDENTIFIER
     }
     cli::bash::declare::type::cli_args() {
-        cli::core::scope::add $1 CLI_ARGS
+        cli::loader::scope::add $1 CLI_ARGS
 
         cli::bash::variable::declare \
             string $1_FIRST_NAMED \
@@ -877,10 +877,12 @@ declare_export() {
         local -u GLOB
 
         for i in "$@"; do 
-            GLOB+="${i}_"; 
+            GLOB+="${i^^}_"; 
         done
 
-        declare -p $(eval "echo \${!${GLOB}@}")
+        while read _ type value; do
+            echo "declare ${type}g ${value}" 
+        done < <( cli::dump "${GLOB}*" )
     }
 
     cli::export::imports() {
@@ -892,7 +894,7 @@ declare_export() {
 declare_export
 
 declare_core() {
-    cli::core::scope::add() { CLI_SCOPE[$1]="$2"; }
+    cli::loader::scope::add() { CLI_SCOPE[$1]="$2"; }
 
     # Arguments when --print-struct
     #     --print-struct -s    [Flag] : Print structs
@@ -1037,7 +1039,7 @@ cli::meta::allow_positional() {
 }
 
 cli::meta::default() {
-    cli::core::scope::add \
+    cli::loader::scope::add \
         CLI_META CLI_META
 
     cli::bash::variable::declare \
@@ -1190,7 +1192,6 @@ cli::loader::cache::test() {
 }
 
 cli::loader::import_parent() {
-
     local command=( "${CLI_COMMAND[@]}" )
 
     # no hierarchy
@@ -1214,7 +1215,7 @@ cli::loader::import_parent() {
     command=( "${command[@]:0:$(( ${#command[@]}-1 ))}" '.group' )
 
     # import parent
-    "${command[@]}" ---import
+    "${command[@]}" ---import >&2
 }
 
 cli::loader::backpatch() {
@@ -1268,7 +1269,7 @@ cli::loader::import() {
 
     # emit inline stub
     if [[ "${TYPE}" == 'inline' ]]; then
-        eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${CLI_COMMAND[@]} --- \"\$@\"; }"
+        eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${FUNCTION} \"\$@\"; }"
         ::cli::bash::is_function_declared::inline "${FUNCTION}" || cli::assert
         return
     fi
@@ -1555,16 +1556,28 @@ cli::main() {
     fi
 }
 
+cli::bash::pop() {
+    MAPFILE=( ${@:1:$((${#@}-1))} )
+}
+
 cli::main::group() {
     [[ "${CLI_COMMAND[@]: -1}" == '.group' ]] || cli::assert
 
-    if (( $# > 0 )); then
-        cli::assert "Unexpected arguments passed to '${CLI_COMMAND[*]}': $@"
+    (( $# == 0 )) \
+        || cli::assert "Unexpected arguments passed to '${CLI_COMMAND[*]}': $@"
+
+    if cli::loader::cache::test 'exports.sh'; then 
+        cat "${REPLY}"
+        return
     fi
 
-    ::cli::bash::is_function_declared::inline ${CLI_FUNCTION_MAIN} \
-        || cli::assert "Command '${CLI_COMMAND[@]}' missing entrypoint '${CLI_FUNCTION_MAIN}'."
-    ${CLI_FUNCTION_MAIN}
+    cli::bash::pop "${CLI_COMMAND[@]}"
+    diff <( cli::export "${MAPFILE[@]}" ) - < /dev/null \
+        || cli::assert "Attempt to import '${MAPFILE[@]} .group' but variables already defined."
+
+    ::cli::bash::is_function_declared::inline main \
+        || cli::assert "Command '${CLI_COMMAND[@]}' missing entrypoint 'main'."
+    main "$@"
 }
 
 cli::main::inline() {
@@ -1699,9 +1712,8 @@ cli::main::command() {
     fi
 
     ::cli::bash::is_function_declared::inline ${CLI_FUNCTION_MAIN} \
-        || cli::assert "Unexpected missing '${CLI_FUNCTION_MAIN}' in '$0'."
-
-    ${CLI_FUNCTION_MAIN} "${CLI_ARGS_POSITIONAL[@]}"
+        || cli::assert "Command '${CLI_COMMAND[@]}' missing entrypoint '${CLI_FUNCTION_MAIN}'."
+    ${CLI_FUNCTION_MAIN} "$@"
 }
 
 cli::dump() {
@@ -1914,7 +1926,7 @@ loader_source() {
     cli::import cli args initialize
     cli::import cli args emit
 
-    # cli::import cli name to-bash
+    cli::import cli name to-bash
     # cli::import cli core struct emit
 
     cli::meta::declare() {
@@ -1950,7 +1962,12 @@ loader_source() {
             cli::export::variables cli bgen
             cli::export::variables cli arg
             cli::export::variables cli meta attributes
+
         } | sort -k2 -k3
+        echo
+
+        echo '# cli core'
+        cli::export cli core
         echo
 
         echo '# TOC of cli::*'

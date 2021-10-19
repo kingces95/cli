@@ -1,5 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash variable initialize
+cli::import cli core variable parse
 cli::import cli core type is-scaler
 cli::import cli core type is-builtin
 cli::import cli core type is-modified
@@ -26,22 +27,28 @@ cli::meta::declare() {
 cli::core::variable::declare::main() {
     ::cli::core::variable::declare::inline "$@"
 
+    set "${MAPFILE[@]}"
     while (( $# > 0 )); do
-        shift
         cli::dump "$1" "$1_*"
         shift
     done
 }
 
 ::cli::core::variable::declare::inline() {
+    local -a names=()
 
     while (( $# > 0 )); do
 
-        local -a type=( ${1?'Missing variable type.'} )
+        ::cli::core::variable::parse::inline "$@"
+
+        local name=${REPLY}
+        local -n ref="${name}"
         shift
 
-        local name=${1?'Missing variable name.'}
-        shift
+        local -a type=( ${MAPFILE[@]} )
+        shift ${#MAPFILE[@]}
+
+        names+=( "${name}" )
 
         if ::cli::core::type::is_modified::inline "${type[@]}"; then
             type=( map )
@@ -70,21 +77,22 @@ cli::core::variable::declare::main() {
 
                 # recursively declare fields
                 ::cli::core::variable::declare::inline \
-                    "${field_type}" \
+                    ${field_type} \
                     "${name}_${field^^}"
             done
         fi
     done
+
+    MAPFILE=( "${names[@]}" )
 }
 
 self_test() {
-
     diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'declare -- VAR=""' || cli::assert
     diff <(${CLI_COMMAND[@]} -- integer VAR) - <<< 'declare -i VAR="0"' || cli::assert
     diff <(${CLI_COMMAND[@]} -- boolean VAR) - <<< 'declare -- VAR="false"' || cli::assert
     diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'declare -a VAR=()' || cli::assert
     diff <(${CLI_COMMAND[@]} -- map VAR) - <<< 'declare -A VAR=()' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- 'map_of integer' VAR) - <<< 'declare -A VAR=()' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- map_of integer VAR) - <<< 'declare -A VAR=()' || cli::assert
 
     # udt
     declare -A CLI_TYPE_VERSION=(
