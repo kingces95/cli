@@ -22,10 +22,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::core::type::is_builtin::inline() {
 
     if (( $# != 1 )); then

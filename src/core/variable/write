@@ -1,0 +1,231 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash write
+cli::import cli core variable parse
+cli::import cli core type is-scaler
+cli::import cli core type is-builtin
+cli::import cli core type is-modified
+cli::import cli core type is-user-defined
+cli::import cli core type unmodify
+
+help() {
+    cat << EOF | cli::core::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Write a variable as a sequence of records.
+
+Description
+    Like recursively listing files in a directory by their full path, this function
+    list the scaler values found in a variable with a "path" that is composed of a space
+    delimited list of names that represent fields of a user defined type, or keys of 
+    a map or modified type (i.e. a type modified by 'map_of'). Arrays do not contriubte
+    a name to the path.
+
+Arguments
+    --                      : Names of the parents.
+EOF
+    cat << EOF
+
+Examples
+    For example, writing a variable VAR of type 'metadata' defined as 
+    
+        CLI_TYPE_METADATA=(
+            [positional]=boolean
+            [allow]='map_of map'
+        )
+        
+    where 'positional' is 'true' and 'allow' is has a key 'color' which points at a 
+    map whose keys are 'black' and 'white' and whose values are empty:
+
+        VAR_POSITIONAL=true
+        VAR_ALLOW=( [0]='color' )
+        VAR_ALLOW_0=(
+            [black]=
+            [white]=
+        )
+
+    would produce the following records: 
+
+        allow color black
+        allow color white
+        positional true
+EOF
+}
+
+::cli::core::variable::write::inline() {
+    ::cli::core::variable::parse::inline "$@"
+    local TYPE=( "${MAPFILE[@]}" )
+    shift $(( ${#MAPFILE[@]} ))
+
+    local NAME="${REPLY}"
+    shift
+
+    # leaf
+    if ::cli::core::type::is_builtin::inline "${TYPE[@]}"; then
+        (( ${#TYPE[@]} == 1 )) || cli::assert
+        local -n REF=${NAME}
+
+        # scaler
+        if ::cli::core::type::is_scaler::inline "${TYPE}"; then
+            ::cli::bash::write::inline "$@" "${REF}"
+
+        # array
+        elif [[ "${TYPE}" == 'array' ]]; then
+            for KEY in "${REF[@]}"; do
+                ::cli::bash::write::inline "$@" "${KEY}"
+            done
+
+        # map
+        else
+            [[ "${TYPE}" == 'map' ]] || cli::assert
+            for KEY in ${!REF[@]}; do
+                ::cli::bash::write::inline "$@" "${KEY}" "${REF[$KEY]}"
+            done
+        fi
+
+    # anonymous
+    elif ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+        local -n REF=${NAME}
+        
+        ::cli::core::type::unmodify::inline "${TYPE[@]}"
+        local FIELD_TYPE=( "${MAPFILE[@]}" )
+
+        # map_of
+        for FIELD_NAME in "${!REF[@]}"; do
+            local FIELD_VARIABLE=${NAME}_${REF[${FIELD_NAME}]}
+
+            ::cli::core::variable::write::inline \
+                "${FIELD_TYPE[@]}" "${FIELD_VARIABLE}" "$@" "${FIELD_NAME}"
+        done
+
+    # udt
+    else
+
+        # user defined type
+        local -n FIELDS=CLI_TYPE_${TYPE^^}
+        # [[ -v "CLI_TYPE_${TYPE^^}" ]] || cli::assert "Type '${TYPE}' not found."
+
+        for FIELD_NAME in ${!FIELDS[@]}; do
+            local FIELD_TYPE=( ${FIELDS[$FIELD_NAME]} )
+            local FIELD_VARIABLE=${NAME}_${FIELD_NAME^^}
+
+            ::cli::core::variable::write::inline \
+                "${FIELD_TYPE[@]}" "${FIELD_VARIABLE}" "$@" "${FIELD_NAME}"
+        done
+    fi
+}
+
+self_test() {
+
+    # string
+    local MY_STRING='Hello World!'
+    diff <(${CLI_COMMAND[@]} -- string MY_STRING) - <<< 'Hello\ World!'
+
+    # integer
+    local -i MY_INTEGER=42
+    diff <(${CLI_COMMAND[@]} -- integer MY_INTEGER) - <<< '42'
+
+    # boolean
+    local MY_BOOLEAN=true
+    diff <(${CLI_COMMAND[@]} -- boolean MY_BOOLEAN) - <<< 'true'
+
+    # array
+    local -a MY_ARRAY=( 'a a b a' )
+    diff <(${CLI_COMMAND[@]} -- array MY_ARRAY) - <<< 'a\ a\ b\ a'
+
+    # array
+    local -a MY_ARRAY=( a a b a )
+    diff <(${CLI_COMMAND[@]} -- array MY_ARRAY) <(
+        echo a
+        echo a
+        echo b
+        echo a
+    )
+
+    # map
+    local -A MY_MAP=( [key]=value [element]= )
+    diff <(${CLI_COMMAND[@]} -- map MY_MAP | sort) <(
+        echo "element"
+        echo key value
+    )
+
+    # map_of map
+    local -A MOD_MAP=(
+        ['seq']=0
+    )
+    local -A MOD_MAP_0=(
+        ['pi']=3141
+        ['fib']=11235
+    )
+    diff <(${CLI_COMMAND[@]} -- map_of map MOD_MAP | sort) <(
+        echo seq fib 11235
+        echo seq pi 3141
+    )
+    
+    # map_of map_of integer
+    local -A MOD_MOD_INTEGER=(
+        ['seq']=0
+    )
+    local -A MOD_MOD_INTEGER_0=(
+        ['fib']=0
+        ['pi']=1
+    )
+    local -A MOD_MOD_INTEGER_0_0=11235
+    local -A MOD_MOD_INTEGER_0_1=3141
+    diff <(${CLI_COMMAND[@]} -- map_of map_of integer MOD_MOD_INTEGER | sort) <(
+        echo seq fib 11235
+        echo seq pi 3141
+    )
+
+    # map_of array
+    local -A MOD_ARRAY=(
+        ['seq']=0
+    )
+    local -a MOD_ARRAY_0=( 'fib' 'pi' )
+    diff <(${CLI_COMMAND[@]} -- map_of array MOD_ARRAY) <(
+        echo seq fib
+        echo seq pi
+    )
+
+    # udt
+    local -A CLI_TYPE_VERSION=(
+        ['major']=integer
+        ['minor']=integer
+    )
+    local -A CLI_TYPE_METADATA=(
+        ['allow']='map_of map'
+        ['mmm']='map_of map_of map'
+        ['positional']='boolean'
+        ['version']='version'
+    )
+
+    local META_POSITIONAL=true
+    local -i META_VERSION_MAJOR=1
+    local -i META_VERSION_MINOR=2
+    local -A META_ALLOW=(
+        ['color']=0
+    )
+    local -A META_ALLOW_0=(
+        ['black']=
+        ['white']=
+    )
+    local -A META_MMM=(
+        ['a']=0
+    )
+    local -A META_MMM_0=(
+        ['b']=0
+    )
+    local -A META_MMM_0_0=(
+        ['c']='d'
+    )
+
+    diff <(${CLI_COMMAND[@]} -- metadata META | sort) <(
+        echo 'allow color black' 
+        echo 'allow color white' 
+        echo 'mmm a b c d' 
+        echo 'positional true' 
+        echo 'version major 1' 
+        echo 'version minor 2'
+    )
+}

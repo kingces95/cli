@@ -1,0 +1,85 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core type is-builtin
+cli::import cli core type is-modified
+cli::import cli core type unmodified
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Emit a type, the type of its fields, and their fields, etc.
+
+Description
+    A user defined type has fields and each field has a type. This forms a 
+    tree which is walked and each visted user defined type is emitted.
+EOF
+}
+
+cli::core::type::emit::main() {
+    ARG_TYPE="$@"
+        ::cli::core::type::emit::inline
+}
+
+::cli::core::type::emit::inline() {
+    local TYPE=( ${ARG_TYPE} )
+
+    # root
+    if (( $# == 0 )); then
+        local -A VISITED=()
+    fi
+    
+    # strip 'map_of' prefixes 
+    local ELEMENT_TYPE="${TYPE}"
+    if ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+        ::cli::core::type::unmodified::inline "${TYPE[@]}"
+        ELEMENT_TYPE="${REPLY}"
+    fi
+
+    # skip builtin types & visited types
+    if ::cli::core::type::is_builtin::inline "${ELEMENT_TYPE}" ||
+        [[ -n ${VISITED[${ELEMENT_TYPE}]+set} ]]; then
+        return
+    fi
+    VISITED[${ELEMENT_TYPE}]=true
+
+    # emit the user defined type
+    local -u UDT_TYPE=CLI_TYPE_${ELEMENT_TYPE^^}
+    declare -p ${UDT_TYPE}
+
+    # recurse using the type of each of the user defined type's fields
+    local -n UDT_TYPE_REF=${UDT_TYPE}
+    for FIELD_TYPE in "${UDT_TYPE_REF[@]}"; do
+        ARG_TYPE="${FIELD_TYPE}" \
+            ::cli::core::type::emit::inline $(( $# + 1 ))
+    done
+}
+
+self_test() {
+    diff <( ${CLI_COMMAND[@]} -- string ) - < /dev/null
+    diff <( ${CLI_COMMAND[@]} -- integer ) - < /dev/null
+    diff <( ${CLI_COMMAND[@]} -- map ) - < /dev/null
+    diff <( ${CLI_COMMAND[@]} -- array ) - < /dev/null
+    diff <( ${CLI_COMMAND[@]} -- map_of string ) - < /dev/null
+    diff <( ${CLI_COMMAND[@]} -- map_of map_of string ) - < /dev/null
+
+    declare -A CLI_TYPE_FLOAT=(
+        [decimal]="integer" 
+        [places]="integer" 
+        [integer]="integer"
+    )
+
+    diff <( ${CLI_COMMAND[@]} -- map_of float ) - \
+        <<< 'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+
+    declare -A CLI_TYPE_CONSTANT=(
+        [value]="float" 
+        [name]="string" 
+    )
+
+    diff <( ${CLI_COMMAND[@]} -- constant ) <(
+        echo 'declare -A CLI_TYPE_CONSTANT=([value]="float" [name]="string" )'
+        echo 'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+    )
+}

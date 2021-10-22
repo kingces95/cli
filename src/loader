@@ -615,6 +615,49 @@ inline() {
         done
     }
 
+    ::cli::bash::variable::list::inline() {
+        MAPFILE=()
+
+        for name in "$@"; do
+
+            if [[ ! "${name}" ]]; then
+                continue
+
+            elif [[ "${name}" =~ ^.*[*]$ ]]; then
+                for match in $(eval "echo \${!${name}}"); do
+                    # do not recurse! test -v arr=() is false
+                    MAPFILE+=( "${match}" )
+                done
+
+            elif [[ -v "${name}" ]]; then
+                MAPFILE+=( "${name}" )
+
+            else
+                # declare -a arr=()
+                for match in $(eval "echo \${!${name}*}"); do
+                    if [[ "${match}" == "${name}" ]]; then
+                        MAPFILE+=( "${name}" )
+                    fi
+                done
+            fi
+        done
+    }
+        
+    ::cli::bash::variable::emit::inline() {
+        ::cli::bash::variable::list::inline "$@"
+        
+        if (( ${#MAPFILE[@]} == 0 )); then
+            return
+        fi
+
+        declare -p "${MAPFILE[@]}"
+    }
+
+    ::cli::bash::array::pop::inline() {
+        (( $# > 0 )) || cli::assert 'Stack empty.'
+        MAPFILE=( ${@:1:$((${#@}-1))} )
+    }
+
     ::cli::subshell::on_exit::inline() {
         local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
         local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
@@ -1287,6 +1330,7 @@ cli::loader::import() {
 }
 
 cli::loader::source::exports() {
+    # echo "testing ${CLI_COMMAND[@]}" >&2
     if ! cli::loader::cache::test 'exports.sh'; then 
         ${CLI_COMMAND[@]} ---exports > /dev/null
     fi
@@ -1556,10 +1600,6 @@ cli::main() {
     fi
 }
 
-cli::bash::pop() {
-    MAPFILE=( ${@:1:$((${#@}-1))} )
-}
-
 cli::main::group() {
     [[ "${CLI_COMMAND[@]: -1}" == '.group' ]] || cli::assert
 
@@ -1571,7 +1611,7 @@ cli::main::group() {
         return
     fi
 
-    cli::bash::pop "${CLI_COMMAND[@]}"
+    ::cli::bash::array::pop::inline "${CLI_COMMAND[@]}"
     diff <( cli::export "${MAPFILE[@]}" ) - < /dev/null \
         || cli::assert "Attempt to import '${MAPFILE[@]} .group' but variables already defined."
 
@@ -1812,9 +1852,7 @@ loader_source() {
         fi >&2
     }
 
-    # these functions pre-imported because the import logic itself depends on them.
-    # the effect of importing pre-imported functions is to ensure the copies here
-    # match the source copies. 
+    # these functions pre-imported because the import logic itself depends on them
     diff_import 'cli set test'
     diff_import 'cli set deflower' \
         'cli set test'
@@ -1864,6 +1902,8 @@ loader_source() {
     diff_import_then_export_as 'cli bash variable initialize' 'cli::bash::variable::declare' \
         'cli bash variable declare'
 
+    diff_import 'cli bash array pop'
+    
     diff_import_then_export_as 'cli bash which' 'cli::which'
     diff_import_then_export_as 'cli bash log' 'cli::log'
     diff_import_then_export_as 'cli bash return' 'cli::return'
@@ -1902,31 +1942,33 @@ loader_source() {
         'cli path name' \
         'cli shim source'
 
-    cli::import cli bash variable list
-    cli::import cli bash variable emit
+    # cli::import cli bash array pop
+    diff_import 'cli bash variable list'
+    diff_import 'cli bash variable emit' \
+        'cli bash variable list'
 
-    cli::import cli run-as
+    # cli::import cli run-as
 
-    cli::import cli core type is-builtin
-    cli::import cli core type is-modified
-    cli::import cli core type is-scaler
-    cli::import cli core type is-user-defined
-    cli::import cli core type unmodified
-    cli::import cli core type unmodify
+    # cli::import cli core type is-builtin
+    # cli::import cli core type is-modified
+    # cli::import cli core type is-scaler
+    # cli::import cli core type is-user-defined
+    # cli::import cli core type unmodified
+    # cli::import cli core type unmodify
     
-    cli::import cli core variable declare
+    # cli::import cli core variable declare
 
-    cli::import cli core declare
-    cli::import cli core load
-    cli::import cli core save
-    cli::import cli core write
+    # cli::import cli core declare
+    # cli::import cli core load
+    # cli::import cli core save
+    # cli::import cli core write
 
-    cli::import cli args tokenize
-    cli::import cli args parse
-    cli::import cli args initialize
-    cli::import cli args emit
+    # cli::import cli args tokenize
+    # cli::import cli args parse
+    # cli::import cli args initialize
+    # cli::import cli args emit
 
-    cli::import cli name to-bash
+    # cli::import cli name to-bash
     # cli::import cli core struct emit
 
     cli::meta::declare() {

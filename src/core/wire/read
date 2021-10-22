@@ -11,7 +11,7 @@ Command
     
 Summary
     Read a stream of records that represent variables and generate a stream
-    that can be consumed by cli::bash::read.
+    that can be consumed by cli::bash::write.
 
 Description
 
@@ -24,7 +24,7 @@ cli::meta::declare() {
     cli::meta::allow_positional
 }
 
-main() {
+cli::core::wire::read::main() {
     source ${1-'/dev/null'}
     
     # select many core variables for each record; if record is 
@@ -208,7 +208,7 @@ self_test() {
         | cli core wire put
     exit
 
-    set_escaping() {
+    escaping() {
 
         # string
         declare MY_STRING=""
@@ -235,7 +235,7 @@ self_test() {
                 'declare -A MY_MAP=([a]="b c" )'
     }
 
-    set_builtin() {
+    builtin() {
 
         # string
         declare MY_STRING=""
@@ -282,7 +282,7 @@ self_test() {
                 'declare -A MY_MAP=([c]="2" [b]="1" [a]="0" )'
     }
 
-    set_builtin_default() {
+    builtin_default() {
 
         # string
         declare MY_STRING=""
@@ -329,7 +329,7 @@ self_test() {
                 'declare -A MY_MAP=()'
     }
 
-    set_indirect() {
+    indirect() {
 
         # string
         declare -A MY_MAP_OF_STRING=()
@@ -381,7 +381,7 @@ self_test() {
                 "declare -A MY_MAP_OF_MAP_1=([a]=\"\" )"
     }
 
-    set_indirect_default() {
+    indirect_default() {
 
         # string
         declare -A MY_MAP_OF_STRING=()
@@ -429,7 +429,7 @@ self_test() {
                 'declare -A MY_MAP_OF_MAP_0=()'
     }
 
-    set_udt() {
+    udt() {
 
         # indirect
         declare -A CLI_TYPE_VERSION=(['major']='integer' ['minor']='integer')
@@ -576,14 +576,12 @@ self_test() {
         set -e
     }
 
-    set_escaping
-    set_builtin
-    set_builtin_default
-
-    set_indirect
-    set_indirect_default
-
-    set_udt
+    escaping
+    builtin
+    builtin_default
+    indirect
+    indirect_default
+    udt
 
     test_bad_value
     test_too_many_values

@@ -27,10 +27,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::core::type::is_user_defined::inline() {   
     ! ::cli::core::type::is_modified::inline "$@" \
         && ! ::cli::core::type::is_builtin::inline "$1"

@@ -25,9 +25,24 @@ cli::meta::declare() {
 }
 
 cli::core::variable::declare::main() {
-    ::cli::core::variable::declare::inline "$@"
+    local -a names=()
 
-    set "${MAPFILE[@]}"
+    while (( $# > 0 )); do
+        ::cli::core::variable::parse::inline "$@"
+
+        local ARG_NAME=${REPLY}
+        local -n ref="${ARG_NAME}"
+        shift
+
+        local ARG_TYPE="${MAPFILE[@]}"
+        shift ${#MAPFILE[@]}
+
+        names+=( "${ARG_NAME}" )
+
+        ::cli::core::variable::declare::inline "$@"
+    done
+
+    set "${names[@]}"
     while (( $# > 0 )); do
         cli::dump "$1" "$1_*"
         shift
@@ -35,55 +50,38 @@ cli::core::variable::declare::main() {
 }
 
 ::cli::core::variable::declare::inline() {
-    local -a names=()
+    local TYPE=( ${ARG_TYPE} )
+    local NAME="${ARG_NAME}"
 
-    while (( $# > 0 )); do
+    if ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+        TYPE=( map )
+    fi
 
-        ::cli::core::variable::parse::inline "$@"
+    if ::cli::core::type::is_builtin::inline "${TYPE[@]}"; then
+        ::cli::bash::variable::initialize::inline "${TYPE[@]}" "${NAME}"
+    else
+        ::cli::core::type::is_user_defined::inline "${TYPE[@]}" || cli::assert
+        # bgen optimization
+        # local bgen=${CLI_BGEN_DECLARE[CLI_TYPE_${TYPE^^}]-}
+        # if [[ -n ${bgen} ]]; then
+        #     ${bgen} ${NAME}
+        #     return
+        # fi
+        # echo "--- MISSING BGEN FOR CLI_TYPE_${TYPE^^} ---" > /dev/stderr
 
-        local name=${REPLY}
-        local -n ref="${name}"
-        shift
+        local -n "TYPE_REF=CLI_TYPE_${TYPE[@]^^}"
 
-        local -a type=( ${MAPFILE[@]} )
-        shift ${#MAPFILE[@]}
+        # layout fields
+        local FIELD
+        for FIELD in "${!TYPE_REF[@]}"; do
+            local "FIELD_TYPE=${TYPE_REF[$FIELD]}"
 
-        names+=( "${name}" )
-
-        if ::cli::core::type::is_modified::inline "${type[@]}"; then
-            type=( map )
-        fi
-
-        if ::cli::core::type::is_builtin::inline "${type[@]}"; then
-            ::cli::bash::variable::initialize::inline "${type[@]}" "${name}"
-        else
-            ::cli::core::type::is_user_defined::inline "${type[@]}" \
-                || cli::assert
-
-            # bgen optimization
-            # local bgen=${CLI_BGEN_DECLARE[CLI_TYPE_${ARG_TYPE^^}]-}
-            # if [[ -n ${bgen} ]]; then
-            #     ${bgen} ${ARG_NAME}
-            #     return
-            # fi
-            # echo "--- MISSING BGEN FOR CLI_TYPE_${ARG_TYPE^^} ---" > /dev/stderr
-
-            local -n "type_ref=CLI_TYPE_${type[@]^^}"
-
-            # layout fields
-            local field
-            for field in "${!type_ref[@]}"; do
-                local "field_type=${type_ref[$field]}"
-
-                # recursively declare fields
-                ::cli::core::variable::declare::inline \
-                    ${field_type} \
-                    "${name}_${field^^}"
-            done
-        fi
-    done
-
-    MAPFILE=( "${names[@]}" )
+            # recursively declare fields
+            ARG_TYPE="${FIELD_TYPE}" \
+            ARG_NAME="${NAME}_${FIELD^^}" \
+                ::cli::core::variable::declare::inline
+        done
+    fi
 }
 
 self_test() {

@@ -7,25 +7,12 @@ Command
 EOF
 }
 
-cli::core::type::help() {
-    cat
-    cat << EOF
-
-Arguments
-    First argument is the type under investigation.
-EOF
-}
-
-cli::core::type::import() {
-    cli::meta::allow_positional
-}
-
-cli::core::type::_group::main() {
+main() {
     :
-    # cli::export cli core type
 }
 
 self_test() {
+    cli core type emit --self-test
     cli core type is-builtin --self-test
     cli core type is-modified --self-test
     cli core type is-scaler --self-test

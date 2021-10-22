@@ -7,11 +7,13 @@ Command
 EOF
 }
 
-cli::meta::declare() {
+main() {
     :
 }
 
-cli::core::variable::_group::main() {
-    :
-    # cli::export cli core variable
+self_test() {
+    cli core variable declare --self-test
+    cli core variable parse --self-test
+    cli core variable put --self-test
+    cli core variable write --self-test
 }

@@ -20,10 +20,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::core::type::unmodify::inline() {
     MAPFILE=()
 

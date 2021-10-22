@@ -37,10 +37,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::variable::emit::inline() {
     ::cli::bash::variable::list::inline "$@"
     

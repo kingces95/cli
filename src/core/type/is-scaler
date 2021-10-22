@@ -19,10 +19,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::core::type::is_scaler::inline() {
 
     if (( $# != 1 )); then

@@ -26,10 +26,6 @@ Example
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::bash::variable::initialize::main() {
     ::cli::bash::variable::initialize::inline "$@"
 

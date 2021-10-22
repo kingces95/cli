@@ -20,22 +20,20 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::core::type::unmodified::inline() {
-    MAPFILE=()
-    
+    local type=( "$@" )
+
     while ::cli::core::type::is_modified::inline "$@"; do
         shift
     done
 
-    MAPFILE=( "$@" )
+    (( $# == 1 )) || cli::assert "Unable to unmodify type ${type}."
+
+    REPLY="$1"
 }
 
 self_test() {
-    [[ "$(${CLI_COMMAND[@]} ---mapfile boolean)" == 'boolean' ]] || cli::assert
-    [[ "$(${CLI_COMMAND[@]} ---mapfile map_of map_of boolean)" == 'boolean' ]] || cli::assert
-    [[ "$(${CLI_COMMAND[@]} ---mapfile string string)" == $'string\nstring' ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply boolean)" == 'boolean' ]] || cli::assert
+    [[ "$(${CLI_COMMAND[@]} ---reply map_of map_of boolean)" == 'boolean' ]] || cli::assert
+    # [[ "$(${CLI_COMMAND[@]} ---reply string string)" == $'string\nstring' ]] || cli::assert
 }
