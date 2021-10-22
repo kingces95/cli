@@ -20,20 +20,22 @@ EOF
 }
 
 cli::core::variable::put::main() {
-    ::cli::core::variable::put::inline "$@"
+    ::cli::core::variable::parse::inline "$@"
+    shift ${#MAPFILE[@]}
+    shift
+
+    ARG_NAME=${REPLY} \
+    ARG_TYPE="${MAPFILE[@]}" \
+        ::cli::core::variable::put::inline "$@"
+
     cli::dump "${REPLY}" "${REPLY}_*"
 }
 
 ::cli::core::variable::put::inline() {
-    ::cli::core::variable::parse::inline "$@"
-
-    local NAME=${REPLY}
+    local -a TYPE=( ${ARG_TYPE} )
+    local NAME="${ARG_NAME}"
     local -n REF="${NAME}"
     # TODO: Verify REF is valid!
-    shift
-
-    local -a TYPE=( ${MAPFILE[@]} )
-    shift ${#MAPFILE[@]}
 
     # builtin
     if ::cli::core::type::is_builtin::inline ${TYPE[@]}; then
@@ -142,7 +144,9 @@ cli::core::variable::put::main() {
         : ${NEXT_TYPE:?}
 
         # recurse
-        ::cli::core::variable::put::inline "${NEXT_TYPE[@]}" "${NEXT_NAME}" "${@:2}"
+        ARG_TYPE="${NEXT_TYPE[@]}" \
+        ARG_NAME="${NEXT_NAME}" \
+            ::cli::core::variable::put::inline  "${@:2}"
     fi
 
     REPLY=${NAME}

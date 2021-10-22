@@ -53,13 +53,19 @@ Examples
 EOF
 }
 
-::cli::core::variable::write::inline() {
+cli::core::variable::write::main() {
     ::cli::core::variable::parse::inline "$@"
-    local TYPE=( "${MAPFILE[@]}" )
     shift $(( ${#MAPFILE[@]} ))
-
-    local NAME="${REPLY}"
     shift
+
+    ARG_TYPE="${MAPFILE[@]}" \
+    ARG_NAME="${REPLY}" \
+        ::cli::core::variable::write::inline "$@"
+}
+
+::cli::core::variable::write::inline() {
+    local TYPE=( ${ARG_TYPE} )
+    local NAME="${ARG_NAME}"
 
     # leaf
     if ::cli::core::type::is_builtin::inline "${TYPE[@]}"; then
@@ -95,8 +101,9 @@ EOF
         for FIELD_NAME in "${!REF[@]}"; do
             local FIELD_VARIABLE=${NAME}_${REF[${FIELD_NAME}]}
 
-            ::cli::core::variable::write::inline \
-                "${FIELD_TYPE[@]}" "${FIELD_VARIABLE}" "$@" "${FIELD_NAME}"
+            ARG_TYPE="${FIELD_TYPE[@]}" \
+            ARG_NAME="${FIELD_VARIABLE}" \
+                ::cli::core::variable::write::inline "$@" "${FIELD_NAME}"
         done
 
     # udt
@@ -104,14 +111,14 @@ EOF
 
         # user defined type
         local -n FIELDS=CLI_TYPE_${TYPE^^}
-        # [[ -v "CLI_TYPE_${TYPE^^}" ]] || cli::assert "Type '${TYPE}' not found."
 
         for FIELD_NAME in ${!FIELDS[@]}; do
             local FIELD_TYPE=( ${FIELDS[$FIELD_NAME]} )
             local FIELD_VARIABLE=${NAME}_${FIELD_NAME^^}
 
-            ::cli::core::variable::write::inline \
-                "${FIELD_TYPE[@]}" "${FIELD_VARIABLE}" "$@" "${FIELD_NAME}"
+            ARG_TYPE="${FIELD_TYPE[@]}" \
+            ARG_NAME="${FIELD_VARIABLE}" \
+                ::cli::core::variable::write::inline "$@" "${FIELD_NAME}"
         done
     fi
 }
