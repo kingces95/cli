@@ -1,8 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable parse
+cli::import cli core variable put
 cli::import cli core variable declare
-cli::import cli core type is-builtin
-cli::import cli core type is-modified
 
 help() {
     cat << EOF
@@ -10,193 +8,84 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Declare a variable given a record.
+    Read and declare variables for records.
 
 Description
     Argument $1-n is the type of the variable, followed by a name which is
-    extended given the remaining arguments which constitute a path followed
-    by the value (or key/value if the type is a map).
-
-Arguments
-    --                      : Record to put.
+    appended according to the remaining arguments which constitute the path 
+    of the record followed by the value (or key/value if the type is a map).
 EOF
 }
 
-cli::core::variable::put::main() {
+cli::core::variable::read::main() {
+    cli::import cli core variable parse
+
     ::cli::core::variable::parse::inline "$@"
     shift ${#MAPFILE[@]}
     shift
 
     ARG_NAME=${REPLY} \
     ARG_TYPE="${MAPFILE[@]}" \
-        ::cli::core::variable::put::inline "$@"
+        ::cli::core::variable::read::inline "$@"
 
     cli::dump "${REPLY}" "${REPLY}_*"
 }
 
-::cli::core::variable::put::inline() {
-    local -a TYPE=( ${ARG_TYPE} )
+::cli::core::variable::read::inline() {
     local NAME="${ARG_NAME}"
-    local -n REF="${NAME}"
-    # TODO: Verify REF is valid!
+    local TYPE=( "${ARG_TYPE}" )
 
-    # builtin
-    if ::cli::core::type::is_builtin::inline ${TYPE[@]}; then
+    ARG_NAME="${NAME}" \
+    ARG_TYPE="${TYPE[@]}" \
+        ::cli::core::variable::declare::inline "${MAPFILE[@]}"
 
-        # scaler
-        if ::cli::core::type::is_scaler::inline ${TYPE[@]}; then
-            (( ${#TYPE[@]} == 1 )) || cli::assert
-
-            (( $# == 0 || $# == 1 )) || cli::assert \
-                "Failed to assign '${1-}' to ${TYPE} '${NAME}'." \
-                "Expected a record with one or no fields, but got '$@'."
-
-            # scaler value supplied
-            if (( $# != 0 )); then
-                case ${TYPE} in
-                    'boolean') [[ "${1-}" =~ ^$|^true$|^false$ ]] || cli::assert \
-                        "Failed to assign '${1-}' to ${TYPE} '${NAME}'." ;;
-
-                    'integer') [[ "${1-}" =~ ^$|^[-]?[0-9]+$ ]] || cli::assert \
-                        "Failed to assign '${1-}' to ${TYPE} '${NAME}'." ;;
-                esac
-
-                REF="$1" 
-
-            # no scaler value supplied; default
-            else
-                ARG_TYPE="${TYPE}" \
-                ARG_NAME="${NAME}" \
-                    ::cli::core::variable::declare::inline
-            fi
-
-        # map
-        elif [[ ${TYPE} == 'map' ]]; then
-
-            (( $# < 3 )) || cli::assert \
-                "Failed to assign value '${2-}' to key '${1-}' in map '${NAME}'." \
-                "Expected a record with two or fewer fields, but got '$@'."
-
-            # map key/value supplied
-            if (( $# != 0 )); then
-                local KEY="${1-}"
-                shift
-
-                local VALUE="$*"
-
-                [[ "${KEY}" =~ . ]] || cli::assert \
-                    "Failed to use empty key to assign '${VALUE}' to map '${NAME}'."
-                REF+=( ["${KEY}"]="${VALUE}" )
-
-            # no key/value; default
-            else
-                REF+=()
-            fi
-
-        # array
-        else
-            [[ ${TYPE} == 'array' ]] || cli::assert "Unknown type '${TYPE}'."
-
-            # array element supplied
-            if (( $# != 0 )); then
-                REF+=( "$*" ) 
-
-            # no array element; default
-            else
-                REF+=()
-            fi
-
-        fi
-
-    # complex
-    elif (( $# > 0 )); then
-        local -a NEXT_TYPE=()
-        local NEXT_NAME
-
-        # anonymous
-        if ::cli::core::type::is_modified::inline ${TYPE[@]}; then
-            NEXT_TYPE=( ${TYPE[@]:1} )
-
-            if [[ ${REF[$1]+set} ]]; then
-                NEXT_NAME=${NAME}_${REF[$1]}
-            else
-                # update anonymous type
-                REF+=( [$1]=${#REF[@]} )
-
-                NEXT_NAME="${NAME}_${REF[$1]}"
-
-                # declare variable
-                ARG_TYPE="${NEXT_TYPE[@]}" \
-                ARG_NAME="${NEXT_NAME}" \
-                    ::cli::core::variable::declare::inline 
-            fi
-
-        # user defined
-        else
-            local -n FIELDS_REF=CLI_TYPE_${TYPE^^}
-
-            if [[ ! "${FIELDS_REF[$1]+set}" == 'set' ]]; then
-                cli::fail "Field '$1' not found in '${TYPE}' fields: { ${!FIELDS_REF[@]} }."
-            fi
-
-            NEXT_TYPE=( ${FIELDS_REF[$1]} )
-            NEXT_NAME=${NAME}_${1^^}
-        fi
-
-        : ${NEXT_NAME:?}
-        : ${NEXT_TYPE:?}
-
-        # recurse
-        ARG_TYPE="${NEXT_TYPE[@]}" \
-        ARG_NAME="${NEXT_NAME}" \
-            ::cli::core::variable::put::inline "${@:2}"
-    fi
-
-    REPLY=${NAME}
-    MAPFILE=( ${TYPE[@]} )
+    while read -a MAPFILE; do
+        ARG_NAME="${NAME}" \
+        ARG_TYPE="${TYPE[@]}" \
+            ::cli::core::variable::put::inline "${MAPFILE[@]}"
+    done 
 }
 
 self_test() {
-
     escaping() {
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- string MY_STRING 'Hello world!' ) - \
+        diff <( ${CLI_COMMAND[@]} -- string MY_STRING <<< 'Hello\ world!' ) - \
             <<< 'declare -- MY_STRING="Hello world!"'
 
         # array
-        diff <( ${CLI_COMMAND[@]} -- array MY_ARRAY a b c ) - \
+        diff <( ${CLI_COMMAND[@]} -- array MY_ARRAY <<< 'a b c' ) - \
             <<< 'declare -a MY_ARRAY=([0]="a b c")'
 
         # map
         declare -A MY_MAP
-        diff <( declare -p MY_MAP | ${CLI_COMMAND[@]} ---source -- map MY_MAP a "b c" ) - \
+        diff <( ${CLI_COMMAND[@]} -- map MY_MAP <<< 'a b\ c' ) - \
             <<< 'declare -A MY_MAP=([a]="b c" )'
     }
 
     builtin() {
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- string MY_STRING 'Hello' ) - \
+        diff <( ${CLI_COMMAND[@]} -- string MY_STRING <<< 'Hello' ) - \
             <<< 'declare -- MY_STRING="Hello"'
 
         # boolean
-        diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN true ) - \
+        diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN <<< true ) - \
             <<< 'declare -- MY_BOOLEAN="true"'
 
         # integer
         local -i MY_INTEGER
-        diff <( ${CLI_COMMAND[@]} --- integer MY_INTEGER 42 ) - \
+        diff <( ${CLI_COMMAND[@]} -- integer MY_INTEGER <<< 42 ) - \
             <<< 'declare -i MY_INTEGER="42"'
 
         # array
-        diff <( ${CLI_COMMAND[@]} --- array MY_ARRAY a > /dev/null
-                ${CLI_COMMAND[@]} --- array MY_ARRAY b; ) - \
+        diff <( ${CLI_COMMAND[@]} --- array MY_ARRAY <<< a > /dev/null
+                ${CLI_COMMAND[@]} -- array MY_ARRAY <<< b; ) - \
             <<< 'declare -a MY_ARRAY=([0]="a" [1]="b")'
 
         # map
         local -A MY_MAP
-        diff <( ${CLI_COMMAND[@]} --- map MY_MAP a 0 ) - \
+        diff <( ${CLI_COMMAND[@]} -- map MY_MAP <<< 'a 0' ) - \
             <<< 'declare -A MY_MAP=([a]="0" )'
     }
 
@@ -205,7 +94,7 @@ self_test() {
         # string
         diff <( ${CLI_COMMAND[@]} -- string MY_STRING ) - \
             <<< 'declare -- MY_STRING=""'
-
+exit
         # boolean
         diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN ) - \
             <<< 'declare -- MY_BOOLEAN="false"'
@@ -342,14 +231,6 @@ self_test() {
             ['minor']='integer'
         )
 
-        # direct default
-        # diff <( 
-        #     ${CLI_COMMAND[@]} -- version MY_VERSION
-        # ) <(
-        #     echo 'declare -i MY_VERSION_MAJOR="0"'
-        #     echo 'declare -i MY_VERSION_MINOR="0"'
-        # )
-
         # indirect
         diff <( 
             declare -A MY_MAP_OF_VERSION=()
@@ -482,13 +363,13 @@ self_test() {
         set -e
     }
 
-    # escaping
-    # builtin
-    # builtin_default
+    escaping
+    builtin
+    builtin_default
 
-    # indirect
-    # double_indirect
-    # indirect_default
+    indirect
+    double_indirect
+    indirect_default
 
     udt
 

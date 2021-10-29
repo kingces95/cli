@@ -1,6 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash variable initialize
 cli::import cli core variable parse
+cli::import cli core variable print
 cli::import cli core type is-scaler
 cli::import cli core type is-builtin
 cli::import cli core type is-modified
@@ -20,45 +21,43 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::core::variable::declare::main() {
-    local -a names=()
+    cli::import cli bash literal
+
+    local -a NAMES=()
+    local -A SCOPE=()
 
     while (( $# > 0 )); do
         ::cli::core::variable::parse::inline "$@"
+        shift $(( ${#MAPFILE[@]} + 1 ))
 
-        local ARG_NAME=${REPLY}
-        local -n ref="${ARG_NAME}"
-        shift
-
-        local ARG_TYPE="${MAPFILE[@]}"
-        shift ${#MAPFILE[@]}
-
-        names+=( "${ARG_NAME}" )
-
-        ::cli::core::variable::declare::inline "$@"
+        ARG_SCOPE='SCOPE' \
+        ARG_TYPE="${MAPFILE[@]}" \
+        ARG_NAME="${REPLY}" \
+            ::cli::core::variable::declare::inline
     done
 
-    set "${names[@]}"
-    while (( $# > 0 )); do
-        cli::dump "$1" "$1_*"
-        shift
-    done
+    ARG_SCOPE='SCOPE' \
+        ::cli::core::variable::print::inline
 }
 
 ::cli::core::variable::declare::inline() {
     local TYPE=( ${ARG_TYPE} )
     local NAME="${ARG_NAME}"
+    local -n SCOPE_REF="${ARG_SCOPE}"
 
-    if ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
-        TYPE=( map )
-    fi
+    # assoicate variable with its type
+    SCOPE_REF["${NAME}"]="${TYPE[*]}"
 
+    # base case
     if ::cli::core::type::is_builtin::inline "${TYPE[@]}"; then
         ::cli::bash::variable::initialize::inline "${TYPE[@]}" "${NAME}"
+
+    # anonymous
+    elif ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+        ::cli::bash::variable::initialize::inline "map" "${NAME}"
+
+    # user defined
     else
         ::cli::core::type::is_user_defined::inline "${TYPE[@]}" || cli::assert
         # bgen optimization
@@ -85,12 +84,13 @@ cli::core::variable::declare::main() {
 }
 
 self_test() {
-    diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'declare -- VAR=""' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- integer VAR) - <<< 'declare -i VAR="0"' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- boolean VAR) - <<< 'declare -- VAR="false"' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'declare -a VAR=()' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- map VAR) - <<< 'declare -A VAR=()' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- map_of integer VAR) - <<< 'declare -A VAR=()' || cli::assert
+    diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'cli::declare string VAR=""'
+    diff <(${CLI_COMMAND[@]} -- integer VAR) - <<< 'cli::declare integer VAR="0"'
+    diff <(${CLI_COMMAND[@]} -- boolean VAR) - <<< 'cli::declare boolean VAR="false"'
+    diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'cli::declare array VAR=()'
+    diff <(${CLI_COMMAND[@]} -- map VAR) - <<< 'cli::declare map VAR=()'
+exit
+    diff <(${CLI_COMMAND[@]} -- map_of integer VAR) - <<< 'cli::declare map_of integer VAR=()'
 
     # udt
     declare -A CLI_TYPE_VERSION=(
@@ -111,27 +111,27 @@ self_test() {
     )
 
     ${CLI_COMMAND[@]} --- udt VAR \
-        | sort -k3 \
-        | diff <(cat <<-EOF
-			declare -a VAR_MY_ARRAY=()
-			declare -- VAR_MY_BOOLEAN="false"
-			declare -i VAR_MY_INTEGER="0"
-			declare -A VAR_MY_MAP=()
-			declare -A VAR_MY_MAP_OF_STRING=()
-			declare -A VAR_MY_MAP_OF_VERSION=()
-			declare -- VAR_MY_STRING=""
-			declare -i VAR_MY_VERSION_MAJOR="0"
-			declare -i VAR_MY_VERSION_MINOR="0"
-			EOF
-        ) -
+        | sort -k3 # \
+    #     | diff <(cat <<-EOF
+	# 		declare -a VAR_MY_ARRAY=()
+	# 		declare -- VAR_MY_BOOLEAN="false"
+	# 		declare -i VAR_MY_INTEGER="0"
+	# 		declare -A VAR_MY_MAP=()
+	# 		declare -A VAR_MY_MAP_OF_STRING=()
+	# 		declare -A VAR_MY_MAP_OF_VERSION=()
+	# 		declare -- VAR_MY_STRING=""
+	# 		declare -i VAR_MY_VERSION_MAJOR="0"
+	# 		declare -i VAR_MY_VERSION_MINOR="0"
+	# 		EOF
+    #     ) -
 
-    ${CLI_COMMAND[@]} --- \
-        string MY_STRING_0 \
-        string MY_STRING_1 \
-        | sort -k3 \
-        | diff <(cat <<-EOF
-			declare -- MY_STRING_0=""
-			declare -- MY_STRING_1=""
-			EOF
-        ) -
+    # ${CLI_COMMAND[@]} --- \
+    #     string MY_STRING_0 \
+    #     string MY_STRING_1 \
+    #     | sort -k3 \
+    #     | diff <(cat <<-EOF
+	# 		declare -- MY_STRING_0=""
+	# 		declare -- MY_STRING_1=""
+	# 		EOF
+    #     ) -
 }

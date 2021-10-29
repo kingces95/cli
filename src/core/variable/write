@@ -1,11 +1,10 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash write
-cli::import cli core variable parse
+cli::import cli core variable resolve
+cli::import cli core type get
 cli::import cli core type is-scaler
 cli::import cli core type is-builtin
-cli::import cli core type is-modified
 cli::import cli core type is-user-defined
-cli::import cli core type unmodify
 
 help() {
     cat << EOF | cli::core::help
@@ -54,6 +53,8 @@ EOF
 }
 
 cli::core::variable::write::main() {
+    cli::import cli core variable parse
+
     ::cli::core::variable::parse::inline "$@"
     shift $(( ${#MAPFILE[@]} ))
     shift
@@ -78,8 +79,8 @@ cli::core::variable::write::main() {
 
         # array
         elif [[ "${TYPE}" == 'array' ]]; then
-            for KEY in "${REF[@]}"; do
-                ::cli::bash::write::inline "$@" "${KEY}"
+            for VALUE in "${REF[@]}"; do
+                ::cli::bash::write::inline "$@" "${VALUE}"
             done
 
         # map
@@ -90,35 +91,29 @@ cli::core::variable::write::main() {
             done
         fi
 
-    # anonymous
-    elif ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
-        local -n REF=${NAME}
-        
-        ::cli::core::type::unmodify::inline "${TYPE[@]}"
-        local FIELD_TYPE=( "${MAPFILE[@]}" )
-
-        # map_of
-        for FIELD_NAME in "${!REF[@]}"; do
-            local FIELD_VARIABLE=${NAME}_${REF[${FIELD_NAME}]}
-
-            ARG_TYPE="${FIELD_TYPE[@]}" \
-            ARG_NAME="${FIELD_VARIABLE}" \
-                ::cli::core::variable::write::inline "$@" "${FIELD_NAME}"
-        done
-
-    # udt
     else
+        local -a SEGMENTS
 
-        # user defined type
-        local -n FIELDS=CLI_TYPE_${TYPE^^}
+        # anonymous
+        if ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+            local -n ORDINALS_REF=${NAME}
+            SEGMENTS=( "${!ORDINALS_REF[@]}" )
 
-        for FIELD_NAME in ${!FIELDS[@]}; do
-            local FIELD_TYPE=( ${FIELDS[$FIELD_NAME]} )
-            local FIELD_VARIABLE=${NAME}_${FIELD_NAME^^}
+        # udt
+        else
+            ::cli::core::type::get::inline "${TYPE}"
+            local -n FIELDS_REF="${REPLY}"
+            SEGMENTS=( "${!FIELDS_REF[@]}" )
+        fi
+            
+        for SEGMENT in "${SEGMENTS[@]}"; do
+            ARG_TYPE="${TYPE[@]}" \
+            ARG_NAME="${NAME}" \
+                ::cli::core::variable::resolve::inline "${SEGMENT}"
 
-            ARG_TYPE="${FIELD_TYPE[@]}" \
-            ARG_NAME="${FIELD_VARIABLE}" \
-                ::cli::core::variable::write::inline "$@" "${FIELD_NAME}"
+            ARG_TYPE="${MAPFILE[@]}" \
+            ARG_NAME="${REPLY}" \
+                ::cli::core::variable::write::inline "$@" "${SEGMENT}"
         done
     fi
 }

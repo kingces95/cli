@@ -1,0 +1,179 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core variable resolve
+cli::import cli core type is-builtin
+
+help() {
+    cat << EOF | cli::core::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Get a scaler, array element, or map value for a path.
+
+Description
+    Argument \$1-n is the type of the variable $n+1. The remaining positional
+    arguments are the path to the builtin type. If the builtin type is an
+    array then ARG_INDEX must contain the element to return. If the builtin
+    is a map then ARG_KEY must contain the key of the value to return. If the
+    key does not exist then the function fails.
+
+    The builtin value is return in variable REPLY.
+EOF
+}
+
+cli::core::variable::get::main() {
+    cli::import cli core variable parse
+
+    ::cli::core::variable::parse::inline "$@"
+    shift $(( ${#MAPFILE[@]} ))
+    shift
+
+    ARG_TYPE="${MAPFILE[@]}" \
+    ARG_NAME="${REPLY}" \
+        ::cli::core::variable::get::inline "$@"
+
+    echo "${REPLY}"
+}
+
+::cli::core::variable::get::inline() {
+    ARG_TYPE="${ARG_TYPE}" \
+    ARG_NAME="${ARG_NAME}" \
+        ::cli::core::variable::resolve::inline "$@"
+
+    local TYPE=( ${MAPFILE[@]} )
+    local NAME="${REPLY}"
+
+    ::cli::core::type::is_builtin::inline "${TYPE[@]}" \
+        || cli::assert "Expected to resolve '$@' to bultin type but got '${TYPE[@]}'."
+
+    case "${TYPE}" in
+        'string') ;&
+        'boolean') ;&
+        'integer') 
+            REPLY="${!NAME}" ;;
+
+        'array')
+            local -n REF="${NAME}"
+            REPLY="${REF[${ARG_INDEX}]}" ;;
+
+        'map')
+            local -n REF="${NAME}"
+            if [[ ! ${REF[${ARG_KEY}]+set} == 'set' ]]; then
+                REPLY=
+                return 1
+            fi
+            REPLY="${REF[${ARG_KEY}]}" ;;
+
+        *) cli::assert "Expected builtin type but got '${TYPE}'."
+    esac
+}
+
+self_test() {
+
+    # string
+    local MY_STRING='Hello World!'
+    diff <(${CLI_COMMAND[@]} -- string MY_STRING) - <<< 'Hello World!'
+
+    # integer
+    local -i MY_INTEGER=42
+    diff <(${CLI_COMMAND[@]} -- integer MY_INTEGER) - <<< '42'
+
+    # boolean
+    local MY_BOOLEAN=true
+    diff <(${CLI_COMMAND[@]} -- boolean MY_BOOLEAN) - <<< 'true'
+
+    # array
+    local -a MY_ARRAY=( a a b a )
+    diff <(ARG_INDEX=0 ${CLI_COMMAND[@]} -- array MY_ARRAY) - <<< 'a'
+
+    # array
+    local -a MY_ARRAY=( a a b a )
+    diff <(ARG_INDEX=2 ${CLI_COMMAND[@]} -- array MY_ARRAY) - <<< 'b'
+
+    # array
+    local -a MY_ARRAY=( 'a a b a' )
+    diff <(ARG_INDEX=0 ${CLI_COMMAND[@]} -- array MY_ARRAY) - <<< 'a a b a'
+
+    # udt
+    local -A CLI_TYPE_VERSION=(
+        ['major']=integer
+        ['minor']=integer
+    )
+    local MY_VERSION_MAJOR=1
+    local MY_VERSION_MINOR=2
+    diff <(${CLI_COMMAND[@]} -- version MY_VERSION major) - <<< '1'
+    diff <(${CLI_COMMAND[@]} -- version MY_VERSION minor) - <<< '2'
+
+    # map
+    local -A MY_MAP=( [key]=value [element]= )
+    diff <(ARG_KEY='key' ${CLI_COMMAND[@]} -- map MY_MAP) - <<< 'value'
+    ARG_KEY='element' ${CLI_COMMAND[@]} -- map MY_MAP >/dev/null
+    ! ARG_KEY='no such key' ${CLI_COMMAND[@]} -- map MY_MAP >/dev/null
+
+    # map_of map
+    local -A MOD_MAP=(
+        ['seq']=0
+    )
+    local -A MOD_MAP_0=(
+        ['pi']=3141
+        ['fib']=11235
+    )
+    diff <(ARG_KEY=fib ${CLI_COMMAND[@]} -- map_of map MOD_MAP seq) - <<< '11235'
+    diff <(ARG_KEY=pi ${CLI_COMMAND[@]} -- map_of map MOD_MAP seq) - <<< '3141'
+    
+    # map_of map_of integer
+    local -A MOD_MOD_INTEGER=(
+        ['seq']=0
+    )
+    local -A MOD_MOD_INTEGER_0=(
+        ['fib']=0
+        ['pi']=1
+    )
+    local -A MOD_MOD_INTEGER_0_0=11235
+    local -A MOD_MOD_INTEGER_0_1=3141
+    diff <(${CLI_COMMAND[@]} -- map_of map_of integer MOD_MOD_INTEGER seq fib) - <<< '11235'
+    diff <(${CLI_COMMAND[@]} -- map_of map_of integer MOD_MOD_INTEGER seq pi) - <<< '3141'
+
+    # map_of array
+    local -A MOD_ARRAY=(
+        ['seq']=0
+    )
+    local -a MOD_ARRAY_0=( 'fib' 'pi' )
+    diff <(ARG_INDEX=0 ${CLI_COMMAND[@]} -- map_of array MOD_ARRAY seq) - <<< 'fib'
+    diff <(ARG_INDEX=1 ${CLI_COMMAND[@]} -- map_of array MOD_ARRAY seq) - <<< 'pi'
+
+    # udt
+    local -A CLI_TYPE_METADATA=(
+        ['allow']='map_of map'
+        ['mmm']='map_of map_of map'
+        ['positional']='boolean'
+        ['version']='version'
+    )
+
+    local META_POSITIONAL=true
+    local -i META_VERSION_MAJOR=1
+    local -i META_VERSION_MINOR=2
+    local -A META_ALLOW=(
+        ['color']=0
+    )
+    local -A META_ALLOW_0=(
+        ['black']=
+        ['white']=
+    )
+    local -A META_MMM=(
+        ['a']=0
+    )
+    local -A META_MMM_0=(
+        ['b']=0
+    )
+    local -A META_MMM_0_0=(
+        ['c']='d'
+    )
+
+    diff <(ARG_KEY='white' ${CLI_COMMAND[@]} -- metadata META allow color) - <<< ''
+    diff <(ARG_KEY='black' ${CLI_COMMAND[@]} -- metadata META allow color) - <<< ''
+    diff <(ARG_KEY='c' ${CLI_COMMAND[@]} -- metadata META mmm a b) - <<< 'd'
+    diff <(${CLI_COMMAND[@]} -- metadata META positional) - <<< 'true'
+    diff <(${CLI_COMMAND[@]} -- metadata META version major) - <<< '1'
+    diff <(${CLI_COMMAND[@]} -- metadata META version minor) - <<< '2'
+}

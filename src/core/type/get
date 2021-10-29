@@ -1,0 +1,37 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash variable is-declared
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Return name of type.
+
+Description
+    Argument \$1 is the name of a type. The bash name of the
+    type is return in REPLY.
+EOF
+}
+
+::cli::core::type::get::inline() {    
+    local NAME=${1-}
+    [[ "${NAME}" =~ $CLI_CORE_REGEX_TYPE_NAME ]] \
+        || cli::assert "Expected type name to match '${CLI_CORE_REGEX_TYPE_NAME}', but got '${NAME}'."
+
+    local TYPE="CLI_TYPE_${NAME^^}"
+    ::cli::bash::variable::is_declared::inline "${TYPE}" \
+        || cli::assert "Expected type '${NAME}' to be declared as '${TYPE}', but it's not."
+
+    REPLY="${TYPE}"
+}
+
+self_test() {
+    local -A CLI_TYPE_VERSION=(
+        [major]='integer'
+        [minor]='integer'
+    )
+
+    diff <(${CLI_COMMAND[@]} ---reply version) - <<< 'CLI_TYPE_VERSION'
+}

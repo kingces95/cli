@@ -1,0 +1,30 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash variable is-declared
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Return true if the type is declared, false otherwise.
+
+Description
+    Argument \$1 is the name of the type. 
+EOF
+}
+
+::cli::core::type::is_declared::inline() {
+    ::cli::bash::variable::is_declared::inline "CLI_TYPE_${1^^}"
+}
+
+self_test() {
+    ! ${CLI_COMMAND[@]} -- version || cli::assert
+
+    local -A CLI_TYPE_VERSION=(
+        [major]='integer'
+        [minor]='integer'
+    )
+
+    ${CLI_COMMAND[@]} -- version || cli::assert
+}
