@@ -263,7 +263,7 @@ inline() {
 
     ::cli::set::deflower::inline() {
         local -n SET_REF=${1?'Missing set'}
-        local KEY=${2?'Missing key'}
+        local KEY=${2?'Missing element value'}
 
         if ::cli::set::test::inline "$@"; then
             return 1
@@ -1258,6 +1258,7 @@ cli::loader::import_parent() {
     command=( "${command[@]:0:$(( ${#command[@]}-1 ))}" '.group' )
 
     # import parent
+    # echo "${command[@]}" ---import >&2
     "${command[@]}" ---import >&2
 }
 
@@ -1347,6 +1348,7 @@ cli::loader::source() {
         return
     fi
 
+    [[ -f "$1" ]] || cli::assert "File missing. Cannot source path '$1'."
     source "$1"
 }
 
@@ -1459,8 +1461,15 @@ cli::loader::shim() {
 cli::main::thunk() {
     
     # optimization; skip creating subshell if we are the root
-    if (( ${#CLI_COMMAND_STACK[@]} == 0 )) \
-        || [[ "${1-}" == '---' ]]; then
+    if (( ${#CLI_COMMAND_STACK[@]} == 0 )); then
+        cli::main::prolog "$@"
+        return
+    fi
+
+    # skip creating subshell if we are invoking an inline function
+    if [[ "${1-}" == '---' ]] \
+        || [[ "${1-}" == '---reply' ]] \
+        || [[ "${1-}" == '---mapfile' ]]; then
         cli::main::prolog "$@"
         return
     fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type is-modified
+cli::import cli core type get
 
 help() {
     cat << EOF | cli::core::type::help
@@ -21,19 +21,20 @@ EOF
 }
 
 ::cli::core::type::unmodified::inline() {
-    local type=( "$@" )
+    MAPFILE=( "$@" )
 
-    while ::cli::core::type::is_modified::inline "$@"; do
-        shift
+    while true; do
+        ::cli::core::type::get::inline "${MAPFILE[@]}"
+        if ! ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then 
+            break
+        fi
     done
 
-    (( $# == 1 )) || cli::assert "Unable to unmodify type ${type}."
-
-    REPLY="$1"
+    REPLY=${MAPFILE}
 }
 
 self_test() {
-    [[ "$(${CLI_COMMAND[@]} ---reply boolean)" == 'boolean' ]] || cli::assert
-    [[ "$(${CLI_COMMAND[@]} ---reply map_of map_of boolean)" == 'boolean' ]] || cli::assert
-    # [[ "$(${CLI_COMMAND[@]} ---reply string string)" == $'string\nstring' ]] || cli::assert
+    diff <( ${CLI_COMMAND[@]} ---reply boolean ) - <<< $'boolean' || cli::assert
+    diff <( ${CLI_COMMAND[@]} ---reply map_of map_of boolean ) - <<< $'boolean' || cli::assert
+    diff <( ${CLI_COMMAND[@]} ---reply map_of udt ) - <<< 'udt' || cli::assert
 }

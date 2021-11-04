@@ -1,0 +1,33 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Return true if type is a string, boolean, integer, map, or array,
+    otherwise false.
+
+Description
+    Argument \$1 is a set of optional type flags.
+EOF
+}
+
+::cli::core::type::is_scaler::inline() {
+    # not array, map, modified, or user defined
+    [[ ! "${1-}" =~ a|A|m|u ]] && (( $# <= 1 ))
+}
+
+self_test() {
+    ${CLI_COMMAND[@]} -- b || cli::assert
+    ${CLI_COMMAND[@]} -- || cli::assert
+    ${CLI_COMMAND[@]} -- i || cli::assert
+
+    ! ${CLI_COMMAND[@]} -- a || cli::assert
+    ! ${CLI_COMMAND[@]} -- A || cli::assert
+    ! ${CLI_COMMAND[@]} -- m || cli::assert
+    ! ${CLI_COMMAND[@]} -- ai || cli::assert
+    ! ${CLI_COMMAND[@]} -- u udt || cli::assert
+    ! ${CLI_COMMAND[@]} -- x udt || cli::assert
+}

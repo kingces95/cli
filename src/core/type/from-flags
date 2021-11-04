@@ -1,0 +1,77 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Given flags as used by cli::declare return a type.
+
+Description
+    Arguments \$1 is a set of flags of the form 
+    
+        [m*][|i|b|a|A|u]
+
+    Argument \$2 is the name of a user defined type, if any.
+
+    Each 'm' is converted to 'map_of'. Flags 'i', 'b', 'a', 'A', are
+    converted to integer, boolean, array, and map. Flag 'u' is replaced
+    by a spaced followed by \$2. Absence of a flag is converted to string.
+
+    The result is returned in the array MAPFILE.
+EOF
+}
+
+::cli::core::type::from_flags::inline() {
+    MAPFILE=()
+
+    local TYPE="${1-}"
+
+    while [[ "${TYPE}" == m* ]]; do
+        TYPE="${TYPE/m/}"
+        MAPFILE+=( 'map_of' )
+    done
+
+    if [[ "${TYPE}" == u ]]; then
+        (( $# == 2 )) || cli::assert \
+            "Expected type flags followed by name of defined type, but got '$@'."
+        shift
+
+        local NAME=${1-}
+        [[ "${NAME}" =~ $CLI_CORE_REGEX_TYPE_NAME ]] \
+            || cli::assert "Expected type name to match '${CLI_CORE_REGEX_TYPE_NAME}', but got '${NAME}'."
+
+        MAPFILE+=( "${NAME}" )
+        return
+    fi
+
+    (( $# <= 1 )) || cli::assert "Expected type flags, but got '$@'."
+
+    case "${TYPE}" in
+        '')     MAPFILE+=( 'string' );;        
+        'i')    MAPFILE+=( 'integer' ) ;;
+        'b')    MAPFILE+=( 'boolean' ) ;;
+        'a')    MAPFILE+=( 'array' ) ;;        
+        'ai')   ;;
+        'ab')   ;;
+        'A')    MAPFILE+=( 'map' ) ;;        
+        'Ai')   ;;
+        'Ab')   ;;
+        *) cli::assert "Unexpected type '$@'."    
+    esac
+}
+
+self_test() {
+    diff <( ${CLI_COMMAND[@]} ---mapfile ) - <<< 'string'
+    diff <( ${CLI_COMMAND[@]} ---mapfile i ) - <<< 'integer'
+    diff <( ${CLI_COMMAND[@]} ---mapfile b ) - <<< 'boolean'
+    diff <( ${CLI_COMMAND[@]} ---mapfile a ) - <<< 'array'
+    diff <( ${CLI_COMMAND[@]} ---mapfile A ) - <<< 'map'
+    diff <( ${CLI_COMMAND[@]} ---mapfile u udt ) - <<< $'udt'
+
+    diff <( ${CLI_COMMAND[@]} ---mapfile m ) - <<< $'map_of\nstring'
+    diff <( ${CLI_COMMAND[@]} ---mapfile mm ) - <<< $'map_of\nmap_of\nstring'
+    diff <( ${CLI_COMMAND[@]} ---mapfile mmi ) - <<< $'map_of\nmap_of\ninteger'
+    diff <( ${CLI_COMMAND[@]} ---mapfile mu udt ) - <<< $'map_of\nudt'
+}

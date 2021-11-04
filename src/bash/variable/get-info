@@ -1,0 +1,152 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash type get
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Get the literal value of a bash variable as returned by declare -p.
+
+Description
+    Arguments \$1 is the name of a bash variable.
+
+    Fail if the bash variable is undefined.
+    
+    Set predicates as per:
+
+        cli bash type get
+
+    Set REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED if the variable is uninitialized.
+
+    Set REPLY_CLI_BASH_VARIABLE_IS_READONLY if the variable is readonly.
+EOF
+}
+
+::cli::bash::variable::get_info::inline() {
+    # declare cache
+    declare -gA CLI_BASH_VARIABLE_INFO+=()
+
+    REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=false
+    REPLY_CLI_BASH_VARIABLE_IS_READONLY=false
+    REPLY_CLI_BASH_VARIABLE_CACHE_HIT=false
+
+    local NAME="$1"
+
+    # try readonly initialized cache
+    if [[ ${CLI_BASH_VARIABLE_INFO["${NAME}"]+set == "set" } ]]; then
+        REPLY_CLI_BASH_VARIABLE_IS_READONLY=true
+        REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=true
+        REPLY_CLI_BASH_VARIABLE_CACHE_HIT=true
+        MAPFILE=( 'readonly' "${CLI_BASH_VARIABLE_INFO["$1"]}" )
+        return
+    fi
+  
+    # test declared
+    local DECLARE
+    DECLARE=$( declare -p ${1-} 2>/dev/null ) || return
+
+    # type
+    local _ TYPE VALUE
+    read _ TYPE VALUE <<< "${DECLARE}"
+    ::cli::bash::type::get::inline "${TYPE}"
+
+    MAPFILE=()
+
+    # readonly
+    if [[ "${TYPE}" == *r* ]]; then
+        REPLY_CLI_BASH_VARIABLE_IS_READONLY=true
+        MAPFILE+=( 'readonly' )
+    fi
+
+    # uninitialized
+    if [[ "${VALUE}" == "$1" ]]; then
+        REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=true
+    fi
+
+    # populate cache
+    if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY} &&
+        ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED}; then
+        CLI_BASH_VARIABLE_INFO["${NAME}"]="${REPLY}"
+    fi
+
+    MAPFILE+=( "${REPLY}" )
+    REPLY=
+}
+
+self_test() {
+    cli::assert::eval() { eval "$@" || cli::assert; }
+
+    test_flags() {
+        local -i EXPECTED=$#
+        for p in "$@"; do
+            cli::assert::eval "\${REPLY_CLI_BASH_${p}}"
+        done
+
+        local -i ACTUAL=0
+        if ${REPLY_CLI_BASH_VARIABLE_CACHE_HIT}; then ACTUAL+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED}; then ACTUAL+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY}; then ACTUAL+=1; fi
+        if ${REPLY_CLI_BASH_TYPE_IS_INTEGER}; then ACTUAL+=1; fi
+        if ${REPLY_CLI_BASH_TYPE_IS_STRING}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_ARRAY}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_MAP}; then ACTUAL+=1; fi 
+
+        (( ACTUAL == EXPECTED )) || cli::assert "${ACTUAL} != ${EXPECTED}"
+    }
+
+    test() {
+        local NAME=$1
+        shift
+
+        local EXPECTED=$1
+        shift 
+
+        local INIT=$1
+        shift
+
+        ${CLI_COMMAND[@]} --- ${NAME}
+        test_flags VARIABLE_IS_UNINITIALIZED "$@"
+        [[ "${EXPECTED}" == "${MAPFILE[*]}" ]] || cli::assert
+
+        if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY}; then
+            return
+        fi
+
+        eval "${NAME}=${INIT}"
+        ${CLI_COMMAND[@]} --- ${NAME}
+        test_flags "$@"
+    }
+
+    ! ${CLI_COMMAND[@]} --- VAR || cli::assert
+
+
+    local MY_STRING
+    test MY_STRING string '""' TYPE_IS_STRING
+
+    local -i MY_INTEGER
+    test MY_INTEGER integer '"0"' TYPE_IS_INTEGER
+
+    local -a MY_ARRAY
+    test MY_ARRAY array '()' TYPE_IS_ARRAY
+
+    local -A MY_MAP
+    test MY_MAP map '()' TYPE_IS_MAP
+
+
+    local -r MY_RO_STRING
+    test MY_RO_STRING 'readonly string' '""' TYPE_IS_STRING VARIABLE_IS_READONLY
+
+    local -ir MY_RO_INTEGER
+    test MY_RO_INTEGER 'readonly integer' '"0"' TYPE_IS_INTEGER VARIABLE_IS_READONLY
+
+    local -ar MY_RO_ARRAY
+    test MY_RO_ARRAY 'readonly array' '()' TYPE_IS_ARRAY VARIABLE_IS_READONLY
+
+    local -Ar MY_RO_MAP
+    test MY_RO_MAP 'readonly map' '()' TYPE_IS_MAP VARIABLE_IS_READONLY
+
+    local -Ar MY_RO_MAP
+    test MY_RO_MAP 'readonly map' '()' TYPE_IS_MAP VARIABLE_IS_READONLY VARIABLE_CACHE_HIT
+}

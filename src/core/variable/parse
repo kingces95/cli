@@ -1,9 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash variable initialize
-cli::import cli core type is-scaler
-cli::import cli core type is-builtin
-cli::import cli core type is-modified
-cli::import cli core type is-user-defined
+cli::import cli core type get
 
 help() {
     cat << EOF
@@ -11,7 +8,7 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Return type in MAPFILE and variable in REPLY.
+    Return type in MAPFILE and variable name in REPLY.
 
 Description
     Positional arguments are the type followed by the variable name.

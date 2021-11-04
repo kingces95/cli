@@ -4,6 +4,13 @@ help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}
+
+Description
+    resolve - given a variable, type, and fields, resolve the bash variable
+    declare - initialize a variable with default values for all fields
+    get/put - get or set a variable field's value
+    read/write - read/write a variable's fields as records
+
 EOF
 }
 
@@ -12,8 +19,12 @@ main() {
 }
 
 self_test() {
-    cli core variable declare --self-test
     cli core variable parse --self-test
-    cli core variable put --self-test
+    cli core variable resolve --self-test
     cli core variable write --self-test
+    cli core variable get --self-test
+    cli core variable declare --self-test
+    # cli core variable put --self-test
+    # cli core variable read --self-test
+    # cli core variable print --self-test
 }

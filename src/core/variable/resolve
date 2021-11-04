@@ -1,10 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core type get
-cli::import cli core type is-builtin
-cli::import cli core type is-modified
-cli::import cli core type is-user-defined
-cli::import cli core type unmodify
-cli::import cli core type is-declared
+cli::import cli core type load
 
 help() {
     cat << EOF | cli::core::help
@@ -12,7 +8,7 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Write a variable as a sequence of records.
+    Resolve a bash variable name, its type, and fields to a bash variable name.
 
 Description
     Like recursively listing files in a directory by their full path, this function
@@ -46,15 +42,17 @@ cli::core::variable::resolve::main() {
 
     for i in "$@"; do
 
+        ::cli::core::type::get::inline "${TYPE[@]}"
+
         # builtin
-        if ::cli::core::type::is_builtin::inline "${TYPE[@]}"; then
+        if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
             
             # array
-            if [[ "${TYPE}" == 'array' ]]; then
+            if ${REPLY_CLI_CORE_TYPE_IS_ARRAY}; then
                 (( $# <= 1 )) || cli::assert "Expected array index but got '$@'."
 
             # map
-            elif [[ "${TYPE}" == 'map' ]]; then
+            elif ${REPLY_CLI_CORE_TYPE_IS_MAP}; then
                 (( $# <= 1 )) || cli::assert "Expected map key but got '$@'."
 
             # scaler
@@ -63,23 +61,20 @@ cli::core::variable::resolve::main() {
             fi
 
         # anonymous
-        elif ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+        elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
             local -n ORDINAL_MAP=${NAME}
             NAME=${NAME}_${ORDINAL_MAP["$i"]}
-
-            ::cli::core::type::unmodify::inline "${TYPE[@]}"
             TYPE=( ${MAPFILE[@]} )
 
         # udt
         else
-            ::cli::core::type::is_user_defined::inline "${TYPE[@]}" \
+            ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} \
                 || cli::assert "Expected user defined type but got '${TYPE[@]}'."
 
+            ::cli::core::type::load::inline "${REPLY}"
+            local -n TYPE_REF="${REPLY}"
+            TYPE=( ${TYPE_REF["$i"]} )
             NAME=${NAME}_${i^^}
-
-            ::cli::core::type::get::inline "${TYPE}"
-            local -n FIELDS_REF="${REPLY}"
-            TYPE=( ${FIELDS_REF["$i"]} )
         fi
     done
 
@@ -97,7 +92,7 @@ self_test() {
     diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'array VAR'
 
     diff <(${CLI_COMMAND[@]} -- array VAR 0) - <<< 'array VAR'
-    
+
     # map_of map_of integer
     (
         local -A VAR=(

@@ -7,17 +7,17 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Add a key to a set. Return non-zero if the key was already present.
+    Add an element to a set. Return non-zero if the element was already present.
 
 Description
-    Argument \$1 is the name of the associative array.
-    Argument \$2 is the value of key for which to test.
+    Argument \$1 is the name of the set (associative array).
+    Argument \$2 is the value of element.
 EOF
 }
 
 ::cli::set::deflower::inline() {
     local -n SET_REF=${1?'Missing set'}
-    local KEY=${2?'Missing key'}
+    local KEY=${2?'Missing element value'}
 
     if ::cli::set::test::inline "$@"; then
         return 1

@@ -1,6 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type is-builtin
-cli::import cli core type is-modified
+cli::import cli core type get
 cli::import cli core type unmodified
 
 help() {
@@ -9,50 +8,33 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Emit a type, the type of its fields, and their fields, etc.
-
+    Emit the name of all user defined types used to compose a type.
+    
 Description
-    A user defined type has fields and each field has a type. This forms a 
-    tree which is walked and each visted user defined type is emitted.
+    Argument \$1 - \$n represent a type.
+
+    Echo the name of all user defined types encountered by walking
+    the type and its fields recursively. 
 EOF
 }
 
-cli::core::type::emit::main() {
-    ARG_TYPE="$@"
-        ::cli::core::type::emit::inline
-}
-
 ::cli::core::type::emit::inline() {
-    local TYPE=( ${ARG_TYPE} )
 
-    # root
-    if (( $# == 0 )); then
-        local -A VISITED=()
-    fi
-    
-    # strip 'map_of' prefixes 
-    local ELEMENT_TYPE="${TYPE}"
-    if ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
-        ::cli::core::type::unmodified::inline "${TYPE[@]}"
-        ELEMENT_TYPE="${REPLY}"
-    fi
+    # strip modifiers 
+    ::cli::core::type::unmodified::inline "$@"
 
-    # skip builtin types & visited types
-    if ::cli::core::type::is_builtin::inline "${ELEMENT_TYPE}" ||
-        [[ -n ${VISITED[${ELEMENT_TYPE}]+set} ]]; then
+    # skip builtin types
+    if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
         return
     fi
-    VISITED[${ELEMENT_TYPE}]=true
 
     # emit the user defined type
-    local -u UDT_TYPE=CLI_TYPE_${ELEMENT_TYPE^^}
-    declare -p ${UDT_TYPE}
+    echo ${MAPFILE[@]}
 
     # recurse using the type of each of the user defined type's fields
-    local -n UDT_TYPE_REF=${UDT_TYPE}
-    for FIELD_TYPE in "${UDT_TYPE_REF[@]}"; do
-        ARG_TYPE="${FIELD_TYPE}" \
-            ::cli::core::type::emit::inline $(( $# + 1 ))
+    local -n CLI_TYPE_REF="${REPLY}"
+    for FIELD_TYPE in "${CLI_TYPE_REF[@]}"; do
+        ::cli::core::type::emit::inline ${FIELD_TYPE}
     done
 }
 
@@ -70,16 +52,13 @@ self_test() {
         [integer]="integer"
     )
 
-    diff <( ${CLI_COMMAND[@]} -- map_of float ) - \
-        <<< 'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
+    diff <( ${CLI_COMMAND[@]} -- map_of float ) - <<< 'float'
 
     declare -A CLI_TYPE_CONSTANT=(
         [value]="float" 
-        [name]="string" 
+        [alt]="float" 
+        [name]="string"
     )
 
-    diff <( ${CLI_COMMAND[@]} -- constant ) <(
-        echo 'declare -A CLI_TYPE_CONSTANT=([value]="float" [name]="string" )'
-        echo 'declare -A CLI_TYPE_FLOAT=([decimal]="integer" [places]="integer" [integer]="integer" )'
-    )
+    diff <( ${CLI_COMMAND[@]} -- constant | sort -u ) - <<< $'constant\nfloat'
 }

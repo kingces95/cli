@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core variable resolve
-cli::import cli core type is-builtin
+cli::import cli core type get
 
 help() {
     cat << EOF | cli::core::help
@@ -17,7 +17,7 @@ Description
     is a map then ARG_KEY must contain the key of the value to return. If the
     key does not exist then the function fails.
 
-    The builtin value is return in variable REPLY.
+    The value is returned in REPLY.
 EOF
 }
 
@@ -43,7 +43,8 @@ cli::core::variable::get::main() {
     local TYPE=( ${MAPFILE[@]} )
     local NAME="${REPLY}"
 
-    ::cli::core::type::is_builtin::inline "${TYPE[@]}" \
+    ::cli::core::type::get::inline "${TYPE[@]}"
+    ${REPLY_CLI_CORE_TYPE_IS_BUILTIN} \
         || cli::assert "Expected to resolve '$@' to bultin type but got '${TYPE[@]}'."
 
     case "${TYPE}" in

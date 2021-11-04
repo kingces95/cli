@@ -23,11 +23,10 @@ EOF
 }
 
 ::cli::core::type::is_modified::inline() {
-    (( ${#@} > 1 )) &&  [[ $1 == 'map_of' ]]
+    [[ "${1-}" =~ m ]]
 }
 
 self_test() {
-
-    ${CLI_COMMAND[@]} -- map_of map || cli::assert
-    ! ${CLI_COMMAND[@]} -- map || cli::assert
+    ${CLI_COMMAND[@]} -- m || cli::assert
+    ! ${CLI_COMMAND[@]} -- A || cli::assert
 }

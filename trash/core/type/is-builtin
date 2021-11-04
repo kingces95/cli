@@ -50,3 +50,29 @@ self_test() {
     ! ${CLI_COMMAND[@]} -- map_of string || cli::assert
     ! ${CLI_COMMAND[@]} -- string string || cli::assert
 }
+
+foo() {
+    cli::declare -- version \
+        ALPHA \
+            major=1 \
+            minor=2 \
+        BETA \
+            major=3
+
+    cli::declare -- meta \
+        META \
+            allow
+                'black'=
+                'white'=
+            positional=true
+
+    cli::declare -m meta \
+        META \
+            'id' \
+                -allow many \
+                    'ticks'= \
+                -allow once \
+                    'black'= \
+                    'white'= \
+                -positional=true \
+}

@@ -2,9 +2,7 @@
 cli::import cli bash write
 cli::import cli core variable resolve
 cli::import cli core type get
-cli::import cli core type is-scaler
-cli::import cli core type is-builtin
-cli::import cli core type is-user-defined
+cli::import cli core type load
 
 help() {
     cat << EOF | cli::core::help
@@ -12,17 +10,11 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Write a variable as a sequence of records.
+    Write a variable's fields as a sequence of records.
 
 Description
-    Like recursively listing files in a directory by their full path, this function
-    list the scaler values found in a variable with a "path" that is composed of a space
-    delimited list of names that represent fields of a user defined type, or keys of 
-    a map or modified type (i.e. a type modified by 'map_of'). Arrays do not contriubte
-    a name to the path.
-
-Arguments
-    --                      : Names of the parents.
+    Argument \$1 is the variable whose fields are to be copied to stdout
+    as records consisting of field names followed by the field value.
 EOF
     cat << EOF
 
@@ -68,24 +60,26 @@ cli::core::variable::write::main() {
     local TYPE=( ${ARG_TYPE} )
     local NAME="${ARG_NAME}"
 
+    ::cli::core::type::get::inline "${TYPE[@]}"
+
     # leaf
-    if ::cli::core::type::is_builtin::inline "${TYPE[@]}"; then
+    if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
         (( ${#TYPE[@]} == 1 )) || cli::assert
         local -n REF=${NAME}
 
         # scaler
-        if ::cli::core::type::is_scaler::inline "${TYPE}"; then
+        if ${REPLY_CLI_CORE_TYPE_IS_SCALER}; then
             ::cli::bash::write::inline "$@" "${REF}"
 
         # array
-        elif [[ "${TYPE}" == 'array' ]]; then
+        elif ${REPLY_CLI_CORE_TYPE_IS_ARRAY}; then
             for VALUE in "${REF[@]}"; do
                 ::cli::bash::write::inline "$@" "${VALUE}"
             done
 
         # map
         else
-            [[ "${TYPE}" == 'map' ]] || cli::assert
+            ${REPLY_CLI_CORE_TYPE_IS_MAP} || cli::assert
             for KEY in ${!REF[@]}; do
                 ::cli::bash::write::inline "$@" "${KEY}" "${REF[$KEY]}"
             done
@@ -95,23 +89,28 @@ cli::core::variable::write::main() {
         local -a SEGMENTS
 
         # anonymous
-        if ::cli::core::type::is_modified::inline "${TYPE[@]}"; then
+        if ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
             local -n ORDINALS_REF=${NAME}
             SEGMENTS=( "${!ORDINALS_REF[@]}" )
 
         # udt
         else
-            ::cli::core::type::get::inline "${TYPE}"
-            local -n FIELDS_REF="${REPLY}"
-            SEGMENTS=( "${!FIELDS_REF[@]}" )
+            ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} || cli::assert
+            local USER_DEFINED_TYPE="${REPLY}"
+
+            ::cli::core::type::load::inline "${USER_DEFINED_TYPE}"
+
+            local -n TYPE_REF="${REPLY}"
+            SEGMENTS=( "${!TYPE_REF[@]}" )
         fi
             
+        local SEGMENT
         for SEGMENT in "${SEGMENTS[@]}"; do
-            ARG_TYPE="${TYPE[@]}" \
+            ARG_TYPE="${TYPE[*]}" \
             ARG_NAME="${NAME}" \
                 ::cli::core::variable::resolve::inline "${SEGMENT}"
 
-            ARG_TYPE="${MAPFILE[@]}" \
+            ARG_TYPE="${MAPFILE[*]}" \
             ARG_NAME="${REPLY}" \
                 ::cli::core::variable::write::inline "$@" "${SEGMENT}"
         done

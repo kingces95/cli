@@ -1,0 +1,96 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Get the type of a bash variable.
+
+Description
+    Arguments \$1 is the name of a bash variable.
+
+    Fail if the bash variable is undefined. Otherwise set predicates:
+
+        REPLY_CLI_BASH_TYPE_IS_INTEGER
+        REPLY_CLI_BASH_TYPE_IS_STRING
+        REPLY_CLI_BASH_TYPE_IS_SCALER
+        REPLY_CLI_BASH_TYPE_IS_ARRAY
+        REPLY_CLI_BASH_TYPE_IS_INTEGER_ARRAY
+        REPLY_CLI_BASH_TYPE_IS_MAP
+        REPLY_CLI_BASH_TYPE_IS_INTEGER_MAP
+
+EOF
+}
+
+::cli::bash::type::get::inline() {
+    local TYPE="${1-}"
+
+    REPLY_CLI_BASH_TYPE_IS_INTEGER=false
+    REPLY_CLI_BASH_TYPE_IS_STRING=false
+    REPLY_CLI_BASH_TYPE_IS_SCALER=false
+    REPLY_CLI_BASH_TYPE_IS_ARRAY=false
+    REPLY_CLI_BASH_TYPE_IS_INTEGER_ARRAY=false
+    REPLY_CLI_BASH_TYPE_IS_MAP=false
+    REPLY_CLI_BASH_TYPE_IS_INTEGER_MAP=false
+
+    if [[ "${TYPE}" == *a* ]]; then
+        REPLY_CLI_BASH_TYPE_IS_ARRAY=true
+        REPLY='array'
+        if [[ "${TYPE}" == *i* ]]; then
+            REPLY='integer_array'
+            REPLY_CLI_BASH_TYPE_IS_INTEGER_ARRAY=true
+        fi
+
+    elif [[ "${TYPE}" == *A* ]]; then
+        REPLY_CLI_BASH_TYPE_IS_MAP=true
+        REPLY='map'
+        if [[ "${TYPE}" == *i* ]]; then
+            REPLY='integer_map'
+            REPLY_CLI_BASH_TYPE_IS_INTEGER_MAP=true
+        fi
+
+    else
+        REPLY_CLI_BASH_TYPE_IS_SCALER=true
+        if [[ "${TYPE}" == *i* ]]; then
+            REPLY='integer'
+            REPLY_CLI_BASH_TYPE_IS_INTEGER=true
+        else
+            REPLY='string'
+            REPLY_CLI_BASH_TYPE_IS_STRING=true
+        fi
+    fi
+}
+
+self_test() {
+    cli::assert::eval() { eval "$@" || cli::assert; }
+
+    test() {
+        local -i EXPECTED=$#
+
+        [[ "${REPLY}" == "${1,,}" ]] || cli::assert "${REPLY} != ${1,,}"
+
+        for p in "$@"; do
+            cli::assert::eval "\${REPLY_CLI_BASH_TYPE_IS_${p}}"
+        done
+
+        local -i ACTUAL=0
+        if ${REPLY_CLI_BASH_TYPE_IS_INTEGER}; then ACTUAL+=1; fi
+        if ${REPLY_CLI_BASH_TYPE_IS_STRING}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_SCALER}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_ARRAY}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_INTEGER_ARRAY}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_MAP}; then ACTUAL+=1; fi 
+        if ${REPLY_CLI_BASH_TYPE_IS_INTEGER_MAP}; then ACTUAL+=1; fi 
+
+        (( ACTUAL == EXPECTED )) || cli::assert
+    }
+
+    ${CLI_COMMAND[@]} ---  ; test STRING SCALER
+    ${CLI_COMMAND[@]} --- i; test INTEGER SCALER
+    ${CLI_COMMAND[@]} --- A; test MAP
+    ${CLI_COMMAND[@]} --- Ai; test INTEGER_MAP MAP
+    ${CLI_COMMAND[@]} --- a; test ARRAY
+    ${CLI_COMMAND[@]} --- ai; test INTEGER_ARRAY ARRAY
+}

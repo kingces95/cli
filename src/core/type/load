@@ -1,0 +1,38 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core type resolve
+cli::import cli bash variable get-info
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Get the bash name of a user defined type.
+
+Description
+    Arguments \$1 is the type.
+
+    Set REPLY to the bash name of a user defined type.
+
+    Assert that the type is declared.
+EOF
+}
+
+::cli::core::type::load::inline() {
+    ::cli::core::type::resolve::inline "$@"
+    local TYPE_NAME="${REPLY}"
+
+    ::cli::bash::variable::get_info::inline "${TYPE_NAME}" || cli::assert \
+        "Expected type '$@' to be declared as '${TYPE_NAME}', but actually not."
+
+    REPLY="${TYPE_NAME}"
+}
+
+self_test() {
+    declare -A CLI_TYPE_VERSION=(
+        [major]='integer'
+        [minor]='integer'
+    )
+    diff <( ${CLI_COMMAND[@]} ---reply version ) - <<< 'CLI_TYPE_VERSION'
+}
