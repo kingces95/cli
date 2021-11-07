@@ -24,3 +24,8 @@ main() {
 
     cli::export cli core
 }
+
+self_test() {
+    cli core variable .group --self-test
+    cli core type .group --self-test
+}

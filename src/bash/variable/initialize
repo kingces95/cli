@@ -52,7 +52,6 @@ cli::bash::variable::initialize::main() {
             'integer') ref=0 ;;
             'array') ;&
             'map') ref=() ;;
-            'boolean') ref='false' ;;
             'string') ref='' ;;
             *) cli::assert "Unknown bash type '${type}'."
         esac
@@ -61,13 +60,12 @@ cli::bash::variable::initialize::main() {
 
 self_test() {
     diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'declare -- VAR=""' || cli::assert
-    diff <(${CLI_COMMAND[@]} -- boolean VAR) - <<< 'declare -- VAR="false"' || cli::assert
     diff <(${CLI_COMMAND[@]} -- integer VAR) - <<< 'declare -i VAR="0"' || cli::assert
     diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'declare -a VAR=()' || cli::assert
     diff <(${CLI_COMMAND[@]} -- map VAR) - <<< 'declare -A VAR=()' || cli::assert
     diff <(${CLI_COMMAND[@]} -- \
         string MY_STRING \
-        map MY_MAP\
+        map MY_MAP \
     ) - <<-EOF || cli::assert
 		declare -- MY_STRING=""
 		declare -A MY_MAP=()

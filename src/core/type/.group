@@ -12,11 +12,11 @@ main() {
 }
 
 self_test() {
-    cli core type emit --self-test
-    cli core type is-builtin --self-test
-    cli core type is-modified --self-test
-    cli core type is-scaler --self-test
-    cli core type is-user-defined --self-test
+    # cli core type emit --self-test
+    cli core type from-flags --self-test
+    cli core type to-flags --self-test
+    cli core type get --self-test
+    cli core type load --self-test
+    cli core type resolve --self-test
     cli core type unmodified --self-test
-    cli core type unmodify --self-test
 }

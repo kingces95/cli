@@ -1,0 +1,22 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    :
+    # cli bash stack call --self-test
+    # cli bash stack hidden-attribute --self-test
+    # cli bash stack process --self-test
+    # cli bash stack trace --self-test
+}

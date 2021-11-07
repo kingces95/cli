@@ -57,7 +57,7 @@ EOF
     # readonly
     if [[ "${TYPE}" == *r* ]]; then
         REPLY_CLI_BASH_VARIABLE_IS_READONLY=true
-        MAPFILE+=( 'readonly' )
+        MAPFILE+=( 'readonly' ) # TODO: remove readonly, use REPLY to store just type name
     fi
 
     # uninitialized
@@ -108,7 +108,7 @@ self_test() {
 
         ${CLI_COMMAND[@]} --- ${NAME}
         test_flags VARIABLE_IS_UNINITIALIZED "$@"
-        [[ "${EXPECTED}" == "${MAPFILE[*]}" ]] || cli::assert
+        [[ "${EXPECTED}" == "${MAPFILE[*]}" ]] || cli::assert "${EXPECTED} != ${MAPFILE[*]}"
 
         if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY}; then
             return

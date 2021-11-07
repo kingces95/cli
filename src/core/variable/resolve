@@ -73,6 +73,11 @@ cli::core::variable::resolve::main() {
 
             ::cli::core::type::load::inline "${REPLY}"
             local -n TYPE_REF="${REPLY}"
+
+            if [[ ! "${TYPE_REF[$i]+set}" == 'set' ]]; then
+                cli::fail "Field '$i' not found in '${TYPE}' fields: { ${!TYPE_REF[@]} }."
+            fi
+
             TYPE=( ${TYPE_REF["$i"]} )
             NAME=${NAME}_${i^^}
         fi

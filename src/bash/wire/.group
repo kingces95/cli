@@ -1,0 +1,22 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    :
+    # cli bash wire emit --self-test
+    # cli bash wire read --self-test
+    # cli bash wire verify --self-test
+}

@@ -1,0 +1,20 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+
+EOF
+}
+
+cli::_test::main() {
+    :
+}
+
+self_test() {
+    cli bash .test --self-test
+    cli core .group --self-test
+}

@@ -1,0 +1,40 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Return bash type given a core type.
+
+Description
+    Argument \$1 - \$n represent a type.
+
+    REPLY contains the name of bash type.
+EOF
+}
+
+::cli::core::type::to_bash::inline() {
+    local TYPE="${1-}"
+
+    case "${TYPE}" in
+        'string') ;&
+        'integer') ;&
+        'array') ;&
+        'map') REPLY="${TYPE}" ;;
+        'map_of') REPLY="map" ;;
+        'boolean') REPLY="string" ;;
+        *) return 1 ;;
+    esac
+}
+
+self_test() {
+    diff <( ${CLI_COMMAND[@]} ---reply string ) - <<< 'string'
+    diff <( ${CLI_COMMAND[@]} ---reply integer ) - <<< 'integer'
+    diff <( ${CLI_COMMAND[@]} ---reply boolean ) - <<< 'string'
+    diff <( ${CLI_COMMAND[@]} ---reply array ) - <<< 'array'
+    diff <( ${CLI_COMMAND[@]} ---reply map_of array ) - <<< 'map'
+    diff <( ${CLI_COMMAND[@]} ---reply map ) - <<< 'map'
+    ! ${CLI_COMMAND[@]} --- udt || cli::assert
+}

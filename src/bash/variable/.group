@@ -1,0 +1,23 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    cli bash variable declare --self-test
+    cli bash variable declare-enum --self-test
+    cli bash variable emit --self-test
+    cli bash variable get-info --self-test
+    cli bash variable initialize --self-test
+    cli bash variable list --self-test
+}

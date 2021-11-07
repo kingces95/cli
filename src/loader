@@ -582,7 +582,6 @@ inline() {
                 'integer') flags+=i ;;
                 'array') flags+=a ;;
                 'map') flags+=A ;;
-                'boolean') ;&
                 'string') ;;
                 *) cli::assert "Unknown bash type '${type}'."
             esac
@@ -608,7 +607,6 @@ inline() {
                 'integer') ref=0 ;;
                 'array') ;&
                 'map') ref=() ;;
-                'boolean') ref='false' ;;
                 'string') ref='' ;;
                 *) cli::assert "Unknown bash type '${type}'."
             esac
@@ -1094,7 +1092,7 @@ cli::meta::default() {
         map CLI_META_GROUP_0_REGEX \
         map CLI_META_GROUP_0_REQUIRE \
         map CLI_META_GROUP_0_TYPE \
-        boolean CLI_META_GROUP_0_POSITIONAL
+        string CLI_META_GROUP_0_POSITIONAL # boolean
 
     CLI_META_BASH_NAME=(
         [help]="help"

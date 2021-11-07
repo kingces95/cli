@@ -56,7 +56,6 @@ cli::bash::variable::declare::main() {
             'integer') flags+=i ;;
             'array') flags+=a ;;
             'map') flags+=A ;;
-            'boolean') ;&
             'string') ;;
             *) cli::assert "Unknown bash type '${type}'."
         esac
@@ -68,7 +67,6 @@ cli::bash::variable::declare::main() {
 
 self_test() {
     [[ "$(${CLI_COMMAND[@]} -- string VAR)" == "declare -- VAR" ]] || cli::assert
-    [[ "$(${CLI_COMMAND[@]} -- boolean VAR)" == "declare -- VAR" ]] || cli::assert
     [[ "$(${CLI_COMMAND[@]} -- integer VAR)" == "declare -i VAR" ]] || cli::assert
     [[ "$(${CLI_COMMAND[@]} -- array VAR)" == "declare -a VAR" ]] || cli::assert
     [[ "$(${CLI_COMMAND[@]} -- map VAR)" == "declare -A VAR" ]] || cli::assert
