@@ -4,8 +4,6 @@ help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}
-
-Description
 EOF
 }
 
@@ -14,5 +12,6 @@ main() {
 }
 
 self_test() {
-    cli bash type get-info --self-test
+    cli core type from-flags --self-test
+    cli core type to-flags --self-test
 }

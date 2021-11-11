@@ -6,15 +6,13 @@ Command
     ${CLI_COMMAND[@]}
 
 Description
-
 EOF
 }
 
-cli::_test::main() {
+main() {
     :
 }
 
 self_test() {
-    cli bash .test --self-test
-    cli core .group --self-test
+    cli bash variable declaration get-info --self-test
 }

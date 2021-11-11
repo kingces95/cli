@@ -169,7 +169,14 @@ readonly -a CLI_META_ATTRIBUTES_METHOD_0_TYPE=( 'cli_bash_stack_hidden_attribute
 readonly -a CLI_META_ATTRIBUTES_METHOD_0_BLOB=()
 
 # globals
-declare -A CLI_LOADER_IMPORTED=()
+declare -A CLI_LOADER_IMPORTED=(
+    ["cli .group"]=true
+    ["cli path .group"]=true
+    ["cli temp .group"]=true
+    ["cli cache .group"]=true
+    ["cli bash .group"]=true
+    ["cli shim .group"]=true
+)
 declare -A CLI_LOADER_SOURCED_PATHS=()
 
 # debug
@@ -187,57 +194,63 @@ bgen() {
     cli::bash::declare::type::cli_meta_tables() {
         cli::loader::scope::add $1 CLI_META_TABLES
 
-        cli::bash::variable::declare \
-            map $1_ALIAS \
-            map $1_ALLOW \
-            map $1_DEFAULT \
-            map $1_POSITIONAL \
-            map $1_REGEX \
-            map $1_REQUIRE \
-            map $1_TYPE
+        declare -Ag \
+            "$1_ALIAS" \
+            "$1_ALLOW" \
+            "$1_DEFAULT" \
+            "$1_POSITIONAL" \
+            "$1_REGEX" \
+            "$1_REQUIRE" \
+            "$1_TYPE"
     }
     cli::bash::declare::type::cli_meta_group() {
         cli::loader::scope::add $1 CLI_META_GROUP
 
-        cli::bash::variable::declare \
-            map $1_ALLOW \
-            map $1_DEFAULT \
-            map $1_REGEX \
-            map $1_REQUIRE \
-            map $1_BASH_TYPE \
-            map $1_TYPE \
-            boolean $1_POSITIONAL
+        declare -Ag \
+            "$1_ALIAS" \
+            "$1_DEFAULT" \
+            "$1_REGEX" \
+            "$1_REQUIRE" \
+            "$1_BASH_TYPE" \
+            "$1_TYPE"
+
+        declare -g \
+            "$1_POSITIONAL"
     }
     cli::bash::declare::type::cli_meta() {
         cli::loader::scope::add $1 CLI_META
 
-        cli::bash::variable::declare \
-            map $1_ALIAS \
-            map $1_GROUP \
-            map $1_BASH_NAME
+        declare -Ag \
+            "$1_ALIAS" \
+            "$1_GROUP" \
+            "$1_BASH_NAME"
     }
     cli::bash::declare::type::cli_meta_attributes() {
         cli::loader::scope::add $1 CLI_META_ATTRIBUTES
 
-        cli::bash::variable::declare \
-            map $1_TYPE \
-            map $1_BLOB
+        declare -Ag \
+            "$1_TYPE" \
+            "$1_BLOB"
     }
     cli::bash::declare::type::cli_tokens() {
         cli::loader::scope::add $1 CLI_TOKENS
 
-        cli::bash::variable::declare \
-            array $1_ID \
-            array $1_IDENTIFIER
+        declare -ag \
+            "$1_ID" \
+            "$1_IDENTIFIER"
     }
     cli::bash::declare::type::cli_args() {
         cli::loader::scope::add $1 CLI_ARGS
 
-        cli::bash::variable::declare \
-            string $1_FIRST_NAMED \
-            map $1_NAMED \
-            array $1_PATH \
-            array $1_POSITIONAL
+        declare -g \
+            "$1_FIRST_NAMED"
+
+        declare -Ag \
+            "$1_NAMED"
+
+        declare -ga \
+            "$1_PATH" \
+            "$1_POSITIONAL"
     }
 
     declare -Ag CLI_BGEN_DECLARE=(
@@ -563,53 +576,6 @@ inline() {
                     fi
                 done
             fi
-        done
-    }
-
-    ::cli::bash::variable::declare::inline() {
-
-        while (( $# > 0 )); do
-
-            local type=${1?'Missing variable type.'}
-            shift
-
-            local name=${1?'Missing variable name.'}
-            shift
-
-            # initialize declare flags
-            local flags=g
-            case ${type} in
-                'integer') flags+=i ;;
-                'array') flags+=a ;;
-                'map') flags+=A ;;
-                'string') ;;
-                *) cli::assert "Unknown bash type '${type}'."
-            esac
-
-            # declare the bash variable
-            declare -${flags} ${name}
-        done
-    }
-
-    ::cli::bash::variable::initialize::inline() {
-        ::cli::bash::variable::declare::inline "$@"
-
-        while (( $# > 0 )); do
-
-            local type=$1
-            shift
-
-            local name=$1
-            shift
-
-            local -n ref=${name}
-            case ${type} in
-                'integer') ref=0 ;;
-                'array') ;&
-                'map') ref=() ;;
-                'string') ref='' ;;
-                *) cli::assert "Unknown bash type '${type}'."
-            esac
         done
     }
 
@@ -1083,16 +1049,18 @@ cli::meta::default() {
     cli::loader::scope::add \
         CLI_META CLI_META
 
-    cli::bash::variable::declare \
-        map CLI_META_BASH_NAME \
-        map CLI_META_ALIAS \
-        map CLI_META_GROUP \
-        map CLI_META_GROUP_0_ALLOW \
-        map CLI_META_GROUP_0_DEFAULT \
-        map CLI_META_GROUP_0_REGEX \
-        map CLI_META_GROUP_0_REQUIRE \
-        map CLI_META_GROUP_0_TYPE \
-        string CLI_META_GROUP_0_POSITIONAL # boolean
+    declare -gA \
+        CLI_META_BASH_NAME \
+        CLI_META_ALIAS \
+        CLI_META_GROUP \
+        CLI_META_GROUP_0_ALLOW \
+        CLI_META_GROUP_0_DEFAULT \
+        CLI_META_GROUP_0_REGEX \
+        CLI_META_GROUP_0_REQUIRE \
+        CLI_META_GROUP_0_TYPE \
+
+    declare -g \
+        CLI_META_GROUP_0_POSITIONAL # boolean
 
     CLI_META_BASH_NAME=(
         [help]="help"
@@ -1255,8 +1223,21 @@ cli::loader::import_parent() {
     # slice off last command and append '.group'
     command=( "${command[@]:0:$(( ${#command[@]}-1 ))}" '.group' )
 
+    # check no variables exist that should be imported with this group
+    ::cli::bash::array::pop::inline "${command[@]}"
+
+    if ::cli::set::test::inline CLI_LOADER_IMPORTED "${command[*]}"; then
+        return
+    fi
+
+    if ! diff <( cli::export "${MAPFILE[@]}" ) - < /dev/null > /dev/null; then
+        echo "Attempt to import '${command[@]}' but variables already defined:" >&2
+        cli::export "${MAPFILE[@]}" | sed 's/^/  /' >&2
+        cli::assert "${MAPFILE[@]}"
+    fi
+
     # import parent
-    # echo "${command[@]}" ---import >&2
+    # echo "${CLI_COMMAND[@]} -> ${command[@]}" >&2
     "${command[@]}" ---import >&2
 }
 
@@ -1497,7 +1478,6 @@ cli::main::prolog() {
 }
 
 cli::main::source() {
-
     cli::loader::import_parent
 
     unset -f help
@@ -1618,12 +1598,9 @@ cli::main::group() {
         return
     fi
 
-    ::cli::bash::array::pop::inline "${CLI_COMMAND[@]}"
-    diff <( cli::export "${MAPFILE[@]}" ) - < /dev/null \
-        || cli::assert "Attempt to import '${MAPFILE[@]} .group' but variables already defined."
-
     ::cli::bash::is_function_declared::inline main \
         || cli::assert "Command '${CLI_COMMAND[@]}' missing entrypoint 'main'."
+
     main "$@"
 }
 
@@ -1904,10 +1881,6 @@ loader_source() {
     diff_import 'cli stderr on-err' \
         'cli stderr dump' \
         'cli bash stack trace'
-
-    diff_import 'cli bash variable declare'
-    diff_import_then_export_as 'cli bash variable initialize' 'cli::bash::variable::declare' \
-        'cli bash variable declare'
 
     diff_import 'cli bash array pop'
     

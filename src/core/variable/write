@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash write
 cli::import cli core variable resolve
+cli::import cli core type get-info
 cli::import cli core type get
-cli::import cli core type load
 
 help() {
     cat << EOF | cli::core::help
@@ -60,7 +60,7 @@ cli::core::variable::write::main() {
     local TYPE=( ${ARG_TYPE} )
     local NAME="${ARG_NAME}"
 
-    ::cli::core::type::get::inline "${TYPE[@]}"
+    ::cli::core::type::get_info::inline "${TYPE[@]}"
 
     # leaf
     if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
@@ -98,7 +98,7 @@ cli::core::variable::write::main() {
             ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} || cli::assert
             local USER_DEFINED_TYPE="${REPLY}"
 
-            ::cli::core::type::load::inline "${USER_DEFINED_TYPE}"
+            ::cli::core::type::get::inline "${USER_DEFINED_TYPE}"
 
             local -n TYPE_REF="${REPLY}"
             SEGMENTS=( "${!TYPE_REF[@]}" )

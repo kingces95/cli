@@ -1,6 +1,4 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable initialize
-cli::import cli core type get
 
 help() {
     cat << EOF

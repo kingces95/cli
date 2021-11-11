@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core variable resolve
-cli::import cli core type get
+cli::import cli core type get-info
 
 help() {
     cat << EOF | cli::core::help
@@ -43,7 +43,7 @@ cli::core::variable::get::main() {
     local TYPE=( ${MAPFILE[@]} )
     local NAME="${REPLY}"
 
-    ::cli::core::type::get::inline "${TYPE[@]}"
+    ::cli::core::type::get_info::inline "${TYPE[@]}"
     ${REPLY_CLI_CORE_TYPE_IS_BUILTIN} \
         || cli::assert "Expected to resolve '$@' to bultin type but got '${TYPE[@]}'."
 

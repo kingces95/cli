@@ -1,5 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash type get
+cli::import cli bash type get-info
+cli::import cli bash variable declaration get-info
 
 help() {
     cat << EOF | cli::core::type::help
@@ -14,139 +15,168 @@ Description
 
     Fail if the bash variable is undefined.
     
-    Set predicates as per:
+    The type is returned in REPLY and the following predicates are set:
 
-        cli bash type get
-
-    Set REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED if the variable is uninitialized.
-
-    Set REPLY_CLI_BASH_VARIABLE_IS_READONLY if the variable is readonly.
+        REPLY_CLI_BASH_VARIABLE_IS_INITIALIZED
+        REPLY_CLI_BASH_VARIABLE_IS_INTEGER
+        REPLY_CLI_BASH_VARIABLE_IS_STRING
+        REPLY_CLI_BASH_VARIABLE_IS_SCALER
+        REPLY_CLI_BASH_VARIABLE_IS_ARRAY
+        REPLY_CLI_BASH_VARIABLE_IS_INTEGER_ARRAY
+        REPLY_CLI_BASH_VARIABLE_IS_MAP
+        REPLY_CLI_BASH_VARIABLE_IS_INTEGER_MAP
+        REPLY_CLI_BASH_VARIABLE_IS_READONLY
+        REPLY_CLI_BASH_VARIABLE_IS_EXPORTED
+        REPLY_CLI_BASH_VARIABLE_IS_UPPER
+        REPLY_CLI_BASH_VARIABLE_IS_LOWER
 EOF
 }
 
 ::cli::bash::variable::get_info::inline() {
     # declare cache
-    declare -gA CLI_BASH_VARIABLE_INFO+=()
+    declare -gA CLI_BASH_VARIABLE_INFO_CACHE+=()
+    REPLY_CLI_BASH_VARIABLE_IS_CACHE_HIT=false
 
-    REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=false
+    REPLY_CLI_BASH_VARIABLE_IS_INTEGER=false
+    REPLY_CLI_BASH_VARIABLE_IS_STRING=false
+    REPLY_CLI_BASH_VARIABLE_IS_SCALER=false
+    REPLY_CLI_BASH_VARIABLE_IS_ARRAY=false
+    REPLY_CLI_BASH_VARIABLE_IS_INTEGER_ARRAY=false
+    REPLY_CLI_BASH_VARIABLE_IS_MAP=false
+    REPLY_CLI_BASH_VARIABLE_IS_INTEGER_MAP=false
     REPLY_CLI_BASH_VARIABLE_IS_READONLY=false
-    REPLY_CLI_BASH_VARIABLE_CACHE_HIT=false
+    REPLY_CLI_BASH_VARIABLE_IS_EXPORTED=false
+    REPLY_CLI_BASH_VARIABLE_IS_UPPER=false
+    REPLY_CLI_BASH_VARIABLE_IS_LOWER=false
+    REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=false
 
-    local NAME="$1"
+    local NAME="${1-}"
+    [[ ${NAME} ]] || cli::assert 'Missing variable name.'
 
     # try readonly initialized cache
-    if [[ ${CLI_BASH_VARIABLE_INFO["${NAME}"]+set == "set" } ]]; then
+    if [[ ${CLI_BASH_VARIABLE_INFO_CACHE["${NAME}"]+set == "set" } ]]; then
         REPLY_CLI_BASH_VARIABLE_IS_READONLY=true
-        REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=true
-        REPLY_CLI_BASH_VARIABLE_CACHE_HIT=true
-        MAPFILE=( 'readonly' "${CLI_BASH_VARIABLE_INFO["$1"]}" )
+        REPLY_CLI_BASH_VARIABLE_IS_CACHE_HIT=true
+
+        ::cli::bash::type::get_info::inline "${CLI_BASH_VARIABLE_INFO_CACHE["$1"]}"
+        REPLY_CLI_BASH_VARIABLE_IS_INTEGER=${REPLY_CLI_BASH_TYPE_IS_INTEGER}
+        REPLY_CLI_BASH_VARIABLE_IS_STRING=${REPLY_CLI_BASH_TYPE_IS_STRING}
+        REPLY_CLI_BASH_VARIABLE_IS_SCALER=${REPLY_CLI_BASH_TYPE_IS_SCALER}
+        REPLY_CLI_BASH_VARIABLE_IS_ARRAY=${REPLY_CLI_BASH_TYPE_IS_ARRAY}
+        REPLY_CLI_BASH_VARIABLE_IS_INTEGER_ARRAY=${REPLY_CLI_BASH_TYPE_IS_INTEGER_ARRAY}
+        REPLY_CLI_BASH_VARIABLE_IS_MAP=${REPLY_CLI_BASH_TYPE_IS_MAP}
+        REPLY_CLI_BASH_VARIABLE_IS_INTEGER_MAP=${REPLY_CLI_BASH_TYPE_IS_INTEGER_MAP}
         return
     fi
-  
+
     # test declared
     local DECLARE
-    DECLARE=$( declare -p ${1-} 2>/dev/null ) || return
+    DECLARE=$( declare -p ${NAME} 2>/dev/null ) || return
 
     # type
-    local _ TYPE VALUE
-    read _ TYPE VALUE <<< "${DECLARE}"
-    ::cli::bash::type::get::inline "${TYPE}"
-
-    MAPFILE=()
-
-    # readonly
-    if [[ "${TYPE}" == *r* ]]; then
-        REPLY_CLI_BASH_VARIABLE_IS_READONLY=true
-        MAPFILE+=( 'readonly' ) # TODO: remove readonly, use REPLY to store just type name
-    fi
+    local _ FLAGS VALUE
+    read _ FLAGS VALUE <<< "${DECLARE}"
 
     # uninitialized
-    if [[ "${VALUE}" == "$1" ]]; then
+    if [[ "${VALUE}" == "${NAME}" ]]; then
         REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=true
     fi
 
-    # populate cache
-    if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY} &&
-        ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED}; then
-        CLI_BASH_VARIABLE_INFO["${NAME}"]="${REPLY}"
+    ::cli::bash::variable::declaration::get_info::inline "${FLAGS//-/}"
+
+    # populate cache if variable has a value and is strictly readonly
+    if ! ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED} &&
+        ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_READONLY} &&
+        ! ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_EXPORTED} &&
+        ! ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_UPPER} &&
+        ! ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_LOWER}; then
+
+        CLI_BASH_VARIABLE_INFO_CACHE["${NAME}"]="${REPLY}"
     fi
 
-    MAPFILE+=( "${REPLY}" )
-    REPLY=
+    REPLY_CLI_BASH_VARIABLE_IS_INTEGER=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_INTEGER}
+    REPLY_CLI_BASH_VARIABLE_IS_STRING=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_STRING}
+    REPLY_CLI_BASH_VARIABLE_IS_SCALER=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_SCALER}
+    REPLY_CLI_BASH_VARIABLE_IS_ARRAY=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_ARRAY}
+    REPLY_CLI_BASH_VARIABLE_IS_INTEGER_ARRAY=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_INTEGER_ARRAY}
+    REPLY_CLI_BASH_VARIABLE_IS_MAP=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_MAP}
+    REPLY_CLI_BASH_VARIABLE_IS_INTEGER_MAP=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_INTEGER_MAP}
+    REPLY_CLI_BASH_VARIABLE_IS_READONLY=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_READONLY}
+    REPLY_CLI_BASH_VARIABLE_IS_EXPORTED=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_EXPORTED}
+    REPLY_CLI_BASH_VARIABLE_IS_UPPER=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_UPPER}
+    REPLY_CLI_BASH_VARIABLE_IS_LOWER=${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_LOWER}
 }
 
 self_test() {
     cli::assert::eval() { eval "$@" || cli::assert; }
 
     test_flags() {
-        local -i EXPECTED=$#
+        local -i EXPECTED_TRUE=$#
+
         for p in "$@"; do
-            cli::assert::eval "\${REPLY_CLI_BASH_${p}}"
+            cli::assert::eval "\${REPLY_CLI_BASH_VARIABLE_IS_${p}}"
         done
 
-        local -i ACTUAL=0
-        if ${REPLY_CLI_BASH_VARIABLE_CACHE_HIT}; then ACTUAL+=1; fi
-        if ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED}; then ACTUAL+=1; fi
-        if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY}; then ACTUAL+=1; fi
-        if ${REPLY_CLI_BASH_TYPE_IS_INTEGER}; then ACTUAL+=1; fi
-        if ${REPLY_CLI_BASH_TYPE_IS_STRING}; then ACTUAL+=1; fi 
-        if ${REPLY_CLI_BASH_TYPE_IS_ARRAY}; then ACTUAL+=1; fi 
-        if ${REPLY_CLI_BASH_TYPE_IS_MAP}; then ACTUAL+=1; fi 
+        local -i ACTUAL_TRUE=0
+        if ${REPLY_CLI_BASH_VARIABLE_IS_INTEGER}; then ACTUAL_TRUE+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_STRING}; then ACTUAL_TRUE+=1; fi 
+        if ${REPLY_CLI_BASH_VARIABLE_IS_SCALER}; then ACTUAL_TRUE+=1; fi 
+        if ${REPLY_CLI_BASH_VARIABLE_IS_ARRAY}; then ACTUAL_TRUE+=1; fi 
+        if ${REPLY_CLI_BASH_VARIABLE_IS_MAP}; then ACTUAL_TRUE+=1; fi 
+        if ${REPLY_CLI_BASH_VARIABLE_IS_INTEGER_ARRAY}; then ACTUAL_TRUE+=1; fi 
+        if ${REPLY_CLI_BASH_VARIABLE_IS_INTEGER_MAP}; then ACTUAL_TRUE+=1; fi 
+        if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY}; then ACTUAL_TRUE+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_EXPORTED}; then ACTUAL_TRUE+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_UPPER}; then ACTUAL_TRUE+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_LOWER}; then ACTUAL_TRUE+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED}; then ACTUAL_TRUE+=1; fi
+        if ${REPLY_CLI_BASH_VARIABLE_IS_CACHE_HIT}; then ACTUAL_TRUE+=1; fi
 
-        (( ACTUAL == EXPECTED )) || cli::assert "${ACTUAL} != ${EXPECTED}"
+        if ! (( ACTUAL_TRUE == EXPECTED_TRUE )); then
+            cli::dump 'REPLY_CLI_BASH_VARIABLE_IS_*' >&2
+            cli::assert "${ACTUAL_TRUE} != ${EXPECTED_TRUE}"
+        fi
     }
 
     test() {
+        local EXPECTED=$1
+        shift
+
         local NAME=$1
         shift
 
-        local EXPECTED=$1
-        shift 
-
-        local INIT=$1
-        shift
-
         ${CLI_COMMAND[@]} --- ${NAME}
-        test_flags VARIABLE_IS_UNINITIALIZED "$@"
-        [[ "${EXPECTED}" == "${MAPFILE[*]}" ]] || cli::assert "${EXPECTED} != ${MAPFILE[*]}"
-
-        if ${REPLY_CLI_BASH_VARIABLE_IS_READONLY}; then
-            return
-        fi
-
-        eval "${NAME}=${INIT}"
-        ${CLI_COMMAND[@]} --- ${NAME}
+        [[ "${EXPECTED}" == "${REPLY}" ]] \
+            || cli::assert "${EXPECTED} != ${REPLY}"
+        
         test_flags "$@"
     }
 
     ! ${CLI_COMMAND[@]} --- VAR || cli::assert
 
+    local -- MY_STRING=; test '' MY_STRING STRING SCALER
+    local -i MY_INTEGER=; test i MY_INTEGER INTEGER SCALER
+    local -a MY_ARRAY=(); test a MY_ARRAY ARRAY
+    local -A MY_MAP=(); test A MY_MAP MAP
+    local -ia MY_IARRAY=(); test ai MY_IARRAY INTEGER_ARRAY ARRAY
+    local -iA MY_IMAP=(); test Ai MY_IMAP INTEGER_MAP MAP 
 
-    local MY_STRING
-    test MY_STRING string '""' TYPE_IS_STRING
+    local -- MY_USTRING; test '' MY_USTRING STRING SCALER UNINITIALIZED
+    local -i MY_UINTEGER; test i MY_UINTEGER INTEGER SCALER UNINITIALIZED
+    local -a MY_UARRAY; test a MY_UARRAY ARRAY UNINITIALIZED
+    local -A MY_UMAP; test A MY_UMAP MAP UNINITIALIZED
 
-    local -i MY_INTEGER
-    test MY_INTEGER integer '"0"' TYPE_IS_INTEGER
+    local -r MY_RO_STRING=; test '' MY_RO_STRING STRING SCALER READONLY
+    local -ir MY_RO_INTEGER=; test i MY_RO_INTEGER INTEGER SCALER READONLY
+    local -ar MY_RO_ARRAY=; test a MY_RO_ARRAY ARRAY READONLY
+    local -Ar MY_RO_MAP=; test A MY_RO_MAP MAP READONLY
+    local -ira MY_RO_IARRAY=(); test ai MY_RO_IARRAY INTEGER_ARRAY ARRAY READONLY
+    local -iAr MY_RO_IMAP=(); test Ai MY_RO_IMAP INTEGER_MAP MAP READONLY
 
-    local -a MY_ARRAY
-    test MY_ARRAY array '()' TYPE_IS_ARRAY
-
-    local -A MY_MAP
-    test MY_MAP map '()' TYPE_IS_MAP
-
-
-    local -r MY_RO_STRING
-    test MY_RO_STRING 'readonly string' '""' TYPE_IS_STRING VARIABLE_IS_READONLY
-
-    local -ir MY_RO_INTEGER
-    test MY_RO_INTEGER 'readonly integer' '"0"' TYPE_IS_INTEGER VARIABLE_IS_READONLY
-
-    local -ar MY_RO_ARRAY
-    test MY_RO_ARRAY 'readonly array' '()' TYPE_IS_ARRAY VARIABLE_IS_READONLY
-
-    local -Ar MY_RO_MAP
-    test MY_RO_MAP 'readonly map' '()' TYPE_IS_MAP VARIABLE_IS_READONLY
-
-    local -Ar MY_RO_MAP
-    test MY_RO_MAP 'readonly map' '()' TYPE_IS_MAP VARIABLE_IS_READONLY VARIABLE_CACHE_HIT
+    test '' MY_RO_STRING STRING SCALER READONLY CACHE_HIT
+    test i MY_RO_INTEGER INTEGER SCALER READONLY CACHE_HIT
+    test a MY_RO_ARRAY ARRAY READONLY CACHE_HIT
+    test A MY_RO_MAP MAP READONLY CACHE_HIT
+    test ai MY_RO_IARRAY INTEGER_ARRAY ARRAY READONLY CACHE_HIT
+    test Ai MY_RO_IMAP INTEGER_MAP MAP READONLY CACHE_HIT
 }

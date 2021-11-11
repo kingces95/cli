@@ -14,5 +14,5 @@ main() {
 }
 
 self_test() {
-    cli bash type get --self-test
+    cli bash string literal --self-test
 }

@@ -2,7 +2,7 @@
 cli::import cli core variable parse
 cli::import cli core variable declare
 cli::import cli core variable resolve
-cli::import cli core type get
+cli::import cli core type get-info
 
 help() {
     cat << EOF
@@ -51,7 +51,7 @@ cli::core::variable::put::main() {
     ARG_NAME="${NAME}" \
         ::cli::core::variable::declare::inline
 
-    ::cli::core::type::get::inline "${TYPE[@]}"
+    ::cli::core::type::get_info::inline "${TYPE[@]}"
 
     # base case
     if (( $# == 0 )); then

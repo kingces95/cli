@@ -1,0 +1,78 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Given a type convert it to flags as used by declare.
+
+Description
+    Arguments \$1 - \$n represent at type of the form 
+    
+        [readonly]? [string|integer|boolean|map|array]
+
+    Result is returned in REPLY. 
+EOF
+}
+
+::cli::bash::variable::declaraiton::print::inline() {
+    local ARGS=( "$@" )
+    local FLAGS=()
+
+    if [[ "${1-}" == 'readonly' ]]; then
+        FLAGS+=( r )
+        shift
+    fi
+
+    if [[ "${1-}" == 'export' ]]; then
+        FLAGS+=( x )
+        shift
+    fi
+
+    if [[ "${1-}" == 'upper' ]]; then
+        FLAGS+=( u )
+        shift
+    fi
+
+    if [[ "${1-}" == 'lower' ]]; then
+        FLAGS+=( l )
+        shift
+    fi
+
+    case "${1-}" in
+        'string') FLAGS+=( ) ;;
+        'integer') FLAGS+=( i ) ;;
+        'array') FLAGS+=( a ) ;;
+        'map') FLAGS+=( A ) ;;
+        'integer_array') FLAGS+=( ai ) ;;
+        'integer_map') FLAGS+=( Ai ) ;;
+        *) cli::assert "Expected type got '${ARGS[*]}'."
+    esac
+
+    IFS=
+    REPLY="${FLAGS[*]}"
+    IFS="${CLI_IFS}"
+}
+
+self_test() {
+    diff <( ${CLI_COMMAND[@]} ---reply string ) <( echo )
+    diff <( ${CLI_COMMAND[@]} ---reply integer ) - <<< 'i'
+    diff <( ${CLI_COMMAND[@]} ---reply array ) - <<< 'a'
+    diff <( ${CLI_COMMAND[@]} ---reply map ) - <<< 'A'
+    diff <( ${CLI_COMMAND[@]} ---reply integer_array ) - <<< 'ai'
+    diff <( ${CLI_COMMAND[@]} ---reply integer_map ) - <<< 'Ai'
+
+    diff <( ${CLI_COMMAND[@]} ---reply readonly string ) - <<< 'r'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly integer ) - <<< 'ri'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly array ) - <<< 'ra'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly map ) - <<< 'rA'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly integer_array ) - <<< 'rai'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly integer_map ) - <<< 'rAi'
+
+    diff <( ${CLI_COMMAND[@]} ---reply readonly export upper string ) - <<< 'rxu'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly export lower string ) - <<< 'rxl'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly export upper integer ) - <<< 'rxui'
+    diff <( ${CLI_COMMAND[@]} ---reply readonly export lower integer ) - <<< 'rxli'
+}

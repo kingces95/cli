@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type get
+cli::import cli core type get-info
 
 help() {
     cat << EOF | cli::core::type::help
@@ -24,7 +24,7 @@ EOF
     MAPFILE=( "$@" )
 
     while true; do
-        ::cli::core::type::get::inline "${MAPFILE[@]}"
+        ::cli::core::type::get_info::inline "${MAPFILE[@]}"
         if ! ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then 
             break
         fi

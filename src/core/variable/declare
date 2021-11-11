@@ -1,10 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable initialize
 cli::import cli bash variable get-info
-cli::import cli core type get
-cli::import cli core type load
-cli::import cli core type to-bash
 cli::import cli core variable resolve
+cli::import cli core type get-info
+cli::import cli core type get
+cli::import cli core type to-bash
 
 help() {
     cat << EOF
@@ -25,7 +24,8 @@ EOF
 cli::core::variable::declare::main() {
     cli::import cli core variable parse
 
-    : ${ARG_SCOPE?}
+    local -A CLI_CORE_VARIABLE_DECLARE_SCOPE=()
+    : ${ARG_SCOPE:=CLI_CORE_VARIABLE_DECLARE_SCOPE}
 
     ::cli::core::variable::parse::inline "$@"
 
@@ -46,34 +46,35 @@ cli::core::variable::declare::main() {
             cli::assert "Variable '${NAME}' of type '${TYPE[*]}'" \
                 "cannot be redclared type '${SCOPE_REF["${NAME}"]}'."
         return
-    
-    # disallow declaring variables already declared in bash
-    else
-        ! ::cli::bash::variable::get_info::inline "${NAME}" || \
-            cli::assert "Failed to declare '${NAME}'." \
-                "Variable '${NAME}' already declared:" \
-                 $( declare -p "${NAME}" )
+
+    elif ::cli::bash::variable::get_info::inline "${NAME}"; then
+        cli::assert "Failed to declare '${NAME}'." \
+            "Variable '${NAME}' already declared in bash as:" \
+            $( declare -p "${NAME}" )
     fi
 
     # assoicate variable with its type
     SCOPE_REF["${NAME}"]="${TYPE[*]}"
 
-    ::cli::core::type::get::inline "${TYPE[@]}"
+    ::cli::core::type::get_info::inline "${TYPE[@]}"
 
     # base case
     if ! ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
-
-        # convert core type to bash type (ie boolean -> string)
-        ::cli::core::type::to_bash::inline ${TYPE[@]} || 
+    
+        if ${REPLY_CLI_CORE_TYPE_IS_STRING}; then
+            declare -g "${NAME}="
+        elif ${REPLY_CLI_CORE_TYPE_IS_INTEGER}; then
+            declare -gi "${NAME}=0"
+        elif ${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}; then
+            declare -g "${NAME}=false"
+        elif ${REPLY_CLI_CORE_TYPE_IS_ARRAY}; then
+            declare -ga "${NAME}=()"
+        elif ${REPLY_CLI_CORE_TYPE_IS_MAP}; then
+            declare -gA "${NAME}=()"
+        elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
+            declare -gA "${NAME}=()"
+        else
             cli::assert "Unknown type '${TYPE[@]}}'."
-
-        # declare and initialize bash variable
-        ::cli::bash::variable::initialize::inline "${REPLY}" "${NAME}"
-
-        # accept bash initial values except for 'boolean'
-        if ${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}; then
-            local -n REF="${NAME}"
-            REF="false"
         fi
 
     # user defined
@@ -88,7 +89,7 @@ cli::core::variable::declare::main() {
         # fi
         # echo "--- MISSING BGEN FOR CLI_TYPE_${TYPE^^} ---" > /dev/stderr
 
-        ::cli::core::type::load::inline ${USER_DEFINED_TYPE}
+        ::cli::core::type::get::inline ${USER_DEFINED_TYPE}
         local -n TYPE_REF=${REPLY}
 
         # layout fields
@@ -109,21 +110,12 @@ cli::core::variable::declare::main() {
 }
 
 self_test() {
-    cli::import cli core variable parse
-    cli::import cli bash variable get-info
-
     local -A SCOPE=()
+    local ARG_SCOPE='SCOPE'
 
     test() {
-        ::cli::core::variable::parse::inline "$@"
-        local TYPE="${MAPFILE[@]}" \
-        local NAME="${REPLY}" \
-
         # declare the variable
-        ARG_SCOPE=SCOPE \
-        ARG_TYPE="${TYPE}" \
-        ARG_NAME="${NAME}" \
-            ::cli::core::variable::declare::inline
+        ${CLI_COMMAND[@]} --- "$@"
 
         test::verify() {
             local TYPE="$1"
@@ -134,13 +126,13 @@ self_test() {
                 "${SCOPE["${NAME}"]}" == "${TYPE}" ]] || \
                 cli::assert "${SCOPE["${NAME}"]+missing} != ${TYPE}"
 
-            ::cli::core::type::get::inline ${TYPE}
+            ::cli::core::type::get_info::inline ${TYPE}
 
             if ! ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
 
                 # get info about the underlying bash variable
                 ::cli::bash::variable::get_info::inline "${NAME}"
-                local ACUTAL_BASH_TYPE="${MAPFILE[*]}"
+                local ACUTAL_BASH_TYPE="${REPLY}"
 
                 # the bash variable should be initialized and mutable
                 ! ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED} || cli::assert
@@ -150,7 +142,8 @@ self_test() {
                 ::cli::core::type::to_bash::inline ${TYPE} 
                 local EXPECTED_BASH_TYPE="${REPLY}"
 
-                [[ "${ACUTAL_BASH_TYPE}" == "${EXPECTED_BASH_TYPE}" ]] || cli::assert
+                [[ "${ACUTAL_BASH_TYPE}" == "${EXPECTED_BASH_TYPE}" ]] \
+                    || cli::assert "${ACUTAL_BASH_TYPE} != ${EXPECTED_BASH_TYPE}"
 
                 return
             fi
@@ -158,7 +151,7 @@ self_test() {
             # no bash variable is declared for a UDT
             ! ::cli::bash::variable::get_info::inline "${NAME}" || cli::assert
 
-            ::cli::core::type::load::inline "${TYPE}"
+            ::cli::core::type::get::inline "${TYPE}"
             local -n TYPE_REF="${REPLY}"
 
             local FIELD
@@ -174,14 +167,14 @@ self_test() {
         }
 
         # parse the declaration
-        test::verify "${TYPE}" "${NAME}"
+        ::cli::core::variable::parse::inline "$@"
+        test::verify "${MAPFILE[*]}" "${REPLY}"
     }
 
     test string MY_STRING
     test integer MY_INTEGER
     test array MY_ARRAY
     test map MY_MAP
-
     test boolean MY_BOOLEAN
     test map_of string MY_MODIFIED
 

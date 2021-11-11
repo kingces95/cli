@@ -5,7 +5,8 @@ help() {
 Command
     ${CLI_COMMAND[@]}
 
-Summary
+Description
+
 EOF
 }
 
@@ -14,8 +15,7 @@ main() {
 }
 
 self_test() {
-    cli temp dir --self-test
-    cli temp fifo --self-test
-    cli temp file --self-test
-    cli temp remove --self-test
+    cli shim shebang --self-test
+    cli shim source --self-test
+    cli shim which --self-test
 }

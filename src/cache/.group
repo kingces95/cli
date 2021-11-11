@@ -4,8 +4,6 @@ help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}
-
-Summary
 EOF
 }
 
@@ -14,8 +12,7 @@ main() {
 }
 
 self_test() {
-    cli temp dir --self-test
-    cli temp fifo --self-test
-    cli temp file --self-test
-    cli temp remove --self-test
+    cli cache path --self-test
+    cli cache put --self-test
+    cli cache test --self-test
 }

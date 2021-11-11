@@ -10,8 +10,8 @@ Description
 EOF
 }
 
-cli::bash::_test::main() {
-    :
+main() {
+    : # special loader case; export nothing
 }
 
 self_test() {
