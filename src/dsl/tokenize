@@ -44,11 +44,7 @@ Examples
 EOF
 }
 
-cli::meta::declare() { 
-    : 
-}
-
-main() {  
+cli::dsl::tokenize::main() { 
     local line
     local word=
     local last_word=
@@ -175,43 +171,46 @@ main() {
 }
 
 self_test() (    
-    cli dsl sample -h \
-        | cli dsl tokenize \
-        | assert::pipe_eq \
-            'ARGUMENTS 7 1 id' \
-            'NAME 8 1 id' \
-            'ALIAS 8 2 i' \
-            'ARGUMENTS 10 1 name' \
-            'NAME 11 1 name' \
-            'NAME 12 1 namespace' \
-            'ARGUMENTS 14 1 ' \
-            'NAME 15 1 run-as' \
-            'NAME 17 1 fruit' \
-            'ALIAS 17 2 f' \
-            'DEFAULT 17 6 ' \
-            'VALUE_PERIOD 17 7 banana' \
-            'ALLOWED_VALUES 18 1 ' \
-            'VALUE_COMMA 18 2 orange' \
-            'VALUE_PERIOD 18 3 banana' \
-            'NAME 19 1 header' \
-            'REQUIRED 19 2 ' \
-            'REGEX 19 5 ' \
-            'VALUE_PERIOD 19 6 ^[A-Z][A-Za-z0-9_]*$' \
-            'NAME 20 1 dump' \
-            'ALIAS 20 2 d' \
-            'FLAG 20 3 ' \
-            'NAME 21 1 my-list' \
-            'ALIAS 21 2 l' \
-            'LIST 21 3 ' \
-            'NAME 22 1 my-props' \
-            'ALIAS 22 2 p' \
-            'PROPERTIES 22 3 ' \
-            'DASHDASH 23 1 ' \
-            'ARGUMENTS 25 1 ' \
-            'NAME 26 1 help' \
-            'ALIAS 26 2 h' \
-            'FLAG 26 3 ' \
-            'NAME 27 1 self-test' \
-            'FLAG 27 2 ' \
-            'EOF 31 6 '
+    diff <(cli dsl sample -h \
+            | cli dsl tokenize \
+        ) \
+        <(cat <<-EoF
+			ARGUMENTS 7 1 id
+			NAME 8 1 id
+			ALIAS 8 2 i
+			ARGUMENTS 10 1 name
+			NAME 11 1 name
+			NAME 12 1 namespace
+			ARGUMENTS 14 1 
+			NAME 15 1 run-as
+			NAME 17 1 fruit
+			ALIAS 17 2 f
+			DEFAULT 17 6 
+			VALUE_PERIOD 17 7 banana
+			ALLOWED_VALUES 18 1 
+			VALUE_COMMA 18 2 orange
+			VALUE_PERIOD 18 3 banana
+			NAME 19 1 header
+			REQUIRED 19 2 
+			REGEX 19 5 
+			VALUE_PERIOD 19 6 ^[A-Z][A-Za-z0-9_]*$
+			NAME 20 1 dump
+			ALIAS 20 2 d
+			FLAG 20 3 
+			NAME 21 1 my-list
+			ALIAS 21 2 l
+			LIST 21 3 
+			NAME 22 1 my-props
+			ALIAS 22 2 p
+			PROPERTIES 22 3 
+			DASHDASH 23 1 
+			ARGUMENTS 28 1 
+			NAME 29 1 help
+			ALIAS 29 2 h
+			FLAG 29 3 
+			NAME 30 1 self-test
+			FLAG 30 2 
+			EOF 31 7 
+			EoF
+        )
 )

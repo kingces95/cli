@@ -84,7 +84,7 @@ read_token() {
     fi
 }
 
-main() {
+cli::dsl::parse::main() { 
     local ARG_FILE=${1-'UNKNOWN'}
 
     declare line
@@ -220,51 +220,54 @@ main() {
 }
 
 self_test() {
-    cli dsl sample -h \
-        | cli dsl tokenize \
-        | cli dsl parse \
-        | assert::pipe_eq \
-            'id . ARGUMENTS id' \
-            'id id NAME id' \
-            'id id ALIAS i' \
-            'id id TYPE string' \
-            'name . ARGUMENTS name' \
-            'name name NAME name' \
-            'name name TYPE string' \
-            'name namespace NAME namespace' \
-            'name namespace TYPE string' \
-            '* . ARGUMENTS *' \
-            '* run-as NAME run-as' \
-            '* run-as TYPE string' \
-            '* fruit NAME fruit' \
-            '* fruit ALIAS f' \
-            '* fruit TYPE string' \
-            '* fruit DEFAULT banana' \
-            '* fruit ALLOWED ' \
-            '* fruit ALLOWED_VALUE orange' \
-            '* fruit ALLOWED_VALUE banana' \
-            '* fruit ALLOWED_END ' \
-            '* header NAME header' \
-            '* header REQUIRED ' \
-            '* header TYPE string' \
-            '* header REGEX ^[A-Z][A-Za-z0-9_]*$' \
-            '* dump NAME dump' \
-            '* dump ALIAS d' \
-            '* dump FLAG ' \
-            '* dump TYPE boolean' \
-            '* my-list NAME my-list' \
-            '* my-list ALIAS l' \
-            '* my-list TYPE array' \
-            '* my-props NAME my-props' \
-            '* my-props ALIAS p' \
-            '* my-props TYPE map' \
-            '* my-props ANYARGS ' \
-            '* . ARGUMENTS *' \
-            '* help NAME help' \
-            '* help ALIAS h' \
-            '* help FLAG ' \
-            '* help TYPE boolean' \
-            '* self-test NAME self-test' \
-            '* self-test FLAG ' \
-            '* self-test TYPE boolean'
+    diff <(cli dsl sample -h \
+            | cli dsl tokenize \
+            | cli dsl parse
+        ) \
+        <(cat <<-EOF
+			id . ARGUMENTS id
+			id id NAME id
+			id id ALIAS i
+			id id TYPE string
+			name . ARGUMENTS name
+			name name NAME name
+			name name TYPE string
+			name namespace NAME namespace
+			name namespace TYPE string
+			* . ARGUMENTS *
+			* run-as NAME run-as
+			* run-as TYPE string
+			* fruit NAME fruit
+			* fruit ALIAS f
+			* fruit TYPE string
+			* fruit DEFAULT banana
+			* fruit ALLOWED 
+			* fruit ALLOWED_VALUE orange
+			* fruit ALLOWED_VALUE banana
+			* fruit ALLOWED_END 
+			* header NAME header
+			* header REQUIRED 
+			* header TYPE string
+			* header REGEX ^[A-Z][A-Za-z0-9_]*$
+			* dump NAME dump
+			* dump ALIAS d
+			* dump FLAG 
+			* dump TYPE boolean
+			* my-list NAME my-list
+			* my-list ALIAS l
+			* my-list TYPE array
+			* my-props NAME my-props
+			* my-props ALIAS p
+			* my-props TYPE map
+			* my-props ANYARGS 
+			* . ARGUMENTS *
+			* help NAME help
+			* help ALIAS h
+			* help FLAG 
+			* help TYPE boolean
+			* self-test NAME self-test
+			* self-test FLAG 
+			* self-test TYPE boolean
+			EOF
+        )
 }

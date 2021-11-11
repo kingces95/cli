@@ -1,0 +1,21 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+EOF
+}
+
+main() {
+    : # special loader case; export nothing
+}
+
+self_test() {
+    cli stderr cat --self-test
+    cli stderr on-err --self-test
+    cli stderr lock --self-test
+    echo cli stderr assert --self-test
+    echo cli stderr dump --self-test
+    echo cli stderr fail --self-test
+}

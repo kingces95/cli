@@ -176,6 +176,10 @@ declare -A CLI_LOADER_IMPORTED=(
     ["cli cache .group"]=true
     ["cli bash .group"]=true
     ["cli shim .group"]=true
+    ["cli set .group"]=true
+    ["cli subshell .group"]=true
+    ["cli stderr .group"]=true
+    ["cli name .group"]=true
 )
 declare -A CLI_LOADER_SOURCED_PATHS=()
 

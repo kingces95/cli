@@ -8,27 +8,23 @@ Command
 EOF
 }
 
-readonly CLI_DSL_ARG_CHAR_GLOB="[a-zA-Z0-9_-]"
-readonly CLI_DSL_ARG_ALIAS_GLOB="-@(${CLI_DSL_ARG_CHAR_GLOB})" 
-readonly CLI_DSL_ARG_NAME_GLOB="--@(${CLI_DSL_ARG_CHAR_GLOB})+(${CLI_DSL_ARG_CHAR_GLOB})"
-
-readonly CLI_DSL_LITERAL_TAB='    '
-readonly CLI_DSL_LITERAL_COLON=':'
-readonly CLI_DSL_LITERAL_REGEX='Regex:'
-readonly CLI_DSL_LITERAL_DEFAULT='Default:'
-readonly CLI_DSL_LITERAL_ALLOWED='Allowed'
-readonly CLI_DSL_LITERAL_VALUES='values:'
-readonly CLI_DSL_LITERAL_REQUIRED='[Required]'
-readonly CLI_DSL_LITERAL_FLAG='[Flag]'
-readonly CLI_DSL_LITERAL_LIST='[List]'
-readonly CLI_DSL_LITERAL_PROPERTIES='[Properties]'
-readonly CLI_DSL_LITERAL_DASHDASH='--'
-
-cli::meta::declare() {
-    :
-}
-
 main() {
+    readonly CLI_DSL_ARG_CHAR_GLOB="[a-zA-Z0-9_-]"
+    readonly CLI_DSL_ARG_ALIAS_GLOB="-@(${CLI_DSL_ARG_CHAR_GLOB})" 
+    readonly CLI_DSL_ARG_NAME_GLOB="--@(${CLI_DSL_ARG_CHAR_GLOB})+(${CLI_DSL_ARG_CHAR_GLOB})"
+
+    readonly CLI_DSL_LITERAL_TAB='    '
+    readonly CLI_DSL_LITERAL_COLON=':'
+    readonly CLI_DSL_LITERAL_REGEX='Regex:'
+    readonly CLI_DSL_LITERAL_DEFAULT='Default:'
+    readonly CLI_DSL_LITERAL_ALLOWED='Allowed'
+    readonly CLI_DSL_LITERAL_VALUES='values:'
+    readonly CLI_DSL_LITERAL_REQUIRED='[Required]'
+    readonly CLI_DSL_LITERAL_FLAG='[Flag]'
+    readonly CLI_DSL_LITERAL_LIST='[List]'
+    readonly CLI_DSL_LITERAL_PROPERTIES='[Properties]'
+    readonly CLI_DSL_LITERAL_DASHDASH='--'
+
     ::cli::bash::variable::declare_enum::inline CLI_DSL_TOKEN \
         'DEFAULT' \
         'FLAG' \
@@ -64,4 +60,12 @@ main() {
         'ARGUMENTS'
 
     cli::export cli dsl
+}
+
+self_test() {
+    cli dsl simple --self-test
+    cli dsl sample --self-test
+    cli dsl tokenize --self-test
+    cli dsl parse --self-test
+    cli dsl meta --self-test
 }

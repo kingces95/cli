@@ -20,6 +20,11 @@ self_test() {
     cli cache .group --self-test
     cli temp .group --self-test
     cli shim .group --self-test
+    cli set .group --self-test
+    cli subshell .group --self-test
+    cli stderr .group --self-test
+    cli name .group --self-test
     
     cli core .group --self-test 
+    cli dsl .group --self-test 
 }

@@ -1,0 +1,17 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+EOF
+}
+
+main() {
+    : # special loader case; export nothing
+}
+
+self_test() {
+    cli set deflower --self-test
+    cli set test --self-test
+}
