@@ -20,17 +20,15 @@ EOF
 
 cli::core::variable::read::main() {
     cli::import cli core variable parse
-
-    local -A CLI_CORE_VARIABLE_READ_SCOPE=()
-    : ${ARG_SCOPE:=CLI_CORE_VARIABLE_READ_SCOPE}
-
     ::cli::core::variable::parse::inline "$@"
     shift ${#MAPFILE[@]}
     shift
 
     local NAME=${REPLY}
     local TYPE="${MAPFILE[*]}"
+    local -A CLI_CORE_VARIABLE_READ_SCOPE=()
 
+    ARG_SCOPE="${ARG_SCOPE:=CLI_CORE_VARIABLE_READ_SCOPE}" \
     ARG_NAME="${NAME}" \
     ARG_TYPE="${TYPE}" \
         ::cli::core::variable::read::inline "$@"

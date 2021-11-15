@@ -20,11 +20,13 @@ main() {
 
 self_test() {
     cli core variable parse --self-test
-    cli core variable resolve --self-test
-    cli core variable write --self-test
-    cli core variable get --self-test
-    cli core variable declare --self-test
-    cli core variable put --self-test
-    cli core variable read --self-test
+    cli core variable resolve --self-test   # name, type
+    cli core variable write --self-test     # name, type
+    cli core variable save --self-test      # dir
+    cli core variable get --self-test       # name, type   
+    cli core variable declare --self-test   # name, type, scope
+    cli core variable put --self-test       # name, type, scope
+    cli core variable read --self-test      # name, type, scope
+    cli core variable load --self-test      # dir
     # cli core variable print --self-test
 }

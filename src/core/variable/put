@@ -41,7 +41,6 @@ cli::core::variable::put::main() {
 
 ::cli::core::variable::put::inline() {
     local SCOPE_NAME="${ARG_SCOPE?'Missing scope.'}"
-    local -n SCOPE_REF="${SCOPE_NAME}"
     local -a TYPE=( ${ARG_TYPE?'Missing type.'} )
     local NAME="${ARG_NAME?'Missing name.'}"
     local -n REF="${NAME}"

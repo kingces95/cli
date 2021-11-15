@@ -23,12 +23,10 @@ EOF
 
 cli::core::variable::declare::main() {
     cli::import cli core variable parse
-
-    local -A CLI_CORE_VARIABLE_DECLARE_SCOPE=()
-    : ${ARG_SCOPE:=CLI_CORE_VARIABLE_DECLARE_SCOPE}
-
     ::cli::core::variable::parse::inline "$@"
 
+    local -A CLI_CORE_VARIABLE_DECLARE_SCOPE=()
+    ARG_SCOPE="${ARG_SCOPE:=CLI_CORE_VARIABLE_DECLARE_SCOPE}" \
     ARG_TYPE="${MAPFILE[@]}" \
     ARG_NAME="${REPLY}" \
         ::cli::core::variable::declare::inline

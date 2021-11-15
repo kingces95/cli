@@ -1,0 +1,23 @@
+source /Users/Setup/git/cli/src/dsl/.group
+ASSERT FAILED: Condition failed
+  ::cli::bash::stack::call::inline                   /Users/Setup/git/cli/src/.cli/loader/exports.sh:0
+  ::cli::bash::stack::trace::inline                  /Users/Setup/git/cli/src/.cli/loader/exports.sh:1415
+  ::cli::stderr::assert::inline                      /Users/Setup/git/cli/src/.cli/loader/exports.sh:1615
+  cli::assert                                        /Users/Setup/git/cli/src/.cli/loader/exports.sh:185
+  cli::loader::source "/Users/Setup/git/cli/src/dsl/.group" /Users/Setup/git/cli/src/.cli/loader/exports.sh:643
+  cli::main::source ---exports                       /Users/Setup/git/cli/src/.cli/loader/exports.sh:897
+  cli::main::prolog ---exports                       /Users/Setup/git/cli/src/.cli/loader/exports.sh:890
+  cli::main::thunk ---exports                        /Users/Setup/git/cli/src/.cli/loader/exports.sh:944
+  cli::loader::shim dsl ".group" ---exports          /Users/Setup/git/cli/src/.cli/loader/exports.sh:632
+  cli dsl ".group" ---exports                        /Users/Setup/git/cli/cli:5
+  cli::loader::source::exports                       /Users/Setup/git/cli/src/.cli/loader/exports.sh:649
+  cli::loader::import                                /Users/Setup/git/cli/src/.cli/loader/exports.sh:419
+  cli::loader::shim dsl ".group" ---import           /Users/Setup/git/cli/src/.cli/loader/exports.sh:590
+  cli dsl ".group" ---import                         /Users/Setup/git/cli/cli:5
+  cli::loader::import_parent                         /Users/Setup/git/cli/src/.cli/loader/exports.sh:437
+  cli::main::source -h                               /Users/Setup/git/cli/src/.cli/loader/exports.sh:894
+  cli::main::prolog -h                               /Users/Setup/git/cli/src/.cli/loader/exports.sh:890
+  cli::main::thunk -h                                /Users/Setup/git/cli/src/.cli/loader/exports.sh:937
+  cli::loader::shim dsl simple -h                    /Users/Setup/git/cli/src/.cli/loader/exports.sh:632
+  cli dsl simple -h                                  /Users/Setup/git/cli/cli:5
+  bash::main "/Users/Setup/git/cli/cli" dsl simple -h /Users/Setup/git/cli/bash-cli-shim:4

@@ -107,6 +107,9 @@ cli::dsl::meta::main() {
         # allow
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
             ::cli::core::variable::put::inline allow "${group}" "${name}" "${identifier}"
+            
+        else
+            cli::assert "Unknown production ${production_name}."
         fi
 
     done
