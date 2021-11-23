@@ -1,5 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core type get-info
+cli::import cli core type unmodify
 
 help() {
     cat << EOF | cli::core::type::help
@@ -23,18 +24,15 @@ EOF
 ::cli::core::type::unmodified::inline() {
     MAPFILE=( "$@" )
 
-    while true; do
-        ::cli::core::type::get_info::inline "${MAPFILE[@]}"
-        if ! ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then 
-            break
-        fi
+    while ::cli::core::type::unmodify::inline "${MAPFILE[@]}"; do
+        :
     done
 
     REPLY=${MAPFILE}
 }
 
 self_test() {
-    diff <( ${CLI_COMMAND[@]} ---reply boolean ) - <<< $'boolean' || cli::assert
-    diff <( ${CLI_COMMAND[@]} ---reply map_of map_of boolean ) - <<< $'boolean' || cli::assert
-    diff <( ${CLI_COMMAND[@]} ---reply map_of udt ) - <<< 'udt' || cli::assert
+    diff <( ${CLI_COMMAND[@]} ---reply boolean ) - <<< 'boolean' || cli::assert
+    diff <( ${CLI_COMMAND[@]} ---reply map_of boolean ) - <<< 'boolean' || cli::assert
+    diff <( ${CLI_COMMAND[@]} ---reply map_of map_of boolean ) - <<< 'boolean' || cli::assert
 }

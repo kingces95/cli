@@ -1,6 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core type unmodified
 cli::import cli core type get
+cli::import cli core type get-info
 
 help() {
     cat << EOF
@@ -11,7 +12,7 @@ Summary
     Emit the name of all user defined types used to compose a type.
     
 Description
-    Argument \$1 - \$n represent a type.
+    Argument \$1 is the type.
 
     Echo the name of all user defined types encountered by walking
     the type and its fields recursively. 
@@ -22,17 +23,19 @@ EOF
 
     # strip modifiers 
     ::cli::core::type::unmodified::inline "$@"
+    [[ "${REPLY}" ]] || cli::assert "Failed to unmodify '$@'.".
 
     # skip builtin types
+    ::cli::core::type::get_info::inline "${REPLY}"
     if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
         return
     fi
 
     # emit the user defined type
-    echo ${MAPFILE[@]}
+    echo "${REPLY}"
 
     # recurse using the type of each of the user defined type's fields
-    ::cli::core::type::get::inline "${REPLY}"
+    ::cli::core::type::get::inline ${REPLY}
     local -n CLI_TYPE_REF="${REPLY}"
     for FIELD_TYPE in "${CLI_TYPE_REF[@]}"; do
         ::cli::core::type::emit::inline ${FIELD_TYPE}

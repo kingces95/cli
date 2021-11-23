@@ -16,7 +16,7 @@ EOF
 }
 
 ::cli::core::type::resolve::inline() {
-    local TYPE="$1"
+    local TYPE="${1-}"
 
     [[ "${TYPE}" =~ $CLI_CORE_REGEX_TYPE_NAME ]] \
         || cli::assert "Expected type name to match '${CLI_CORE_REGEX_TYPE_NAME}', but got '${TYPE}'."

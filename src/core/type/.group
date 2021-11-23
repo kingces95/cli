@@ -17,5 +17,6 @@ self_test() {
     cli core type get-info --self-test
     cli core type resolve --self-test
     cli core type to-bash --self-test
+    cli core type unmodify --self-test
     cli core type unmodified --self-test
 }

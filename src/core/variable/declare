@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash variable get-info
-cli::import cli core variable resolve
+cli::import cli core variable get-info
+cli::import cli core variable name resolve
 cli::import cli core type get-info
 cli::import cli core type get
-cli::import cli core type to-bash
 
 help() {
     cat << EOF
@@ -23,28 +23,33 @@ EOF
 
 cli::core::variable::declare::main() {
     cli::import cli core variable parse
+
     ::cli::core::variable::parse::inline "$@"
 
-    local -A CLI_CORE_VARIABLE_DECLARE_SCOPE=()
-    ARG_SCOPE="${ARG_SCOPE:=CLI_CORE_VARIABLE_DECLARE_SCOPE}" \
     ARG_TYPE="${MAPFILE[@]}" \
-    ARG_NAME="${REPLY}" \
-        ::cli::core::variable::declare::inline
+        ::cli::core::variable::declare::inline "${REPLY}"
 }
 
 ::cli::core::variable::declare::inline() {
-    local SCOPE_NAME="${ARG_SCOPE?'Missing scope.'}"
-    local TYPE=( ${ARG_TYPE?'Missing type.'} )
-    local NAME="${ARG_NAME?'Missing name.'}"
+    local SCOPE_NAME="${ARG_SCOPE}"
+    [[ "${SCOPE_NAME}" ]] || cli::assert 'Missing scope.'
     local -n SCOPE_REF="${SCOPE_NAME}"
 
+    local TYPE="${ARG_TYPE}"
+    [[ "${TYPE}" ]] || cli::assert 'Missing type.'
+
+    local NAME="${1-}"
+    [[ "${NAME}" ]] || cli::assert 'Missing name.'
+
     # redefinition is a noop
-    if [[ "${SCOPE_REF["${NAME}"]+set}" ]]; then
-        [[ "${SCOPE_REF["${NAME}"]}" == "${TYPE[*]}" ]] || \
-            cli::assert "Variable '${NAME}' of type '${TYPE[*]}'" \
-                "cannot be redclared type '${SCOPE_REF["${NAME}"]}'."
+    if ::cli::core::variable::get_info::inline "${NAME}"; then
+        local EXISTING_TYPE="${MAPFILE[*]}"
+        [[ "${EXISTING_TYPE}" == "${TYPE}" ]] || \
+            cli::assert "Variable '${NAME}' of type '${EXISTING_TYPE}'" \
+                "cannot be redclared type '${TYPE}'."
         return
 
+    # assert bash variable does not already exist
     elif ::cli::bash::variable::get_info::inline "${NAME}"; then
         cli::assert "Failed to declare '${NAME}'." \
             "Variable '${NAME}' already declared in bash as:" \
@@ -52,9 +57,9 @@ cli::core::variable::declare::main() {
     fi
 
     # assoicate variable with its type
-    SCOPE_REF["${NAME}"]="${TYPE[*]}"
+    SCOPE_REF["${NAME}"]="${TYPE}"
 
-    ::cli::core::type::get_info::inline "${TYPE[@]}"
+    ::cli::core::type::get_info::inline ${TYPE}
 
     # base case
     if ! ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
@@ -72,7 +77,7 @@ cli::core::variable::declare::main() {
         elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
             declare -gA "${NAME}=()"
         else
-            cli::assert "Unknown type '${TYPE[@]}}'."
+            cli::assert "Unknown type '${TYPE}}'."
         fi
 
     # user defined
@@ -91,23 +96,24 @@ cli::core::variable::declare::main() {
         local -n TYPE_REF=${REPLY}
 
         # layout fields
-        local FIELD
-        for FIELD in "${!TYPE_REF[@]}"; do
+        local FIELD_NAME
+        for FIELD_NAME in "${!TYPE_REF[@]}"; do
 
             # resolve bash variable for field
             ARG_TYPE="${USER_DEFINED_TYPE}" \
-            ARG_NAME="${NAME}" \
-                ::cli::core::variable::resolve::inline "${FIELD}"
+                ::cli::core::variable::name::resolve::inline "${NAME}" "${FIELD_NAME}"
+            local FIELD_TYPE="${MAPFILE[*]}"
 
             # recursively initialize bash variable for field
-            ARG_TYPE="${MAPFILE[*]}" \
-            ARG_NAME="${REPLY}" \
-                ::cli::core::variable::declare::inline
+            ARG_TYPE="${FIELD_TYPE}" \
+                ::cli::core::variable::declare::inline "${REPLY}"
         done
     fi
 }
 
 self_test() {
+    cli::import cli core type to-bash
+
     local -A SCOPE=()
     local ARG_SCOPE='SCOPE'
 
@@ -155,9 +161,8 @@ self_test() {
             local FIELD
             for FIELD in "${!TYPE_REF[@]}"; do
                 
-                ARG_NAME="${NAME}" \
                 ARG_TYPE="${TYPE}" \
-                    ::cli::core::variable::resolve::inline "${FIELD}"
+                    ::cli::core::variable::name::resolve::inline "${NAME}" "${FIELD}"
 
                 # recurse
                 test::verify "${MAPFILE[*]}" "${REPLY}"
@@ -181,6 +186,7 @@ self_test() {
         [minor]='integer'
     )
     test version MY_VERSION
+    return
 
     # kitchen sink
     declare -A CLI_TYPE_UDT=(

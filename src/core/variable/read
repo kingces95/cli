@@ -20,42 +20,34 @@ EOF
 
 cli::core::variable::read::main() {
     cli::import cli core variable parse
-    ::cli::core::variable::parse::inline "$@"
-    shift ${#MAPFILE[@]}
-    shift
 
+    ::cli::core::variable::parse::inline "$@"
     local NAME=${REPLY}
     local TYPE="${MAPFILE[*]}"
-    local -A CLI_CORE_VARIABLE_READ_SCOPE=()
 
-    ARG_SCOPE="${ARG_SCOPE:=CLI_CORE_VARIABLE_READ_SCOPE}" \
-    ARG_NAME="${NAME}" \
     ARG_TYPE="${TYPE}" \
-        ::cli::core::variable::read::inline "$@"
+        ::cli::core::variable::declare::inline "${NAME}"
+
+    ::cli::core::variable::read::inline "${NAME}"
 
     cli::dump "${NAME}" "${NAME}_*"
 }
 
 ::cli::core::variable::read::inline() {
-
-    ARG_SCOPE=${ARG_SCOPE} \
-    ARG_NAME="${ARG_NAME}" \
-    ARG_TYPE="${ARG_TYPE}" \
-        ::cli::core::variable::declare::inline
+    local ARG_SCOPE=${ARG_SCOPE-'CLI_SCOPE'}
+    local NAME="$1"
 
     while read -a MAPFILE; do
-        ARG_SCOPE=${ARG_SCOPE} \
-        ARG_NAME="${ARG_NAME}" \
-        ARG_TYPE="${ARG_TYPE}" \
-            ::cli::core::variable::put::inline "${MAPFILE[@]}"
+        ::cli::core::variable::put::inline "${NAME}" "${MAPFILE[@]}"
     done
 }
 
 self_test() {
-    local -A SCOPE=()
     local ARG_SCOPE='SCOPE'
 
     escaping() {
+        local -A SCOPE=()
+       
         # string
         diff <( ${CLI_COMMAND[@]} -- string MY_STRING <<< 'Hello\ world!' ) - \
             <<< 'declare -- MY_STRING="Hello world!"'
@@ -70,6 +62,7 @@ self_test() {
     }
 
     builtin() {
+        local -A SCOPE=()
 
         # string
         diff <( ${CLI_COMMAND[@]} -- string MY_STRING <<< 'Hello' ) - \
@@ -94,6 +87,7 @@ self_test() {
     }
 
     builtin_default() {
+        local -A SCOPE=()
 
         # string
         diff <( ${CLI_COMMAND[@]} -- string MY_STRING < /dev/null ) - \
@@ -117,6 +111,7 @@ self_test() {
     }
 
     double_indirect() {
+        local -A SCOPE=()
   
         diff <( ${CLI_COMMAND[@]} -- map_of map_of string MY_MAP_OF_MAP_OF_STRING <<< 'x y Hello' ) <(
             echo 'declare -A MY_MAP_OF_MAP_OF_STRING=([x]="0" )'
@@ -126,6 +121,7 @@ self_test() {
     }
 
     indirect() {
+        local -A SCOPE=()
 
         # string
         diff <( ${CLI_COMMAND[@]} -- map_of string MY_MAP_OF_STRING <<< 'x Hello' ) <(
@@ -168,6 +164,7 @@ self_test() {
     }
 
     indirect_default() {
+        local -A SCOPE=()
 
         # string
         diff <( ${CLI_COMMAND[@]} -- map_of string MY_MAP_OF_STRING <<< 'x' ) <( \
@@ -216,6 +213,7 @@ self_test() {
 
         # indirect
         diff <( 
+            local -A SCOPE=()
             ${CLI_COMMAND[@]} --- map_of version MY_MAP_OF_VERSION <<< 'x major 1' > /dev/null
             ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION <<< 'x minor 2'
         ) <(
@@ -226,6 +224,7 @@ self_test() {
 
         # indirect no key
         diff <( 
+            local -A SCOPE=()
             ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION < /dev/null
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=()'
@@ -233,6 +232,7 @@ self_test() {
 
         # indirect key but no field
         diff <( 
+            local -A SCOPE=()
             ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION <<< 'x'
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=([x]="0" )'
@@ -242,11 +242,12 @@ self_test() {
 
         # indirect default
         diff <( 
+            local -A SCOPE=()
             ${CLI_COMMAND[@]} --- map_of version MY_MAP_OF_VERSION <<< 'x major 1' > /dev/null
             ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION <<< 'x major'
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=([x]="0" )'
-            echo 'declare -i MY_MAP_OF_VERSION_0_MAJOR="1"'
+            echo 'declare -i MY_MAP_OF_VERSION_0_MAJOR="0"'
             echo 'declare -i MY_MAP_OF_VERSION_0_MINOR="0"'
         )
 
@@ -257,6 +258,7 @@ self_test() {
             ['version']='version'
         )
         diff <( 
+            local -A SCOPE=()
             ${CLI_COMMAND[@]} --- udt MY_UDT <<< 'positional true' > /dev/null
             ${CLI_COMMAND[@]} --- udt MY_UDT <<< 'version minor 2' > /dev/null
             ${CLI_COMMAND[@]} --- udt MY_UDT <<< 'version major 1' > /dev/null

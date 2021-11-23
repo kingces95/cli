@@ -1,0 +1,19 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+    resolve - given a variable, type, and fields, resolve the bash variable
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    cli core variable name resolve --self-test   # name, type
+}

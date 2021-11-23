@@ -46,12 +46,13 @@ cli::meta::declare() {
 }
 
 cli::dsl::meta::main() { 
+    local -A SCOPE=()
+    local ARG_SCOPE="SCOPE"
 
-    local ARG_SCOPE="CLI_SCOPE"
-    local ARG_TYPE="cli_meta_tables"
-    local ARG_NAME="STRUCT"
-        
-    ::cli::core::variable::declare::inline
+    ARG_TYPE="cli_meta_tables" \
+        ::cli::core::variable::declare::inline "STRUCT"
+
+    local NAME="STRUCT"
 
     local group
     local name
@@ -75,27 +76,27 @@ cli::dsl::meta::main() {
 
         # anyargs
         elif (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
-            ::cli::core::variable::put::inline positional "${group}" true
+            ::cli::core::variable::put::inline "${NAME}" positional "${group}" true
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
-            ::cli::core::variable::put::inline alias "${identifier}" "${name}"
+            ::cli::core::variable::put::inline "${NAME}" alias "${identifier}" "${name}"
 
         # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
-            ::cli::core::variable::put::inline default "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${NAME}" default "${group}" "${name}" "${identifier}"
 
         # regex
         elif (( production == CLI_DSL_PRODUCTION_REGEX )); then
-            ::cli::core::variable::put::inline regex "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${NAME}" regex "${group}" "${name}" "${identifier}"
 
         # type
         elif (( production == CLI_DSL_PRODUCTION_TYPE )); then
-            ::cli::core::variable::put::inline type "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${NAME}" type "${group}" "${name}" "${identifier}"
 
         # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
-            ::cli::core::variable::put::inline require "${group}" "${name}"
+            ::cli::core::variable::put::inline "${NAME}" require "${group}" "${name}"
 
         # flag
         # elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
@@ -106,15 +107,15 @@ cli::dsl::meta::main() {
 
         # allow
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
-            ::cli::core::variable::put::inline allow "${group}" "${name}" "${identifier}"
-            
-        else
-            cli::assert "Unknown production ${production_name}."
+            ::cli::core::variable::put::inline "${NAME}" allow "${group}" "${name}" "${identifier}"
+
+        # else
+        #     cli::assert "Unknown production ${production_name}."
         fi
 
     done
 
-    ::cli::core::variable::write::inline
+    ::cli::core::variable::write::inline "${NAME}"
 }
 
 self_test() {

@@ -1896,7 +1896,7 @@ loader_source() {
     diff_import_then_export_as 'cli bash is-function-declared' 'cli::is_function_declared'
 
     diff_import 'cli name parse'
-    diff_import 'cli name to-bash'
+    diff_import_then_export 'cli name to-bash'
     diff_import 'cli name to-inline' \
         'cli name to-bash' \
         'cli bash join'

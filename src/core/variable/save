@@ -21,13 +21,8 @@ Description
 EOF
 }
 
-cli::core::variable::save::main() {
-    ARG_DIR="$1" \
-        ::cli::core::variable::save::inline
-}
-
 ::cli::core::variable::save::inline() {
-    local DIR="${ARG_DIR}"
+    local DIR="$1"
 
     if [[ -d "${DIR}" ]]; then
         rm -Rf "${DIR}"

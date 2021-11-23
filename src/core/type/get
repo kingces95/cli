@@ -20,7 +20,7 @@ EOF
 }
 
 ::cli::core::type::get::inline() {
-    ::cli::core::type::resolve::inline "$@"
+    ::cli::core::type::resolve::inline "${1-}"
     local TYPE_NAME="${REPLY}"
 
     ::cli::bash::variable::get_info::inline "${TYPE_NAME}" || cli::assert \

@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core variable parse
 cli::import cli core variable declare
-cli::import cli core variable resolve
-cli::import cli core type get-info
+cli::import cli core variable name resolve
+cli::import cli core variable get-info
 
 help() {
     cat << EOF
@@ -23,238 +23,283 @@ EOF
 }
 
 cli::core::variable::put::main() {
-    ::cli::core::variable::parse::inline "$@"
-    shift ${#MAPFILE[@]}
-    shift
-
-    declare -gA SCOPE+=()
-    local NAME="${REPLY}"
-    local -a TYPE=( "${MAPFILE[@]}" )
-
-    ARG_SCOPE=SCOPE \
-    ARG_NAME="${NAME}" \
-    ARG_TYPE="${TYPE[@]}" \
-        ::cli::core::variable::put::inline "$@"
-
+    local NAME="${1-}"
+    ::cli::core::variable::put::inline "$@"
     cli::dump "${NAME}" "${NAME}_*"
 }
 
 ::cli::core::variable::put::inline() {
-    local SCOPE_NAME="${ARG_SCOPE?'Missing scope.'}"
-    local -a TYPE=( ${ARG_TYPE?'Missing type.'} )
-    local NAME="${ARG_NAME?'Missing name.'}"
+    local NAME=${1-}
+    shift
+
+    ::cli::core::variable::get_info::inline "${NAME}" \
+        || cli::assert "Variable '${NAME}' not defiend."
+
+    local TYPE="${REPLY}"
+    [[ "${TYPE}" ]] || ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED} || cli::assert
+
     local -n REF="${NAME}"
 
-    ARG_SCOPE="${SCOPE_NAME}" \
-    ARG_TYPE="${TYPE[@]}" \
-    ARG_NAME="${NAME}" \
-        ::cli::core::variable::declare::inline
-
-    ::cli::core::type::get_info::inline "${TYPE[@]}"
-
-    # base case
-    if (( $# == 0 )); then
-        REPLY="${NAME}"
-        MAPFILE=( "${TYPE[@]}" )
-
     # builtin
-    elif ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
+    if ${REPLY_CLI_CORE_VARIABLE_IS_BUILTIN}; then
 
         # scaler
         if ${REPLY_CLI_CORE_TYPE_IS_SCALER}; then
-            local VALUE="$1"
+            (( $# <= 1 )) || cli::assert \
+                "Failed to assign '${1}' to ${TYPE} '${NAME}'." \
+                "Expected a record with one or no fields, but got '$#': $@"
 
-            (( $# == 1 )) || cli::assert \
-                "Failed to assign '${VALUE}' to ${TYPE} '${NAME}'." \
-                "Expected a record with one or no fields, but got '$@'."
-            shift
+            local VALUE
 
             # boolean
             if ${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}; then
+                VALUE="${1-false}"
                 [[ "${VALUE}" =~ ^true$|^false$ ]] || \
                     cli::assert "Failed to assign '${VALUE}' to ${TYPE} '${NAME}'."
 
             # integer
             elif ${REPLY_CLI_CORE_TYPE_IS_INTEGER}; then
+                VALUE="${1-0}"
                 [[ "${VALUE}" =~ ^[-]?[0-9]+$ ]] || \
                     cli::assert "Failed to assign '${VALUE}' to ${TYPE} '${NAME}'."
 
             # string
             else
                 ${REPLY_CLI_CORE_TYPE_IS_STRING} || cli::assert
+                VALUE="${1-}"
             fi
 
             REF="${VALUE}" 
 
         # map
         elif ${REPLY_CLI_CORE_TYPE_IS_MAP}; then
-            local KEY="${1-}"
+            (( $# <= 2 )) || cli::assert \
+                "Failed to assign key '${1-}' value '${2-}' in map '${NAME}'." \
+                "Expected a record with two or fewer fields, but got $#: $@"
+
+            # no key/value pair
+            if (( $# == 0 )); then 
+                return
+            fi
+
+            local KEY="$1"
+            [[ "${KEY}" =~ . ]] || cli::assert \
+                "Failed to use empty key to assign '$2' to map '${NAME}'."
+
             local VALUE="${2-}"
 
-            (( $# <= 2 )) || cli::assert \
-                "Failed to assign value '${VALUE}' to key '${KEY}' in map '${NAME}'." \
-                "Expected a record with two or fewer fields, but got '$@'."
-            shift $#
-
             # map key and maybe a value supplied
-            [[ "${KEY}" =~ . ]] || cli::assert \
-                "Failed to use empty key to assign '${VALUE}' to map '${NAME}'."
             REF+=( ["${KEY}"]="${VALUE}" )
 
         # array
-        elif ${REPLY_CLI_CORE_TYPE_IS_ARRAY}; then
-            local VALUE="$1"
+        else
+            ${REPLY_CLI_CORE_TYPE_IS_ARRAY} || cli::assert
 
             # array element supplied
-            (( $# == 1 )) || cli::assert \
-                "Failed to assign value '${VALUE}' to array '${NAME}'." \
-                "Expected a record with one or no fields, but got '$@'."
-            shift
+            (( $# <= 1 )) || cli::assert \
+                "Failed to add value '$1' to array '${NAME}'." \
+                "Expected a record with one or no fields, but got $@: $@"
+            
+            # no elements
+            if (( $# == 0 )); then 
+                return
+            fi
 
-            REF+=( "${VALUE}" ) 
-        else
-            cli::assert
+            local ELEMENT="$1"
+            REF+=( "${ELEMENT}" ) 
         fi
 
-        (( $# == 0 )) || cli::assert
-        REPLY="${NAME}"
-        MAPFILE=( "${TYPE[@]}" )
+        return
+    fi
 
-    # anonymous
-    elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED} || \
-        ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
+    ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED} \
+        || ${REPLY_CLI_CORE_VARIABLE_IS_USER_DEFINED} \
+        || cli::assert
 
-        local KEY="$1"
-        shift
+    if (( $# == 0 )); then
+        return
+    fi
 
-        if ${REPLY_CLI_CORE_TYPE_IS_MODIFIED} && \
-            [[ ! ${REF["${KEY}"]+set} ]]; then
+    local KEY="$1"
+    shift
+
+    # modified
+    if ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED}; then
+        TYPE="${MAPFILE[*]}"
+
+        # add ordinal to map_of map
+        if [[ ! "${REF["${KEY}"]+set}" == 'set' ]]; then
             REF+=( ["${KEY}"]=${#REF[@]} )
         fi
-
-        ARG_TYPE="${TYPE[@]}" \
-        ARG_NAME="${NAME}" \
-            ::cli::core::variable::resolve::inline "${KEY}"
-
-        # recurse
-        ARG_SCOPE="${SCOPE_NAME}" \
-        ARG_TYPE="${MAPFILE[@]}" \
-        ARG_NAME="${REPLY}" \
-            ::cli::core::variable::put::inline "$@"
-
-    else
-        cli::assert
     fi
+
+    # resolve variable name
+    ARG_TYPE="${TYPE}" \
+        ::cli::core::variable::name::resolve::inline "${NAME}" "${KEY}"
+    local NEXT_NAME="${REPLY}"
+    local NEXT_TYPE="${MAPFILE[*]}"
+
+    # declare variable
+    ARG_TYPE="${NEXT_TYPE}" \
+        ::cli::core::variable::declare::inline "${NEXT_NAME}"
+
+    # set variable
+    ::cli::core::variable::put::inline "${NEXT_NAME}" "$@"
 }
 
 self_test() {
+    local -A SCOPE=()
+    local ARG_SCOPE='SCOPE'
 
     escaping() {
+            
+        local -A SCOPE=(
+            ['MY_STRING']='string'
+            ['MY_MAP']='map'
+            ['MY_ARRAY']='array'
+        )
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- string MY_STRING 'Hello world!' ) - \
+        local MY_STRING=
+        diff <( ${CLI_COMMAND[@]} -- MY_STRING 'Hello world!' ) - \
             <<< 'declare -- MY_STRING="Hello world!"'
 
         # array
-        diff <( ${CLI_COMMAND[@]} -- array MY_ARRAY 'a b c' ) - \
+        local -a MY_ARRAY=()
+        diff <( ${CLI_COMMAND[@]} -- MY_ARRAY 'a b c' ) - \
             <<< 'declare -a MY_ARRAY=([0]="a b c")'
 
         # map
-        diff <( ${CLI_COMMAND[@]} -- map MY_MAP a "b c" ) - \
+        local -A MY_MAP=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP a "b c" ) - \
             <<< 'declare -A MY_MAP=([a]="b c" )'
     }
 
     builtin() {
+            
+        local -A SCOPE=(
+            ['MY_STRING']='string'
+            ['MY_BOOLEAN']='boolean'
+            ['MY_INTEGER']='integer'
+            ['MY_MAP']='map'
+            ['MY_ARRAY']='array'
+        )
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- string MY_STRING 'Hello' ) - \
+        local MY_STRING=
+        diff <( ${CLI_COMMAND[@]} -- MY_STRING 'Hello' ) - \
             <<< 'declare -- MY_STRING="Hello"'
 
         # boolean
-        diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN true ) - \
+        local MY_BOOLEAN=false
+        diff <( ${CLI_COMMAND[@]} -- MY_BOOLEAN true ) - \
             <<< 'declare -- MY_BOOLEAN="true"'
 
         # integer
-        diff <( ${CLI_COMMAND[@]} --- integer MY_INTEGER 42 ) - \
+        local -i MY_INTEGER=0
+        diff <( ${CLI_COMMAND[@]} -- MY_INTEGER 42 ) - \
             <<< 'declare -i MY_INTEGER="42"'
 
         # array
-        diff <( ${CLI_COMMAND[@]} --- array MY_ARRAY a > /dev/null
-                ${CLI_COMMAND[@]} --- array MY_ARRAY b; ) - \
+        local -a MY_ARRAY=()
+        diff <( ${CLI_COMMAND[@]} --- MY_ARRAY a > /dev/null
+                ${CLI_COMMAND[@]} -- MY_ARRAY b; ) - \
             <<< 'declare -a MY_ARRAY=([0]="a" [1]="b")'
 
         # map
-        diff <( ${CLI_COMMAND[@]} --- map MY_MAP a 0 ) - \
+        local -A MY_MAP=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP a 0 ) - \
             <<< 'declare -A MY_MAP=([a]="0" )'
     }
 
     builtin_default() {
+            
+        local -A SCOPE=(
+            ['MY_STRING']='string'
+            ['MY_BOOLEAN']='boolean'
+            ['MY_INTEGER']='integer'
+            ['MY_MAP']='map'
+            ['MY_ARRAY']='array'
+        )
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- string MY_STRING ) - \
+        local MY_STRING='Hello world!'
+        diff <( ${CLI_COMMAND[@]} -- MY_STRING ) - \
             <<< 'declare -- MY_STRING=""'
 
         # boolean
-        diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN ) - \
+        local MY_BOOLEAN=false
+        diff <( ${CLI_COMMAND[@]} -- MY_BOOLEAN ) - \
             <<< 'declare -- MY_BOOLEAN="false"'
 
         # integer
-        diff <( ${CLI_COMMAND[@]} --- integer MY_INTEGER ) - \
+        local -i MY_INTEGER=42
+        diff <( ${CLI_COMMAND[@]} -- MY_INTEGER ) - \
             <<< 'declare -i MY_INTEGER="0"'
 
         # array
-        diff <( ${CLI_COMMAND[@]} --- array MY_ARRAY ) - \
-            <<< 'declare -a MY_ARRAY=()'
+        local -a MY_ARRAY=('a')
+        diff <( ${CLI_COMMAND[@]} -- MY_ARRAY ) - \
+            <<< 'declare -a MY_ARRAY=([0]="a")'
 
-        # map
-        diff <( ${CLI_COMMAND[@]} --- map MY_MAP k v) - \
+        # map (no key/value)
+        local -A MY_MAP=([k]=v)
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP) - \
             <<< 'declare -A MY_MAP=([k]="v" )'
-    }
-
-    double_indirect() {
-  
-        diff <( ${CLI_COMMAND[@]} -- map_of map_of string MY_MAP_OF_MAP_OF_STRING x y Hello ) <(
-            echo 'declare -A MY_MAP_OF_MAP_OF_STRING=([x]="0" )'
-            echo 'declare -A MY_MAP_OF_MAP_OF_STRING_0=([y]="0" )'
-            echo 'declare -- MY_MAP_OF_MAP_OF_STRING_0_0="Hello"'
-        )
+   
+        # map (no value)
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP k) - \
+            <<< 'declare -A MY_MAP=([k]="" )'
     }
 
     indirect() {
+            
+        local -A SCOPE=(
+            ['MY_MAP_OF_STRING']='map_of string'
+            ['MY_MAP_OF_BOOLEAN']='map_of boolean'
+            ['MY_MAP_OF_INTEGER']='map_of integer'
+            ['MY_MAP_OF_MAP']='map_of map'
+            ['MY_MAP_OF_ARRAY']='map_of array'
+        )
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- map_of string MY_MAP_OF_STRING x Hello ) <(
+        local -A MY_MAP_OF_STRING=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_STRING x Hello ) <(
             echo 'declare -A MY_MAP_OF_STRING=([x]="0" )'
             echo 'declare -- MY_MAP_OF_STRING_0="Hello"'
         )
 
         # boolean
-        diff <( ${CLI_COMMAND[@]} -- map_of boolean MY_MAP_OF_BOOLEAN x true ) <(
+        local -A MY_MAP_OF_BOOLEAN=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_BOOLEAN x true ) <(
             echo 'declare -A MY_MAP_OF_BOOLEAN=([x]="0" )'
             echo 'declare -- MY_MAP_OF_BOOLEAN_0="true"'
         )
 
         # integer
-        diff <( ${CLI_COMMAND[@]} -- map_of integer MY_MAP_OF_INTEGER x 42 ) <(
+        local -A MY_MAP_OF_INTEGER=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_INTEGER x 42 ) <(
             echo 'declare -A MY_MAP_OF_INTEGER=([x]="0" )'
             echo 'declare -i MY_MAP_OF_INTEGER_0="42"'
         )
 
         # array
+        local -A MY_MAP_OF_ARRAY=()
         diff <( 
-            ${CLI_COMMAND[@]} --- map_of array MY_MAP_OF_ARRAY x "a b" > /dev/null
-            ${CLI_COMMAND[@]} -- map_of array MY_MAP_OF_ARRAY x c 
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_ARRAY x "a b" > /dev/null
+            ${CLI_COMMAND[@]} -- MY_MAP_OF_ARRAY x c 
         ) <(
             echo 'declare -A MY_MAP_OF_ARRAY=([x]="0" )'
             echo 'declare -a MY_MAP_OF_ARRAY_0=([0]="a b" [1]="c")'
         )
 
         # map
+        local -A MY_MAP_OF_MAP=()
         diff <( 
-            ${CLI_COMMAND[@]} --- map_of map MY_MAP_OF_MAP x a 0 > /dev/null
-            ${CLI_COMMAND[@]} --- map_of map MY_MAP_OF_MAP x b 1 > /dev/null 
-            ${CLI_COMMAND[@]} --- map_of map MY_MAP_OF_MAP y a 0 > /dev/null 
-            ${CLI_COMMAND[@]} -- map_of map MY_MAP_OF_MAP y a 
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_MAP x a 0 > /dev/null
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_MAP x b 1 > /dev/null 
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_MAP y a 0 > /dev/null 
+            ${CLI_COMMAND[@]} -- MY_MAP_OF_MAP y a 
         ) <(
             echo 'declare -A MY_MAP_OF_MAP=([y]="1" [x]="0" )'
             echo 'declare -A MY_MAP_OF_MAP_0=([b]="1" [a]="0" )'
@@ -262,39 +307,65 @@ self_test() {
         )
     }
 
+    double_indirect() {
+          local -A SCOPE=(
+            ['MY_MAP_OF_MAP_OF_STRING']='map_of map_of string'
+        )
+
+        local -A MY_MAP_OF_MAP_OF_STRING=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_MAP_OF_STRING x y Hello ) <(
+            echo 'declare -A MY_MAP_OF_MAP_OF_STRING=([x]="0" )'
+            echo 'declare -A MY_MAP_OF_MAP_OF_STRING_0=([y]="0" )'
+            echo 'declare -- MY_MAP_OF_MAP_OF_STRING_0_0="Hello"'
+        )
+    }
+
     indirect_default() {
+            
+        local -A SCOPE=(
+            ['MY_MAP_OF_STRING']='map_of string'
+            ['MY_MAP_OF_BOOLEAN']='map_of boolean'
+            ['MY_MAP_OF_INTEGER']='map_of integer'
+            ['MY_MAP_OF_ARRAY']='map_of array'
+            ['MY_MAP_OF_MAP']='map_of map'
+        )
 
         # string
-        diff <( ${CLI_COMMAND[@]} -- map_of string MY_MAP_OF_STRING x ) <( \
+        local -A MY_MAP_OF_STRING=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_STRING x ) <( \
             echo 'declare -A MY_MAP_OF_STRING=([x]="0" )'
             echo 'declare -- MY_MAP_OF_STRING_0=""'
         )
 
         # boolean
-        diff <( ${CLI_COMMAND[@]} -- map_of boolean MY_MAP_OF_BOOLEAN x ) <( \
+        local -A MY_MAP_OF_BOOLEAN=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_BOOLEAN x ) <( \
             echo 'declare -A MY_MAP_OF_BOOLEAN=([x]="0" )'
             echo 'declare -- MY_MAP_OF_BOOLEAN_0="false"'
         )
 
         # integer
-        diff <( ${CLI_COMMAND[@]} -- map_of integer MY_MAP_OF_INTEGER x ) <( \
+        local -A MY_MAP_OF_INTEGER=()
+        diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_INTEGER x ) <( \
             echo 'declare -A MY_MAP_OF_INTEGER=([x]="0" )'
             echo 'declare -i MY_MAP_OF_INTEGER_0="0"'
         )
 
         # array
+        local -A MY_MAP_OF_ARRAY=()
         diff <( 
-            ${CLI_COMMAND[@]} -- map_of array MY_MAP_OF_ARRAY x
+            ${CLI_COMMAND[@]} -- MY_MAP_OF_ARRAY x
         ) <(
             echo 'declare -A MY_MAP_OF_ARRAY=([x]="0" )'
             echo 'declare -a MY_MAP_OF_ARRAY_0=()'
         )
 
         # map
+        local -A MY_MAP_OF_MAP=()
         diff <( 
-            ${CLI_COMMAND[@]} --- map_of map MY_MAP_OF_MAP x a > /dev/null
-            ${CLI_COMMAND[@]} --- map_of map MY_MAP_OF_MAP x b > /dev/null 
-            ${CLI_COMMAND[@]} -- map_of map MY_MAP_OF_MAP y a 
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_MAP x a > /dev/null
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_MAP x b > /dev/null 
+            ${CLI_COMMAND[@]} --  MY_MAP_OF_MAP y a 
         ) <( \
             echo 'declare -A MY_MAP_OF_MAP=([y]="1" [x]="0" )'
             echo 'declare -A MY_MAP_OF_MAP_0=([b]="" [a]="" )'
@@ -303,24 +374,20 @@ self_test() {
     }
 
     udt() {
+        local -A SCOPE=(
+            ['MY_MAP_OF_VERSION']='map_of version'
+        )
 
         declare -A CLI_TYPE_VERSION=(
             ['major']='integer' 
             ['minor']='integer'
         )
 
-        # direct default
-        diff <( 
-            ${CLI_COMMAND[@]} -- version MY_VERSION
-        ) <(
-            echo 'declare -i MY_VERSION_MAJOR="0"'
-            echo 'declare -i MY_VERSION_MINOR="0"'
-        )
-
         # indirect
         diff <( 
-            ${CLI_COMMAND[@]} --- map_of version MY_MAP_OF_VERSION x major 1 > /dev/null
-            ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION x minor 2
+            local -A MY_MAP_OF_VERSION=()
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_VERSION x major 1 > /dev/null
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_VERSION x minor 2
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=([x]="0" )'
             echo 'declare -i MY_MAP_OF_VERSION_0_MAJOR="1"'
@@ -329,14 +396,16 @@ self_test() {
 
         # indirect no key
         diff <( 
-            ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION
+            local -A MY_MAP_OF_VERSION=()
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_VERSION
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=()'
         )
 
         # indirect key but no field
         diff <( 
-            ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION x
+            local -A MY_MAP_OF_VERSION=()
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_VERSION x
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=([x]="0" )'
             echo 'declare -i MY_MAP_OF_VERSION_0_MAJOR="0"'
@@ -345,26 +414,31 @@ self_test() {
 
         # indirect default
         diff <( 
-            ${CLI_COMMAND[@]} --- map_of version MY_MAP_OF_VERSION x major 1 > /dev/null
-            ${CLI_COMMAND[@]} -- map_of version MY_MAP_OF_VERSION x major
+            local -A MY_MAP_OF_VERSION=()
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_VERSION x major 1 > /dev/null
+            ${CLI_COMMAND[@]} --- MY_MAP_OF_VERSION x major
         ) <(
             echo 'declare -A MY_MAP_OF_VERSION=([x]="0" )'
-            echo 'declare -i MY_MAP_OF_VERSION_0_MAJOR="1"'
+            echo 'declare -i MY_MAP_OF_VERSION_0_MAJOR="0"'
             echo 'declare -i MY_MAP_OF_VERSION_0_MINOR="0"'
         )
 
         # direct
+        local -A SCOPE=(
+            ['MY_UDT']='udt'
+        )
+
         declare -A CLI_TYPE_UDT=(
             ['positional']='boolean' 
             ['allow']='map_of map' 
             ['version']='version'
         )
         diff <( 
-            ${CLI_COMMAND[@]} --- udt MY_UDT positional true > /dev/null
-            ${CLI_COMMAND[@]} --- udt MY_UDT version minor 2 > /dev/null
-            ${CLI_COMMAND[@]} --- udt MY_UDT version major 1 > /dev/null
-            ${CLI_COMMAND[@]} --- udt MY_UDT allow color white > /dev/null
-            ${CLI_COMMAND[@]} --- udt MY_UDT allow color black
+            ${CLI_COMMAND[@]} --- MY_UDT positional true > /dev/null
+            ${CLI_COMMAND[@]} --- MY_UDT version minor 2 > /dev/null
+            ${CLI_COMMAND[@]} --- MY_UDT version major 1 > /dev/null
+            ${CLI_COMMAND[@]} --- MY_UDT allow color white > /dev/null
+            ${CLI_COMMAND[@]} --- MY_UDT allow color black
         ) <(
             echo 'declare -A MY_UDT_ALLOW=([color]="0" )' 
             echo 'declare -A MY_UDT_ALLOW_0=([black]="" [white]="" )' 

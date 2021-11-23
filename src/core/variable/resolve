@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type get-info
-cli::import cli core type get
+cli::import cli core variable name resolve
+cli::import cli core variable get-info
 
 help() {
     cat << EOF | cli::core::help
@@ -8,161 +8,128 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Resolve a bash variable name, its type, and fields to a bash variable name.
+    Return a bash variable name given a bash variable and a string of fields.
 
 Description
-    Like recursively listing files in a directory by their full path, this function
-    list the scaler values found in a variable with a "path" that is composed of a space
-    delimited list of names that represent fields of a user defined type, or keys of 
-    a map or modified type (i.e. a type modified by 'map_of'). Arrays do not contriubte
-    a name to the path.
+    Argument \$1 is the root uppercase bash variable name. Remaining arguments 
+    are lower case field names. 
 
-Arguments
-    --                      : Names of the parents.
+    ARG_SCOPE is a map of bash variable names to their core type.
 EOF
 }
 
 cli::core::variable::resolve::main() {
-    cli::import cli core variable parse
-
-    ::cli::core::variable::parse::inline "$@"
-    shift $(( ${#MAPFILE[@]} ))
-    shift
-
-    ARG_TYPE="${MAPFILE[@]}" \
-    ARG_NAME="${REPLY}" \
-        ::cli::core::variable::resolve::inline "$@"
-
+    ::cli::core::variable::resolve::inline "$@"
     echo "${MAPFILE[*]} ${REPLY}"
 }
 
 ::cli::core::variable::resolve::inline() {
-    local TYPE=( ${ARG_TYPE} )
-    local NAME="${ARG_NAME}"
+    local NAME="${1-}"
+    [[ "${NAME}" ]] || cli::assert 'Missing name.'
 
-    for i in "$@"; do
+    ::cli::core::variable::get_info::inline "${NAME}" \
+        || cli::assert "Variable '${NAME}' not found."
+    local TYPE="${MAPFILE[*]}"
 
-        ::cli::core::type::get_info::inline "${TYPE[@]}"
-
-        # builtin
-        if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
-            
-            # array
-            if ${REPLY_CLI_CORE_TYPE_IS_ARRAY}; then
-                (( $# <= 1 )) || cli::assert "Expected array index but got '$@'."
-
-            # map
-            elif ${REPLY_CLI_CORE_TYPE_IS_MAP}; then
-                (( $# <= 1 )) || cli::assert "Expected map key but got '$@'."
-
-            # scaler
-            else
-                (( $# == 0 )) || cli::assert "Expected no path but got '$@'."
-            fi
-
-        # anonymous
-        elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
-            local -n ORDINAL_MAP=${NAME}
-            NAME=${NAME}_${ORDINAL_MAP["$i"]}
-            TYPE=( ${MAPFILE[@]} )
-
-        # udt
-        else
-            ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} \
-                || cli::assert "Expected user defined type but got '${TYPE[@]}'."
-
-            ::cli::core::type::get::inline "${REPLY}"
-            local -n TYPE_REF="${REPLY}"
-
-            if [[ ! "${TYPE_REF[$i]+set}" == 'set' ]]; then
-                cli::assert "Field '$i' not found in '${TYPE}' fields: { ${!TYPE_REF[@]} }."
-            fi
-
-            TYPE=( ${TYPE_REF["$i"]} )
-            NAME=${NAME}_${i^^}
-        fi
-    done
-
-    MAPFILE=( "${TYPE[@]}" )
-    REPLY="${NAME}"
+    ARG_TYPE="${TYPE}" \
+        ::cli::core::variable::name::resolve::inline "$@"
 }
 
 self_test() {
-    diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'string VAR'
+    ARG_SCOPE='SCOPE'
 
-    diff <(${CLI_COMMAND[@]} -- string VAR) - <<< 'string VAR'
-    diff <(${CLI_COMMAND[@]} -- integer VAR) - <<< 'integer VAR'
-    diff <(${CLI_COMMAND[@]} -- boolean VAR) - <<< 'boolean VAR'
-    diff <(${CLI_COMMAND[@]} -- map VAR) - <<< 'map VAR'
-    diff <(${CLI_COMMAND[@]} -- array VAR) - <<< 'array VAR'
+    # builtin
+    local -A SCOPE=(
+        ['MY_STRING']='string'
+        ['MY_INTEGER']='integer'
+        ['MY_BOOLEAN']='boolean'
+        ['MY_MAP']='map'
+        ['MY_ARRAY']='array'
+    )
+    diff <(${CLI_COMMAND[@]} -- MY_STRING) - <<< 'string MY_STRING'
+    diff <(${CLI_COMMAND[@]} -- MY_INTEGER) - <<< 'integer MY_INTEGER'
+    diff <(${CLI_COMMAND[@]} -- MY_BOOLEAN) - <<< 'boolean MY_BOOLEAN'
+    diff <(${CLI_COMMAND[@]} -- MY_MAP) - <<< 'map MY_MAP'
+    diff <(${CLI_COMMAND[@]} -- MY_ARRAY) - <<< 'array MY_ARRAY'
+    diff <(${CLI_COMMAND[@]} -- MY_ARRAY 0) - <<< 'array MY_ARRAY'
 
-    diff <(${CLI_COMMAND[@]} -- array VAR 0) - <<< 'array VAR'
+    # modified array
+    local -A SCOPE=(
+        ['VAR']='map_of array'
+    )
+    local -A VAR=(
+        ['seq']=0
+    )
+    local -a MY_MAP_OF_ARRAY_0=( 'fib' 'pi' )
+    diff <(${CLI_COMMAND[@]} -- VAR seq) - <<< 'array VAR_0'
 
-    # map_of map_of integer
-    (
-        local -A VAR=(
-            ['seq']=0
-        )
-        local -A VAR_0=(
-            ['fib']=0
-            ['pi']=1
-        )
-        local -A VAR_0_0=11235
-        local -A VAR_0_1=3141
-        local TYPE=( map_of map_of integer )
-        diff <(${CLI_COMMAND[@]} -- "${TYPE[@]}" VAR) - <<< 'map_of map_of integer VAR'
-        diff <(${CLI_COMMAND[@]} -- "${TYPE[@]}" VAR seq) - <<< 'map_of integer VAR_0'
-        diff <(${CLI_COMMAND[@]} -- "${TYPE[@]}" VAR seq fib) - <<< 'integer VAR_0_0'
-        diff <(${CLI_COMMAND[@]} -- "${TYPE[@]}" VAR seq pi) - <<< 'integer VAR_0_1'
+    # modified integer
+    local -A SCOPE=(
+        ['VAR']='map_of map_of integer'
+    )
+    local -A VAR=(
+        ['seq']=0
+    )
+    local -A VAR_0=(
+        ['fib']=0
+        ['pi']=1
+    )
+    local -A VAR_0_0=11235
+    local -A VAR_0_1=3141
+
+    diff <(${CLI_COMMAND[@]} -- VAR) - <<< 'map_of map_of integer VAR'
+    diff <(${CLI_COMMAND[@]} -- VAR seq) - <<< 'map_of integer VAR_0'
+    diff <(${CLI_COMMAND[@]} -- VAR seq fib) - <<< 'integer VAR_0_0'
+    diff <(${CLI_COMMAND[@]} -- VAR seq pi) - <<< 'integer VAR_0_1'
+
+    # user defined type
+    local -A CLI_TYPE_VERSION=(
+        ['major']=integer
+        ['minor']=integer
+    )
+    local -A CLI_TYPE_METADATA=(
+        ['allow']='map_of map'
+        ['mmm']='map_of map_of map'
+        ['positional']='boolean'
+        ['version']='version'
     )
 
-    # map_of array
-    (
-        local -A VAR=(
-            ['seq']=0
-        )
-        local -a VAR_0=( 'fib' 'pi' )
-        diff <(${CLI_COMMAND[@]} -- map_of array VAR seq) - <<< 'array VAR_0'
+    local -A SCOPE=(
+        ['META']='metadata'
+        ['META_POSITIONAL']='boolean'
+        ['META_VERSION']='version'
+        ['META_VERSION_MAJOR']='integer'
+        ['META_VERSION_MINOR']='integer'
+        ['META_ALLOW']='map_of map'
+        ['META_ALLOW_0']='map'
+        ['META_MMM']='map_of map_of map'
+        ['META_MMM_0']='map_of map'
+        ['META_MMM_0_0']='map'
+    )
+    local META_POSITIONAL=true
+    local -i META_VERSION_MAJOR=1
+    local -i META_VERSION_MINOR=2
+    local -A META_ALLOW=(
+        ['color']=0
+    )
+    local -A META_ALLOW_0=(
+        ['black']=
+        ['white']=
+    )
+    local -A META_MMM=(
+        ['a']=0
+    )
+    local -A META_MMM_0=(
+        ['b']=0
+    )
+    local -A META_MMM_0_0=(
+        ['c']='d'
     )
 
-    # udt
-    (    
-        local -A CLI_TYPE_VERSION=(
-            ['major']=integer
-            ['minor']=integer
-        )
-        local -A CLI_TYPE_METADATA=(
-            ['allow']='map_of map'
-            ['mmm']='map_of map_of map'
-            ['positional']='boolean'
-            ['version']='version'
-        )
-
-        local META_POSITIONAL=true
-        local -i META_VERSION_MAJOR=1
-        local -i META_VERSION_MINOR=2
-        local -A META_ALLOW=(
-            ['color']=0
-        )
-        local -A META_ALLOW_0=(
-            ['black']=
-            ['white']=
-        )
-        local -A META_MMM=(
-            ['a']=0
-        )
-        local -A META_MMM_0=(
-            ['b']=0
-        )
-        local -A META_MMM_0_0=(
-            ['c']='d'
-        )
-
-        diff <(${CLI_COMMAND[@]} -- metadata META allow color) - <<< 'map META_ALLOW_0'
-        diff <(${CLI_COMMAND[@]} -- metadata META mmm a b) - <<< 'map META_MMM_0_0'
-        diff <(${CLI_COMMAND[@]} -- metadata META positional) - <<< 'boolean META_POSITIONAL'
-        diff <(${CLI_COMMAND[@]} -- metadata META version) - <<< 'version META_VERSION'
-        diff <(${CLI_COMMAND[@]} -- metadata META version major) - <<< 'integer META_VERSION_MAJOR'
-        diff <(${CLI_COMMAND[@]} -- metadata META version minor) - <<< 'integer META_VERSION_MINOR'
-    )
+    diff <(${CLI_COMMAND[@]} -- META allow color) - <<< 'map META_ALLOW_0'
+    diff <(${CLI_COMMAND[@]} -- META mmm a b) - <<< 'map META_MMM_0_0'
+    diff <(${CLI_COMMAND[@]} -- META positional) - <<< 'boolean META_POSITIONAL'
+    diff <(${CLI_COMMAND[@]} -- META version) - <<< 'version META_VERSION'
+    diff <(${CLI_COMMAND[@]} -- META version major) - <<< 'integer META_VERSION_MAJOR'
+    diff <(${CLI_COMMAND[@]} -- META version minor) - <<< 'integer META_VERSION_MINOR'
 }

@@ -2,6 +2,9 @@
 cli::import cli core variable declare
 cli::import cli core variable put
 cli::import cli core variable write
+cli::import cli core variable save
+cli::import cli core variable load
+cli::import cli core variable read
 
 help() {
     cat << EOF
@@ -24,150 +27,173 @@ swap() {
 transform() {
     local INDEX=$(( $1 - 1 ))
     while read -a FIELDS; do
-        FIELDS[${INDEX}]=$($2 <<< ${FIELDS[${INDEX}]})
+        $2 "${FIELDS[${INDEX}]}"
+        FIELDS[${INDEX}]="${MAPFILE}"
         echo "${FIELDS[@]}"
     done
 }
 
-main() {
+cli::dsl::load::main() {
+    ARG_SCOPE="CLI_SCOPE" \
     ARG_META='MY_META' \
+    ARG_NAME='MY_META_TABLES' \
         ::cli::dsl::load::inline
 }
 
 ::cli::dsl::load::inline() {
-    local ARG_SCOPE="CLI_SCOPE"
-    local ARG_TYPE="cli_dsl_meta_tables"
-    local ARG_NAME="META_TABLES"
+    local SCOPE_NAME="${ARG_SCOPE}"
+    local NAME="${ARG_NAME}"
+    local TABLES="CLI_DSL_LOAD_META_TABLES"
 
-    # local dir=$(mktemp -d "/tmp/cli.dsl.bgen.XXXXXX")
-    # cli::save "${dir}"
-    # rm -r "${dir}"
+    # declare temp variable to hold inbound stream
+    ARG_TYPE="cli_meta_tables" \
+        ::cli::core::variable::declare::inline ${TABLES}
 
-    ::cli::core::variable::declare::inline
+    # create temporary directory to save stream
+    cli::temp::dir
+    local DIR="${REPLY}"
 
-    # cli::declare cli_meta_tables META_TABLES
-    # cli::read META_TABLES
-    # CLI_SCOPE+=( [META_TABLES_TYPE]='map_of map' ) # TODO: Hack
-    # CLI_SCOPE+=( [META_TABLES_ALIAS]='map' ) # TODO: Hack
+    # save stream
+    ::cli::core::variable::save::inline "${DIR}"
 
-    # local -n ARG_META_REF=${ARG_META}
+    # load stream
+    ::cli::core::variable::load::inline "${DIR}" \
+        | ::cli::core::variable::read::inline ${TABLES}
 
-    local ARG_META_GROUP="${ARG_META}_GROUP"
-    CLI_SCOPE+=( [${ARG_META}_GROUP]='map_of cli_meta_group' ) # TODO: Hack
-    CLI_SCOPE+=( [${ARG_META}_ALIAS]='map' ) # TODO: Hack
-    CLI_SCOPE+=( [${ARG_META}_BASH_NAME]='map' ) # TODO: Hack
+# cli::dump 'CLI_DSL_LOAD_META_TABLES_*'
 
-    cli::declare cli_meta ${ARG_META}
+    ARG_TYPE="cli_meta" \
+        ::cli::core::variable::declare::inline ${NAME}
 
-    # name -> bash_name
-    cli::write META_TABLES_TYPE \
+    # bash name
+    ::cli::core::variable::write::inline ${TABLES}_TYPE \
         | awk '{ print $2, $2 }' \
-        | transform 2 cli::loader::to_bash \
-        | cli::read ${ARG_META}_BASH_NAME
+        | transform 2 cli::name::to-bash \
+        | ::cli::core::variable::read::inline ${NAME}_BASH_NAME
 
     # alias
-    cli::write META_TABLES_ALIAS \
-        | cli::read ${ARG_META}_ALIAS
+    ::cli::core::variable::write::inline ${TABLES}_ALIAS \
+        | ::cli::core::variable::read::inline ${NAME}_ALIAS
 
-    # load only group specific metadata
-    cli::write META_TABLES \
+    # group specific metadata; e.g. the group id is not '*'
+    ::cli::core::variable::write::inline ${TABLES} \
         | awk '$1 != "alias"' \
         | swap 1 2 \
         | awk '$1 != "*"' \
-        | cli::read "${ARG_META_GROUP}"
+        | ::cli::core::variable::read::inline ${NAME}_GROUP
 
-    local -n ARG_META_GROUP_REF="${ARG_META_GROUP}"
-   
-    # no groups
-    if (( ${#ARG_META_GROUP_REF[@]} == 0 )); then
-        cli::write META_TABLES \
-            | awk '$1 != "alias"' \
-            | swap 1 2 \
-            | cli::read "${ARG_META_GROUP}" 
+    local -n GROUP_REF=${NAME}_GROUP
 
-        # join name->bash_name name->type on name to get bash_name->type
-        join -1 2 -2 4 -o "2.2 1.3 2.5" \
-            <(cli::write "${ARG_META}" | grep "bash_name" | sort) \
-            <(cli::write "${ARG_META}" | grep "group \\* type" | sort) \
-            | awk '{ print $1, "bash_type", $2, $3 }' \
-            | cli::read "${ARG_META_GROUP}"
-    # groups
-    else
-
-        # merge universal metadata with each group
-        for group in "${!ARG_META_GROUP_REF[@]}"; do
-
-            cli::write META_TABLES \
-                | awk '$1 != "alias"' \
-                | swap 1 2 \
-                | awk -v group="${group}" '$1 == "*" { $1 = group; print; }' \
-                | cli::read "${ARG_META_GROUP}"
-
-            # join name->bash_name name->type on name to get bash_name->type
-            join -1 2 -2 4 -o "2.2 1.3 2.5" \
-                <(cli::write "${ARG_META}" | grep "bash_name" | sort) \
-                <(cli::write "${ARG_META}" | grep "group ${group} type" | sort) \
-                | awk '{ print $1, "bash_type", $2, $3 }' \
-                | cli::read "${ARG_META_GROUP}"
-        done
+    local -a GROUP_NAMES=( "${!GROUP_REF[@]}" )
+    if (( ${#GROUP_NAMES[@]} == 0 )); then
+        GROUP_NAMES=( '*' )
     fi
 
-    cli::write "${ARG_META}"
+    local GROUP_NAME
+    for GROUP_NAME in "${GROUP_NAMES[@]}"; do
+
+        ::cli::core::variable::write::inline ${TABLES} \
+            | awk '$1 != "alias"' \
+            | swap 1 2 \
+            | awk -v group="${GROUP_NAME}" '$1 == "*" { $1 = group; print; }' \
+            | ::cli::core::variable::read::inline ${NAME}_GROUP
+
+        # join on the bash name (1.2 and 2.4) 
+        # and project: group id (2.2), 'bash_name', bash name (1.3), type (2.5)
+        #   1:bash_name 2:foo-bar 3:foo_bar
+        #   1:group 2:* 3:type 4:foo-bar 5:string
+        join \
+            -1 2 \
+            -2 4 \
+            -o "2.2 1.3 2.5" <(
+            ::cli::core::variable::write::inline ${NAME} \
+                | grep "bash_name" \
+                | sort
+        ) <(
+            ::cli::core::variable::write::inline ${NAME} \
+                | grep "group ${GROUP_NAME} type" \
+                | sort
+        ) \
+            | awk '{ print $1, "bash_type", $2, $3 }' \
+            | ::cli::core::variable::read::inline ${NAME}_GROUP
+    done
+
+    ::cli::core::variable::write::inline "${NAME}"
 }
 
 self_test() {
-    cli dsl sample -h \
+    diff <(cli dsl sample -h \
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
-        | ${CLI_COMMAND[@]} \
-        | assert::pipe_eq \
-            'bash_name my-list my_list' \
-            'bash_name run-as run_as' \
-            'bash_name fruit fruit' \
-            'bash_name my-props my_props' \
-            'bash_name id id' \
-            'bash_name self-test self_test' \
-            'bash_name help help' \
-            'bash_name header header' \
-            'bash_name dump dump' \
-            'bash_name name name' \
-            'bash_name namespace namespace' \
-            'alias p my-props' \
-            'alias l my-list' \
-            'alias i id' \
-            'alias h help' \
-            'alias f fruit' \
-            'alias d dump' \
-            'group id require header ' \
-            'group id default fruit banana' \
-            'group id regex header ^[A-Z][A-Za-z0-9_]*$' \
-            'group id positional true' \
-            'group id type my-list array' \
-            'group id type run-as string' \
-            'group id type fruit string' \
-            'group id type my-props map' \
-            'group id type id string' \
-            'group id type self-test boolean' \
-            'group id type help boolean' \
-            'group id type header string' \
-            'group id type dump boolean' \
-            'group id allow fruit orange ' \
-            'group id allow fruit banana ' \
-            'group name require header ' \
-            'group name default fruit banana' \
-            'group name regex header ^[A-Z][A-Za-z0-9_]*$' \
-            'group name positional true' \
-            'group name type my-list array' \
-            'group name type run-as string' \
-            'group name type fruit string' \
-            'group name type my-props map' \
-            'group name type self-test boolean' \
-            'group name type help boolean' \
-            'group name type header string' \
-            'group name type dump boolean' \
-            'group name type name string' \
-            'group name type namespace string' \
-            'group name allow fruit orange ' \
-            'group name allow fruit banana '
+        | ${CLI_COMMAND[@]} -- 
+    ) - <<-EOF
+		bash_name my-list my_list
+		bash_name run-as run_as
+		bash_name fruit fruit
+		bash_name my-props my_props
+		bash_name id id
+		bash_name self-test self_test
+		bash_name help help
+		bash_name header header
+		bash_name dump dump
+		bash_name name name
+		bash_name namespace namespace
+		alias p my-props
+		alias l my-list
+		alias i id
+		alias h help
+		alias f fruit
+		alias d dump
+		group id require header
+		group id default fruit banana
+		group id bash_type my_list array
+		group id bash_type fruit string
+		group id bash_type id string
+		group id bash_type self_test boolean
+		group id bash_type run_as string
+		group id bash_type help boolean
+		group id bash_type header string
+		group id bash_type dump boolean
+		group id bash_type my_props map
+		group id regex header ^[A-Z][A-Za-z0-9_]*$
+		group id positional true
+		group id type my-list array
+		group id type run-as string
+		group id type fruit string
+		group id type my-props map
+		group id type id string
+		group id type self-test boolean
+		group id type help boolean
+		group id type header string
+		group id type dump boolean
+		group id allow fruit orange
+		group id allow fruit banana
+		group name require header
+		group name default fruit banana
+		group name bash_type my_list array
+		group name bash_type fruit string
+		group name bash_type self_test boolean
+		group name bash_type run_as string
+		group name bash_type help boolean
+		group name bash_type header string
+		group name bash_type dump boolean
+		group name bash_type name string
+		group name bash_type my_props map
+		group name bash_type namespace string
+		group name regex header ^[A-Z][A-Za-z0-9_]*$
+		group name positional true
+		group name type my-list array
+		group name type run-as string
+		group name type fruit string
+		group name type my-props map
+		group name type self-test boolean
+		group name type help boolean
+		group name type header string
+		group name type dump boolean
+		group name type name string
+		group name type namespace string
+		group name allow fruit orange
+		group name allow fruit banana
+		EOF
 }

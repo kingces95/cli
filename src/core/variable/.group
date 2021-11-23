@@ -19,14 +19,17 @@ main() {
 }
 
 self_test() {
+    cli core variable name .group --self-test
+
+    cli core variable get-info --self-test
     cli core variable parse --self-test
-    cli core variable resolve --self-test   # name, type
-    cli core variable write --self-test     # name, type
+    cli core variable resolve --self-test   # name
+    cli core variable write --self-test     # name
     cli core variable save --self-test      # dir
+    cli core variable load --self-test      # dir
     cli core variable get --self-test       # name, type   
     cli core variable declare --self-test   # name, type, scope
     cli core variable put --self-test       # name, type, scope
     cli core variable read --self-test      # name, type, scope
-    cli core variable load --self-test      # dir
-    # cli core variable print --self-test
+    echo cli core variable print --self-test
 }
