@@ -1008,89 +1008,12 @@ cli::import() {
     "$@" ---import
 }
 
-# meta
-cli::meta::add_alias() {
-    local arg_alias=${1:0:1}
-
-    CLI_META_ALIAS+=([${arg_alias}]="$1" )
-}
-
-cli::meta::add_flag() {
-    cli::meta::add_alias "$@"
-
-    CLI_META_GROUP_0_TYPE+=([$1]="boolean" )
-    CLI_META_BASH_NAME+=([$1]="$1" )
-}
-
-cli::meta::add_optional() {
-    cli::meta::add_alias "$@";
-    
-    if [[ -n "${2-}" ]]; then
-        CLI_META_GROUP_0_DEFAULT+=([$1]="${2-}");
-    fi
-    
-    if [[ -n "${3-}" ]]; then
-        CLI_META_GROUP_0_REGEX+=([$1]="$3");
-    fi
-    
-    CLI_META_GROUP_0_TYPE+=([$1]="string")
-    CLI_META_BASH_NAME+=([$1]="$1" )
-}
-
-cli::meta::add_required() {
-    cli::meta::add_optional "$@"
-    
-    CLI_META_GROUP_0_REQUIRE+=([$1]="" )    
-    CLI_META_GROUP_0_TYPE+=([$1]="string")
-    CLI_META_BASH_NAME+=([$1]="$1" )
-}
-
-cli::meta::allow_positional() {
-    CLI_META_GROUP_0_POSITIONAL="true"
-}
-
-cli::meta::default() {
-    cli::loader::scope::add \
-        CLI_META CLI_META
-
-    declare -gA \
-        CLI_META_BASH_NAME \
-        CLI_META_ALIAS \
-        CLI_META_GROUP \
-        CLI_META_GROUP_0_ALLOW \
-        CLI_META_GROUP_0_DEFAULT \
-        CLI_META_GROUP_0_REGEX \
-        CLI_META_GROUP_0_REQUIRE \
-        CLI_META_GROUP_0_TYPE \
-
-    declare -g \
-        CLI_META_GROUP_0_POSITIONAL # boolean
-
-    CLI_META_BASH_NAME=(
-        [help]="help"
-        [self-test]="self_test"
-    )
-    CLI_META_ALIAS=(
-        [h]="help" 
-    )
-    CLI_META_GROUP=(
-        ["*"]="0" 
-    )
-    CLI_META_GROUP_0_TYPE=(
-        [help]="boolean"
-        [self-test]="boolean"
-    )
-}
-
 # loader
 cli::loader::cache::bgen() {
 
     # allow hard coded metadata of logic that is itself necessary to parse help
-    if ::cli::bash::is_function_declared::inline cli::meta::declare; then
-        cli::meta::default
-        cli::meta::declare
-        return
-    fi
+    ! ::cli::bash::is_function_declared::inline cli::meta::declare \
+        || cli::assert 'Custom metadata deprecated'
 
     [[ ! "${CLI_SCOPE[CLI_META]+set}" ]] \
         || cli::assert "Metadata should have not been declared outside of cli::meta::declare."
@@ -1106,37 +1029,31 @@ cli::loader::cache::bgen() {
 }
 
 cli::loader::initialize() {
-    
+
+    local -A KNOWN_COMMANDS=(
+        ['cli loader']=
+        ['cli dsl tokenize']=
+        ['cli dsl parse']=
+        ['cli dsl meta']=
+    )
+
+    local COMMAND="${CLI_COMMAND[*]}"
+
+    if [[ "${KNOWN_COMMANDS[${COMMAND}]+set}" == 'set' ]]; then
+        ARG_HELP=false
+        ARG_SELF_TEST=false
+        CLI_ARGS_POSITIONAL=( "$@" )
+        return
+    fi
+
     # somehow the metadata should have been declared
     [[ "${CLI_SCOPE[CLI_META]+set}" ]] \
-        || cli::assert "Metadata missing. Add cli::meta::declare?"
+        || cli::assert "Metadata missing for command '${CLI_COMMAND[*]}'."
 
     # to test 'cli args' logic itself hard code logic here to skip 'cli args' 
     # logic if there is ...
 
     # cli::print CLI_META > /dev/stderr
-
-    #  ... a single parameter group { 'help' 'self-test' } and ...
-    # declare -p CLI_META_GROUP_0_TYPE > /dev/stderr
-    if (( ${#CLI_META_GROUP[@]} == 1 )) && \
-        (( ${#CLI_META_GROUP_0_TYPE[@]} == 2 )); then
-
-        # ... no named parameters
-        if (( $# == 0 )); then
-            ARG_HELP=false
-            ARG_SELF_TEST=false
-            return
-        fi
-
-        # ... or only positional parameters
-        if [[ "$1" == '--' ]] && ${CLI_META_GROUP_0_POSITIONAL}; then
-            shift
-            ARG_HELP=false
-            ARG_SELF_TEST=false
-            CLI_ARGS_POSITIONAL=( "$@" )
-            return
-        fi
-    fi
 
     cli::declare cli_tokens CLI_TOKENS
     cli::declare cli_args CLI_ARGS
@@ -1686,10 +1603,10 @@ cli::main::command() {
     fi
 
     # bgen metadata
-    cli::loader::cache::bgen
-    if [[ -f "${CLI_LOADER_BGEN_PATH-}" ]]; then
-        source "${CLI_LOADER_BGEN_PATH}"
-    fi
+    # cli::loader::cache::bgen
+    # if [[ -f "${CLI_LOADER_BGEN_PATH-}" ]]; then
+    #     source "${CLI_LOADER_BGEN_PATH}"
+    # fi
 
     # well-known options that require loaded metadata
     if [[ "${1-}" == ---* ]]; then
