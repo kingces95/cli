@@ -61,8 +61,12 @@ EOF
     if ${REPLY_CLI_CORE_VARIABLE_IS_BUILTIN}; then
         local -n REF=${NAME}
 
+        # boolean
+        if ${REPLY_CLI_CORE_VARIABLE_IS_BOOLEAN}; then
+            ::cli::bash::write::inline "${PREFIX[@]}"
+
         # scaler
-        if ${REPLY_CLI_CORE_VARIABLE_IS_SCALER}; then
+        elif ${REPLY_CLI_CORE_VARIABLE_IS_SCALER}; then
             ::cli::bash::write::inline "${PREFIX[@]}" "${REF}"
 
         # array
@@ -131,7 +135,7 @@ self_test() {
 
     # boolean
     local MY_BOOLEAN=true
-    diff <(${CLI_COMMAND[@]} -- MY_BOOLEAN) - <<< 'true'
+    diff <(${CLI_COMMAND[@]} -- MY_BOOLEAN) - <<< ''
 
     # array
     local -a MY_ARRAY=( 'a a b a' )
@@ -253,7 +257,7 @@ self_test() {
         echo 'allow color black' 
         echo 'allow color white' 
         echo 'mmm a b c d' 
-        echo 'positional true' 
+        echo 'positional' 
         echo 'version major 1' 
         echo 'version minor 2'
     )

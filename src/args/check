@@ -119,7 +119,7 @@ self_test() {
     ${CLI_COMMAND[@]} -- myname '' 'boolean'
     ${CLI_COMMAND[@]} -- myname myvalue 'string' '.*' 'myvalue myothervalue' 0 100
     ${CLI_COMMAND[@]} -- myname myothervalue 'string' '.*' 'myvalue myothervalue' 0 100
-
+exit
     test() {
         ! { set -m; (::cli::args::check::inline "$@") } 2>&1 1>/dev/stderr || cli::assert
     }

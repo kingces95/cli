@@ -27,4 +27,5 @@ self_test() {
     
     cli core .group --self-test 
     cli dsl .group --self-test 
+    cli args .group --self-test 
 }

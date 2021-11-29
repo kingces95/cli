@@ -31,7 +31,7 @@ Examples
 EOF
 }
 
-main() {
+cli::dsl::sample::main() { 
     echo "${ARG_HEADER}"
     if [[ "${ARG_DUMP}" == 'true' ]]; then
         declare -p

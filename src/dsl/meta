@@ -129,7 +129,7 @@ self_test() {
 			require * header
 			default * fruit banana
 			regex * header ^[A-Z][A-Za-z0-9_]*$
-			positional * true
+			positional *
 			alias p my-props
 			alias l my-list
 			alias i id

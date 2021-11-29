@@ -53,7 +53,7 @@ cli::core::variable::put::main() {
 
             # boolean
             if ${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}; then
-                VALUE="${1-false}"
+                VALUE="${1-true}"
                 [[ "${VALUE}" =~ ^true$|^false$ ]] || \
                     cli::assert "Failed to assign '${VALUE}' to ${TYPE} '${NAME}'."
 
@@ -195,6 +195,10 @@ self_test() {
         diff <( ${CLI_COMMAND[@]} -- MY_BOOLEAN true ) - \
             <<< 'declare -- MY_BOOLEAN="true"'
 
+        local MY_BOOLEAN=false
+        diff <( ${CLI_COMMAND[@]} -- MY_BOOLEAN ) - \
+            <<< 'declare -- MY_BOOLEAN="true"'
+
         # integer
         local -i MY_INTEGER=0
         diff <( ${CLI_COMMAND[@]} -- MY_INTEGER 42 ) - \
@@ -230,7 +234,7 @@ self_test() {
         # boolean
         local MY_BOOLEAN=false
         diff <( ${CLI_COMMAND[@]} -- MY_BOOLEAN ) - \
-            <<< 'declare -- MY_BOOLEAN="false"'
+            <<< 'declare -- MY_BOOLEAN="true"'
 
         # integer
         local -i MY_INTEGER=42
@@ -341,7 +345,7 @@ self_test() {
         local -A MY_MAP_OF_BOOLEAN=()
         diff <( ${CLI_COMMAND[@]} -- MY_MAP_OF_BOOLEAN x ) <( \
             echo 'declare -A MY_MAP_OF_BOOLEAN=([x]="0" )'
-            echo 'declare -- MY_MAP_OF_BOOLEAN_0="false"'
+            echo 'declare -- MY_MAP_OF_BOOLEAN_0="true"'
         )
 
         # integer

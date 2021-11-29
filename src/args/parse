@@ -1,4 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core variable declare
+cli::import cli core variable read
+cli::import cli core variable write
+cli::import cli core variable put
 
 help() {
     cat << EOF
@@ -34,13 +38,21 @@ Examples
 EOF
 }
 
-main() {
-    cli::declare 'map' ALIAS
-    cli::read ALIAS < "${1-/dev/null}"
+cli::args::parse::main() {
+    local -A SCOPE=()
+    ARG_SCOPE='SCOPE'
 
-    cli::declare 'cli_args' ARGS
+    ARG_TYPE='map' \
+        ::cli::core::variable::declare::inline ALIAS
 
-    cli::declare 'cli_tokens' TOKENS
+    ::cli::core::variable::read::inline ALIAS < "${1-/dev/null}"
+
+    ARG_TYPE='cli_args' \
+        ::cli::core::variable::declare::inline ARGS
+
+    ARG_TYPE='cli_tokens' \
+        ::cli::core::variable::declare::inline TOKENS
+
     while read token_name identifier; do
         local token="CLI_ARG_TOKEN_${token_name}"
 
@@ -53,7 +65,7 @@ main() {
     ARG_TOKENS=TOKENS \
         ::cli::args::parse::inline
 
-    cli::write ARGS 'cli_args'
+    ::cli::core::variable::write::inline ARGS
 }
 
 ::cli::args::parse::inline() {
@@ -106,7 +118,7 @@ main() {
 
         while (( token != CLI_ARG_TOKEN_EOF )); do
             # assert_token_is TOKEN_VALUE
-            cli::put ${ARG_ARGS} positional "${identifier}"
+            ::cli::core::variable::put::inline "${ARG_ARGS}" positional "${identifier}"
             read_token
         done
     }
@@ -139,25 +151,25 @@ main() {
         read_token
 
         if (( named_count == 0 )); then
-            cli::put ${ARG_ARGS} first_named "${option}"
+            ::cli::core::variable::put::inline "${ARG_ARGS}" first_named "${option}"
         fi
         named_count=$(( named_count + 1 ))
         
         # flags
         if (( token != CLI_ARG_TOKEN_VALUE )); then
-            cli::put ${ARG_ARGS} named "${option}" ''
+            ::cli::core::variable::put::inline "${ARG_ARGS}" named "${option}" ''
             return
         fi
 
         # list of values (typically only one but could be array or properties)
         while (( token == CLI_ARG_TOKEN_VALUE )); do
-            cli::put ${ARG_ARGS} named "${option}" "${identifier}"
+            ::cli::core::variable::put::inline "${ARG_ARGS}" named "${option}" "${identifier}"
             read_token 
         done
     }
 
     SEGMENT() {
-        cli::put ${ARG_ARGS} path "${identifier}"
+        ::cli::core::variable::put::inline "${ARG_ARGS}" path "${identifier}"
         read_token
     }
 
@@ -165,27 +177,31 @@ main() {
 }
 
 self_test() {
-    cli args tokenize -- --myarr a b c --myprops a=0 b=1 c=2 \
-        | ${CLI_COMMAND[@]} \
-        | assert::pipe_eq \
-            'first_named myarr' \
-            'named myprops a=0' \
-            'named myprops b=1' \
-            'named myprops c=2' \
-            'named myarr a' \
-            'named myarr b' \
-            'named myarr c'
+    diff <(
+        cli args tokenize -- --myarr a b c --myprops a=0 b=1 c=2 \
+            | ${CLI_COMMAND[@]} --
+    ) - <<-EOF
+		first_named myarr
+		named myprops a=0
+		named myprops b=1
+		named myprops c=2
+		named myarr a
+		named myarr b
+		named myarr c
+		EOF
 
-    cli args tokenize -- x y z -h --help opt --help key=value -- a0 a1 \
-        | ${CLI_COMMAND[@]} -- <( echo $'h help\nt test\n' ) \
-        | assert::pipe_eq \
-            'first_named help' \
-            'path x' \
-            'path y' \
-            'path z' \
-            'positional a0' \
-            'positional a1' \
-            'named help ' \
-            'named help opt' \
-            'named help key=value'
+    diff <(
+        cli args tokenize -- x y z -h --help opt --help key=value -- a0 a1 \
+        | ${CLI_COMMAND[@]} -- <( echo $'h help\nt test\n' )
+    ) - <<-EOF
+		first_named help
+		path x
+		path y
+		path z
+		positional a0
+		positional a1
+		named help
+		named help opt
+		named help key=value
+		EOF
 }

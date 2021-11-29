@@ -72,6 +72,9 @@ self_test() {
         diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN <<< true ) - \
             <<< 'declare -- MY_BOOLEAN="true"'
 
+        diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN <<< '' ) - \
+            <<< 'declare -- MY_BOOLEAN="true"'
+
         # integer
         diff <( ${CLI_COMMAND[@]} -- integer MY_INTEGER <<< 42 ) - \
             <<< 'declare -i MY_INTEGER="42"'
@@ -92,8 +95,8 @@ self_test() {
         # string
         diff <( ${CLI_COMMAND[@]} -- string MY_STRING < /dev/null ) - \
             <<< 'declare -- MY_STRING=""'
-        # boolean
 
+        # boolean
         diff <( ${CLI_COMMAND[@]} -- boolean MY_BOOLEAN < /dev/null ) - \
             <<< 'declare -- MY_BOOLEAN="false"'
 
@@ -175,7 +178,7 @@ self_test() {
         # boolean
         diff <( ${CLI_COMMAND[@]} -- map_of boolean MY_MAP_OF_BOOLEAN <<< 'x' ) <( \
             echo 'declare -A MY_MAP_OF_BOOLEAN=([x]="0" )'
-            echo 'declare -- MY_MAP_OF_BOOLEAN_0="false"'
+            echo 'declare -- MY_MAP_OF_BOOLEAN_0="true"'
         )
 
         # integer

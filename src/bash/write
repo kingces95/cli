@@ -23,6 +23,7 @@ EOF
 }
 
 ::cli::bash::write::inline() {
+    MAPFILE=()
     local COUNT=$#
 
     while (( $# > 0 )); do
@@ -36,22 +37,20 @@ EOF
             break
         fi
 
-        if (( $# != COUNT )); then
-            echo -n " "
-        fi
-
         field="${field//\\/\\\\}"
         field="${field// /\\ }"
         field="${field//$'\t'/\\$'\t'}"
 
-        echo -n "${field}"
+        MAPFILE+=( "${field}" )
         shift
     done
-    
-    echo
+
+    echo "${MAPFILE[@]}"
 }
 
 self_test() {
+    diff <(${CLI_COMMAND[@]} -- ) - <<< ''
+    diff <(${CLI_COMMAND[@]} -- '' ) - <<< ''
 
     diff <(${CLI_COMMAND[@]} -- 'x' $' ' $'\t' '\' | read -a ARRAY; declare -p ARRAY) \
         - <<< "declare -a ARRAY=([0]=\"x\" [1]=\" \" [2]=\$'\t' [3]=\"\\\\\")"

@@ -1,5 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli args check
+cli::import cli core variable declare
+cli::import cli core variable read
+cli::import cli core variable write
+cli::import cli core variable put
+cli::import cli core variable resolve
+cli::import cli set intersect
 
 help() {
     cat << EOF
@@ -37,66 +43,77 @@ Examples
 EOF
 }
 
-# main() {
+cli::args::initialize::main() {
+    : ${ARG_SCOPE?'Missing scope.'}
+    : ${ARG_META?'Missing metadata.'}
 
-#     cli::declare 'cli_args' ARGS
-#     cli::read ARGS
+    ARG_TYPE='cli_args' \
+        ::cli::core::variable::declare::inline MY_ARGS
+    ::cli::core::variable::read::inline MY_ARGS
 
-#     cli::declare 'cli_meta_group' META
-#     cli::read META < "${1-/dev/null}"
+    # ARG_SCOPE=${ARG_SCOPE} \
+    # ARG_META=${ARG_META} \
+    # ARG_ARGS='MY_ARGS' \
+    #     ::cli::args::initialize::inline
 
-#     # cli::print ARGS
-#     # cli::print META
-
-#     ARG_META='META' \
-#     ARG_ARGS='ARGS' \
-#         ::cli::args::initialize::inline
-
-#     cli::write ARGS
-# }
+    ::cli::core::variable::write::inline MY_ARGS
+}
 
 ::cli::args::initialize::inline() {
+    : ${ARG_SCOPE?'Missing scope.'}
+    : ${ARG_META?'Missing metadata.'}
+    : ${ARG_ARGS?'Missing args.'}
 
-    : ${ARG_ARGS:='ARGS'}
+    local -n GROUP=${ARG_META}_GROUP
+
+    local GROUP_ID='*'
+    if (( ${#GROUP[@]} > 1 )); then
+        ::cli::set::intersect::inline ${ARG_META}_GROUP ${ARG_ARGS}_NAMED
+        (( ${#REPLY_MAP[@]} == 1 )) || cli::assert
+        GROUP_ID="${!REPLY_MAP[@]}" 
+    fi
+
+    ::cli::core::variable::resolve::inline ${ARG_META} group ${GROUP_ID}
+    local META_NAME=${REPLY}
+    local -n TYPE_REF=${META_NAME}_TYPE
+    local -n DEFAULT_REF=${META_NAME}_DEFAULT
+    local -n REQUIRE_REF=${META_NAME}_REQUIRE
+    local -n REGEX_REF=${META_NAME}_REGEX
+    local -n ALLOW_REF=${META_NAME}_ALLOW
+    local -n POSITIONAL_REF=${META_NAME}_POSITIONAL
+
+    local -n ARGS_REF=${ARG_ARGS}
     local -n ARGS_POSITIONAL_REF=${ARG_ARGS}_POSITIONAL
     local -n ARGS_NAMED_REF=${ARG_ARGS}_NAMED
-
-    : ${ARG_META:='META'}
-    local -n TYPE=${ARG_META}_TYPE
-    local -n DEFAULT=${ARG_META}_DEFAULT
-    local -n REQUIRE=${ARG_META}_REQUIRE
-    local -n REGEX=${ARG_META}_REGEX
-    local -n ALLOW=${ARG_META}_ALLOW
-    local -n POSITIONAL=${ARG_META}_POSITIONAL
 
     local option
 
     # trap for unknown named arguments
     for option in "${!ARGS_NAMED_REF[@]}"; do
-        if [[ -z ${TYPE[${option}]+set} ]]; then
+        if [[ ! ${TYPE_REF[${option}]+set} ]]; then
             cli::fail "Unexpected unknown argument '--${option}'" \
                 "passed to command '${CLI_COMMAND[@]}'."
         fi
     done
 
     # initialize name arguments
-    for option in ${!TYPE[@]}; do
+    for option in ${!TYPE_REF[@]}; do
 
         # type
-        local type="${TYPE[${option}]}"
+        local type="${TYPE_REF[${option}]}"
 
         # declare variable if not specified on command line
         if [[ -z "${ARGS_NAMED_REF[${option}]+set}" ]]; then
             local default=
 
             # fail if required and missing
-            if [[ -n ${REQUIRE[$option]+set} ]]; then
+            if [[ -n ${REQUIRE_REF[$option]+set} ]]; then
                 cli::fail "Missing required argument '--${option}'" \
                     "in call to command '${CLI_COMMAND[@]}'."
 
             # switch has an explict default
-            elif [[ -n "${DEFAULT[${option}]+set}" ]] ; then
-                default=${DEFAULT[${option}]}
+            elif [[ -n "${DEFAULT_REF[${option}]+set}" ]] ; then
+                default=${DEFAULT_REF[${option}]}
 
             # switch has an implicit default; i.e. booleans
             elif [[ "${type}" == 'boolean' ]] ; then
@@ -108,7 +125,7 @@ EOF
             fi
 
             # assign default if missing
-            cli::put ${ARG_ARGS} named "${option}" "${default}"
+            ::cli::core::variable::put::inline ${ARG_ARGS} named "${option}" "${default}"
         fi
 
         local -n ARGS_NAMED_N_REF="${ARG_ARGS}_NAMED_${ARGS_NAMED_REF[$option]}"
@@ -117,7 +134,7 @@ EOF
         if [[ -z "${ARGS_NAMED_N_REF-}" ]]; then
 
             # fail if required and empty
-            if [[ -n ${REQUIRE[$option]+set} ]]; then
+            if [[ -n ${REQUIRE_REF[$option]+set} ]]; then
                 cli::fail "Required argument '--${option}'" \
                     "passed to command '${CLI_COMMAND[@]}' has empty value."
             fi
@@ -125,8 +142,8 @@ EOF
 
         # allow ref
         local allow=''
-        if [[ -n ${ALLOW[$option]+set} ]]; then 
-            local -n allow_ref=${ARG_META}_ALLOW_${ALLOW[${option}]}
+        if [[ -n ${ALLOW_REF[$option]+set} ]]; then 
+            local -n allow_ref=${ARG_META}_ALLOW_${ALLOW_REF[${option}]}
             allow="${!allow_ref[@]}"
         fi
 
@@ -162,38 +179,58 @@ EOF
                 "${option}" \
                 "${value}" \
                 "${element_type}" \
-                "${REGEX[${option}]-}" \
+                "${REGEX_REF[${option}]-}" \
                 "${allow}"
         done
     done
 
     # positional
-    if ! ${POSITIONAL} && (( ${#ARGS_POSITIONAL_REF[@]} > 0 )); then
+    if ! ${POSITIONAL_REF} && (( ${#ARGS_POSITIONAL_REF[@]} > 0 )); then
         cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND[@]}'," \
             "but got ${#ARGS_POSITIONAL_REF[@]}: '${ARGS_POSITIONAL_REF[*]}'."
     fi
 }
 
 self_test() {
+    local -A SCOPE=()
+    ARG_SCOPE='SCOPE'
+
+    # declare metadata
+    local ARG_META='MY_META'
+    ARG_TYPE='cli_meta' \
+        ::cli::core::variable::declare::inline ${ARG_META}
+
+    # load metadata
+    ::cli::core::variable::read::inline ${ARG_META} < <( 
+        cli dsl sample ---load 
+    )
 
     # cli dsl sample
-    cli args tokenize -- --id 42 -f banana -h --header Foo -- a0 a1 \
-        | cli args parse -- <( \
-            cli dsl sample ---load \
-                | awk '$1 == "alias" { $1=""; print }' \
-            ) \
-        | ${CLI_COMMAND[@]} -- <( \
-            cli dsl sample ---load \
-                | awk '$1 == "group" && $2 == "id" { $1=""; $2=""; print }' \
-            ) \
-        | assert::pipe_records_eq \
-            'first_named id' \
-            'positional a0' \
-            'positional a1' \
-            'named fruit banana' \
-            'named id 42' \
-            'named help' \
-            'named header Foo'
+    diff <(
+        # sample command line
+        local COMMAND_LINE='--id 42 -f banana -h --header Foo -- a0 a1'
+        cli args tokenize -- ${COMMAND_LINE} \
+            | cli args parse -- \
+                <( ::cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
+            | ${CLI_COMMAND[@]} --
+    ) - <<-EOF || cli::assert
+			first_named id
+			positional a0
+			positional a1
+			named fruit banana
+			named id 42
+			named header Foo
+			EOF
+exit
+        #     \
+        # | assert::pipe_records_eq \
+        #     'first_named id' \
+        #     'positional a0' \
+        #     'positional a1' \
+        #     'named fruit banana' \
+        #     'named id 42' \
+        #     'named help' \
+        #     'named header Foo'
 
     meta() {
         echo 'type props map'

@@ -16,10 +16,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 swap() {
     awk "{ t = \$$1; \$$1 = \$$2; \$$2 = t; print }"
 }
@@ -157,7 +153,7 @@ self_test() {
 		group id bash_type dump boolean
 		group id bash_type my_props map
 		group id regex header ^[A-Z][A-Za-z0-9_]*$
-		group id positional true
+		group id positional
 		group id type my-list array
 		group id type run-as string
 		group id type fruit string
@@ -182,7 +178,7 @@ self_test() {
 		group name bash_type my_props map
 		group name bash_type namespace string
 		group name regex header ^[A-Z][A-Za-z0-9_]*$
-		group name positional true
+		group name positional
 		group name type my-list array
 		group name type run-as string
 		group name type fruit string

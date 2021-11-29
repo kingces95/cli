@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core variable declare
 
 help() {
     cat << EOF
@@ -66,7 +67,11 @@ EOF
 }
 
 cli::args::tokenize::main() {   
-    cli::declare 'cli_tokens' TOKENS
+    local -A SCOPE=()
+    ARG_SCOPE='SCOPE'
+
+    ARG_TYPE='cli_tokens' \
+        ::cli::core::variable::declare::inline TOKENS
 
     ARG_TOKENS=TOKENS \
         ::cli::args::tokenize::inline "$@"
@@ -82,8 +87,6 @@ cli::args::tokenize::main() {
     local -n IDENTIFIER_REF="${ARG_TOKENS}_IDENTIFIER"
 
     local NAME_REGEX='[a-z][a-z0-9-]*'
-
-    local CLI_REGEX_NAME="^[a-z.][a-z0-9-]*$"
 
     local DASH_REGEX="^-[^-].*$" # enable better error messages
     local DASH_FLAGS_REGEX="^-([a-z]+)$"
@@ -163,69 +166,73 @@ cli::args::tokenize::main() {
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} \
-        | assert::pipe_eq \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} --) - <<< 'EOF '
 
-    # positional argument delimiter (e.g. --)
-    ${CLI_COMMAND[@]} -- \
-        | assert::pipe_eq \
-            'EOF '
-   
-    # basic
-    ${CLI_COMMAND[@]} -- c --k v -- a0 \
-        | assert::pipe_eq \
-            'PATH c' \
-            'DASH_DASH k' \
-            'VALUE v' \
-            'END_OPTIONS ' \
-            'VALUE a0' \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} -- c --k v -- a0) - <<-EOFF
+		PATH c
+		DASH_DASH k
+		VALUE v
+		END_OPTIONS 
+		VALUE a0
+		EOF 
+		EOFF
+
+    diff <(${CLI_COMMAND[@]} -- --k 'v v' -- 'a a') - <<-EOFF
+		DASH_DASH k
+		VALUE v v
+		END_OPTIONS 
+		VALUE a a
+		EOF 
+		EOFF
+
+    exit
+
     # escape
-    ${CLI_COMMAND[@]} -- --k 'v v' -- 'a a' \
-        | assert::pipe_eq \
-            'DASH_DASH k' \
-            'VALUE v v' \
-            'END_OPTIONS ' \
-            'VALUE a a' \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} -- --k 'v v' -- 'a a') - <<-EOFF
+		DASH_DASH k
+		VALUE v v
+		END_OPTIONS 
+		VALUE a a
+		EOF 
+		EOFF
 
     # named argument default aliasing (e.g. '-k' -> '--k' )
-    ${CLI_COMMAND[@]} -- -k v \
-        | assert::pipe_eq \
-            'DASH k' \
-            'VALUE v' \
-            'EOF ' 
+    diff <(${CLI_COMMAND[@]} -- -k v) - <<-EOFF
+		DASH k
+		VALUE v
+		EOF 
+		EOFF
 
     # named argument packed (e.g. '-mn' -> '--m --n' )
-    ${CLI_COMMAND[@]} -- -mn \
-        | assert::pipe_eq \
-            'DASH mn' \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} -- -mn) - <<-EOFF
+		DASH mn
+		EOF 
+		EOFF
 
     # named argument implicit value (e.g. '' )
-    ${CLI_COMMAND[@]} -- --m -n \
-        | assert::pipe_eq \
-            'DASH_DASH m' \
-            'DASH n' \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} -- --m -n) - <<-EOFF
+		DASH_DASH m
+		DASH n
+		EOF 
+		EOFF
 
     # path
-    ${CLI_COMMAND[@]} -- g0 g1 cmd \
-        | assert::pipe_eq \
-            'PATH g0' \
-            'PATH g1' \
-            'PATH cmd' \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} -- g0 g1 cmd) - <<-EOFF
+		PATH g0
+		PATH g1
+		PATH cmd
+		EOF 
+		EOFF
 
     # positional
-    ${CLI_COMMAND[@]} -- -- a0 a1 \
-        | assert::pipe_eq \
-            'END_OPTIONS ' \
-            'VALUE a0' \
-            'VALUE a1' \
-            'EOF '
+    diff <(${CLI_COMMAND[@]} -- -- a0 a1) - <<-EOFF
+		END_OPTIONS 
+		VALUE a0
+		VALUE a1
+		EOF 
+		EOFF
 
+exit
     assert::fails "${CLI_COMMAND[@]} -- -!" \
         "Unexpected option \"-!\" does not match regex ^-([a-z]+)$" \
         "passed to command \"cli args tokenize\"."

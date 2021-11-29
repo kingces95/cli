@@ -1665,12 +1665,12 @@ cli::dump() {
     ::cli::bash::variable::emit::inline "$@"
 }
 
-cli::loader::dsl::tokenize() { help | cli dsl tokenize; }
+cli::loader::dsl::tokenize() { cli::main -h | cli dsl tokenize; }
 cli::loader::dsl::parse() { cli::loader::dsl::tokenize | cli dsl parse; }
 cli::loader::dsl::meta() { cli::loader::dsl::parse | cli dsl meta; }
-cli::loader::dsl::load() { cli::loader::dsl::meta | cli dsl load; }
-cli::loader::dsl::bgen() { cli::loader::dsl::load | cli dsl bgen; }
-cli::loader::dsl::wire() { cli::loader::dsl::load | cli core wire load -- CLI_META cli_meta | sort -u; }
+cli::loader::dsl::load() { cli::loader::dsl::meta | cli dsl load --; }
+cli::loader::dsl::bgen() { cli::loader::dsl::load -- | cli dsl bgen; }
+cli::loader::dsl::wire() { cli::loader::dsl::load -- | cli core wire load -- CLI_META cli_meta | sort -u; }
 cli::loader::dsl::wire_bash() { cli::loader::dsl::wire | cli core wire read | sort -u; }
 
 loader_source() {
