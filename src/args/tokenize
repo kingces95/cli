@@ -1,5 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core variable declare
+cli::import cli core variable unset
 
 help() {
     cat << EOF
@@ -70,11 +71,12 @@ cli::args::tokenize::main() {
     local -A SCOPE=()
     ARG_SCOPE='SCOPE'
 
-    ARG_TYPE='cli_tokens' \
-        ::cli::core::variable::declare::inline TOKENS
+    local TOKENS='REPLY_CLI_ARGS_TOKENS'
 
-    ARG_TOKENS=TOKENS \
-        ::cli::args::tokenize::inline "$@"
+    ::cli::args::tokenize::inline "$@"
+    ::cli::args::tokenize::inline "$@"
+    local -n TOKENS_ID=${TOKENS}_ID
+    local -n TOKENS_IDENTIFIER=${TOKENS}_IDENTIFIER
 
     for i in "${!TOKENS_ID[@]}"; do
         echo ${CLI_ARG_TOKEN[TOKENS_ID[$i]]} "${TOKENS_IDENTIFIER[$i]-}"
@@ -82,9 +84,15 @@ cli::args::tokenize::main() {
 }
 
 ::cli::args::tokenize::inline() {
-    : ${ARG_TOKENS?}
-    local -n TOKEN_REF="${ARG_TOKENS}_ID"
-    local -n IDENTIFIER_REF="${ARG_TOKENS}_IDENTIFIER"
+    : ${ARG_SCOPE?'Missing scope.'}
+
+    local TOKENS='REPLY_CLI_ARGS_TOKENS'
+    ::cli::core::variable::unset::inline ${TOKENS}
+    ARG_TYPE='cli_tokens' \
+        ::cli::core::variable::declare::inline ${TOKENS}
+
+    local -n TOKEN_REF="${TOKENS}_ID"
+    local -n IDENTIFIER_REF="${TOKENS}_IDENTIFIER"
 
     local NAME_REGEX='[a-z][a-z0-9-]*'
 
@@ -103,49 +111,9 @@ cli::args::tokenize::main() {
         TOKEN_REF+=( $1 )
         IDENTIFIER_REF+=( "${2-}" )
     }
-
-    while (( $# > 0 )); do
-        if [[ "$1" =~ ${CLI_REGEX_NAME} ]]; then
-            yield ${CLI_ARG_TOKEN_PATH} "$1"
-        else
-            break
-        fi
-
-        shift
-    done
     
     while (( $# > 0 )); do        
-        if [[ "$1" =~ ${DASH_REGEX} ]]; then
-
-            if [[ ! "$1" =~ ${DASH_FLAGS_REGEX} ]]; then
-                cli::fail "Unexpected option \"$1\"" \
-                    "does not match regex ${DASH_FLAGS_REGEX}" \
-                    "passed to command \"${CLI_COMMAND[@]}\"."
-            fi
-
-            yield ${CLI_ARG_TOKEN_DASH} "${BASH_REMATCH[1]}"
-
-        elif [[ "$1" =~ ${DASH_DASH_REGEX} ]]; then
-                
-            if [[ ! "$1" =~ ${DASH_DASH_OPTION_REGEX} ]]; then
-                cli::fail "Unexpected option \"$1\"" \
-                    "does not match regex ${DASH_DASH_OPTION_REGEX}" \
-                    "passed to command \"${CLI_COMMAND[@]}\"."
-            fi
-
-            yield ${CLI_ARG_TOKEN_DASH_DASH} "${BASH_REMATCH[1]}"
-
-        elif [[ "$1" =~ ${DASH_DASH_DASH_REGEX} ]]; then
-
-            if [[ ! "$1" =~ ${DASH_DASH_DASH_OPTION_REGEX} ]]; then
-                cli::fail "Unexpected option \"$1\"" \
-                    "does not match regex ${DASH_DASH_DASH_OPTION_REGEX}" \
-                    "passed to command \"${CLI_COMMAND[@]}\"."
-            fi
-
-            yield ${CLI_ARG_TOKEN_DASH_DASH_DASH} "${BASH_REMATCH[1]}"
-
-        elif [[ "$1" == ${DASH_DASH} ]]; then
+        if [[ "$1" == ${DASH_DASH} ]]; then
             yield ${CLI_ARG_TOKEN_END_OPTIONS}
             shift
 
@@ -155,6 +123,37 @@ cli::args::tokenize::main() {
             done
 
             break
+        
+        elif [[ "$1" == ---* ]]; then
+
+            if [[ ! "$1" =~ ^---([a-z][a-z0-9-]*)$ ]]; then
+                cli::fail "Unexpected option \"$1\"" \
+                    "does not match regex ${DASH_DASH_DASH_OPTION_REGEX}" \
+                    "passed to command \"${CLI_COMMAND[@]}\"."
+            fi
+
+            yield ${CLI_ARG_TOKEN_DASH_DASH_DASH} "${1:3}"
+
+        elif [[ "$1" == --* ]]; then
+                
+            if [[ ! "$1" =~ ^--([a-z][a-z0-9-]*)$ ]]; then
+                cli::fail "Unexpected option \"$1\"" \
+                    "does not match regex ${DASH_DASH_OPTION_REGEX}" \
+                    "passed to command \"${CLI_COMMAND[@]}\"."
+            fi
+
+            yield ${CLI_ARG_TOKEN_DASH_DASH} "${1:2}"
+
+        elif [[ "$1" == -* ]]; then
+
+            if [[ ! "$1" =~ ^-([a-z][a-z0-9-]*)$ ]]; then
+                cli::fail "Unexpected option \"$1\"" \
+                    "does not match regex ${DASH_FLAGS_REGEX}" \
+                    "passed to command \"${CLI_COMMAND[@]}\"."
+            fi
+
+            yield ${CLI_ARG_TOKEN_DASH} "${1:1}"
+
         else
             yield ${CLI_ARG_TOKEN_VALUE} "$1"
         fi
@@ -163,13 +162,15 @@ cli::args::tokenize::main() {
     done
 
     yield ${CLI_ARG_TOKEN_EOF}
+
+    REPLY=${TOKENS}
 }
 
 self_test() {
+
     diff <(${CLI_COMMAND[@]} --) - <<< 'EOF '
 
-    diff <(${CLI_COMMAND[@]} -- c --k v -- a0) - <<-EOFF
-		PATH c
+    diff <(${CLI_COMMAND[@]} -- --k v -- a0) - <<-EOFF
 		DASH_DASH k
 		VALUE v
 		END_OPTIONS 
@@ -213,14 +214,6 @@ self_test() {
     diff <(${CLI_COMMAND[@]} -- --m -n) - <<-EOFF
 		DASH_DASH m
 		DASH n
-		EOF 
-		EOFF
-
-    # path
-    diff <(${CLI_COMMAND[@]} -- g0 g1 cmd) - <<-EOFF
-		PATH g0
-		PATH g1
-		PATH cmd
 		EOF 
 		EOFF
 

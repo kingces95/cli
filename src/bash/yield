@@ -1,0 +1,26 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Echo each argument to stdout.
+
+Description
+    Argument \$1 - \$n are the arguments to copy to stdout.
+EOF
+}
+
+::cli::bash::yield::inline() {
+    while (( $# > 0 )); do
+        echo "$1"
+        shift
+    done
+}
+
+self_test() {
+    diff <(${CLI_COMMAND[@]} --) - < /dev/null || cli::assert
+    diff <(${CLI_COMMAND[@]} -- a b c) - <<< $'a\nb\nc' || cli::assert
+}

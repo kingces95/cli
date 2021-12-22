@@ -1,0 +1,34 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash emit block paren 
+cli::import cli bash emit expression key 
+cli::import cli bash emit literal string 
+cli::import cli bash map keys
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+EOF
+}
+
+::cli::bash::emit::literal::map::inline() {
+    local MAP_NAME=$1
+    local -n REF=${MAP_NAME?'Missing map variable name.'}
+
+    ::cli::bash::map::keys::inline ${MAP_NAME} \
+        | while read; do
+            local KEY="${REPLY}"
+            local VALUE="${REF[$KEY]}"
+
+            ::cli::bash::emit::expression::key::inline "${KEY}"
+            echo -n '='
+            ::cli::bash::emit::literal::string::inline VALUE
+            
+            echo
+        done | ::cli::bash::emit::block::paren::inline
+}
+
+self_test() {
+    local -A MAP=([a]=0 )
+    diff <( ${CLI_COMMAND[@]} -- MAP; echo ) - <<< $'(\n    [a]="0"\n)'
+}

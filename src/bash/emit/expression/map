@@ -1,0 +1,20 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash emit expression key
+cli::import cli bash emit literal string
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+EOF
+}
+
+::cli::bash::emit::expression::map::inline() {
+    ::cli::bash::emit::expression::key::inline "$1"
+    echo -n '='
+    ::cli::bash::emit::literal::string::inline "$2"
+}
+
+self_test() {
+    diff <( ${CLI_COMMAND[@]} -- key value; echo ) - <<< $'[key]="value"'
+}

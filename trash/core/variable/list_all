@@ -1,0 +1,96 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core type get
+cli::import cli core variable get-info
+cli::import cli core variable resolve
+
+help() {
+    cat << EOF | cli::core::type::help
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Get the variable names of the fields of a variable with a user defined type.
+
+Description
+    Arguments \$1 is the name of the variable.
+
+    Return the variable names of the fields in MAPFILE. 
+EOF
+}
+
+::cli::core::variable::list::inline() {
+    : "${ARG_SCOPE?'Missing scope.'}"
+    
+    MAPFILE=()
+    local RESULT=()
+
+    local NAME="$1"
+    ::cli::core::variable::get_info::inline "${NAME}" \
+        || cli::assert "Variable '${NAME}' not in scope."
+
+    # builtin
+    if ${REPLY_CLI_CORE_VARIABLE_IS_BUILTIN}; then
+        RESULT+=( "${NAME}" )
+    else
+        # modified
+        if ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
+            local -n TYPE_OR_MAP_OF=${NAME}
+    
+        # user defined type
+        else
+            ::cli::core::type::get::inline ${REPLY}
+            local -n TYPE_OR_MAP_OF=${REPLY}
+        fi
+
+        local FIELD_OR_ORDINAL
+        for FIELD_OR_ORDINAL in "${!TYPE_OR_MAP_OF[@]}"; do
+            ::cli::core::variable::resolve::inline "${NAME}" "${FIELD_OR_ORDINAL}"
+            RESULT+=( "${REPLY}" )
+        done
+    fi
+
+    MAPFILE=( "${RESULT[@]}" )
+}
+
+self_test() {
+    local ARG_SCOPE='MY_SCOPE'
+
+    local -Ar CLI_TYPE_TEST=( 
+        [STRING_FIELD]='string'
+        [BOOLEAN_FIELD]='boolean'
+        [INTEGER_FIELD]='integer'
+        [ARRAY_FIELD]='array'
+        [MAP_FIELD]='map'
+    )
+
+    local -A MY_SCOPE=(
+        [MY_TEST]='test'
+        [MY_TEST_STRING]='string'
+        [MY_TEST_BOOLEAN]='boolean'
+        [MY_TEST_INTEGER]='integer'
+        [MY_TEST_ARRAY]='array'
+        [MY_TEST_MAP]='map'
+    )
+    local MY_TEST_STRING_FIELD='Hi world!' 
+    local MY_TEST_BOOLEAN_FIELD=true 
+    local -i MY_TEST_INTEGER_FIELD=21 
+    local -a MY_TEST_ARRAY_FIELD=( x y z )
+    local -A MY_TEST_MAP_FIELD=( [z]=26 )
+
+    diff <(${CLI_COMMAND[@]} ---mapfile MY_TEST) <(
+        echo MY_TEST_INTEGER_FIELD
+        echo MY_TEST_STRING_FIELD
+        echo MY_TEST_MAP_FIELD
+        echo MY_TEST_BOOLEAN_FIELD
+        echo MY_TEST_ARRAY_FIELD        
+    )
+
+    local -A MY_SCOPE=(
+        [MY_MODIFIED]='map_of string'
+    )
+    local -A MY_MODIFIED=( [hi]=0 )
+    local MY_MODIFIED_0='world!'
+    diff <(${CLI_COMMAND[@]} ---mapfile MY_MODIFIED) <(
+        echo MY_MODIFIED_0
+    )
+}

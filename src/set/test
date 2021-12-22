@@ -18,7 +18,9 @@ EOF
     local -n SET_REF=${1:?'Missing set'}
     shift 
 
-    local KEY=${*:?'Missing key'}
+    local KEY="$*"
+    [[ "${KEY}" ]] || cli::assert 'Missing key'
+    
     [[ ${SET_REF[${KEY}]+hit} == 'hit' ]]
 }
 

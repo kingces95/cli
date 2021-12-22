@@ -2,8 +2,12 @@
 cli::import cli bash variable get-info
 cli::import cli core variable get-info
 cli::import cli core variable name resolve
+cli::import cli core variable initialize
+cli::import cli core variable unset
 cli::import cli core type get-info
 cli::import cli core type get
+cli::import cli core type to-bash
+cli::import cli set test
 
 help() {
     cat << EOF
@@ -31,11 +35,10 @@ cli::core::variable::declare::main() {
 }
 
 ::cli::core::variable::declare::inline() {
-    local SCOPE_NAME="${ARG_SCOPE}"
+    local SCOPE_NAME="${ARG_SCOPE-}"
     [[ "${SCOPE_NAME}" ]] || cli::assert 'Missing scope.'
-    local -n SCOPE_REF="${SCOPE_NAME}"
 
-    local TYPE="${ARG_TYPE}"
+    local TYPE="${ARG_TYPE-}"
     [[ "${TYPE}" ]] || cli::assert 'Missing type.'
 
     local NAME="${1-}"
@@ -48,42 +51,30 @@ cli::core::variable::declare::main() {
             cli::assert "Variable '${NAME}' of type '${EXISTING_TYPE}'" \
                 "cannot be redclared type '${TYPE}'."
         return
-
-    # assert bash variable does not already exist
-    elif ::cli::bash::variable::get_info::inline "${NAME}"; then
-        cli::assert "Failed to declare '${NAME}'." \
-            "Variable '${NAME}' already declared in bash as:" \
-            $( declare -p "${NAME}" )
     fi
+    
+    # assert bash variable does not already exist
+    ! ::cli::bash::variable::get_info::inline "${NAME}" \
+        || cli::assert "Failed to declare '${NAME}'." \
+            "Variable '${NAME}' already declared in bash as:" \
+            "$( declare -p "${NAME}" )"
 
     # assoicate variable with its type
+    local -n SCOPE_REF="${SCOPE_NAME}"
     SCOPE_REF["${NAME}"]="${TYPE}"
 
-    ::cli::core::type::get_info::inline ${TYPE}
+    ::cli::core::type::get_info::inline ${TYPE} # split
 
     # base case
     if ! ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
-    
-        if ${REPLY_CLI_CORE_TYPE_IS_STRING}; then
-            declare -g "${NAME}="
-        elif ${REPLY_CLI_CORE_TYPE_IS_INTEGER}; then
-            declare -gi "${NAME}=0"
-        elif ${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}; then
-            declare -g "${NAME}=false"
-        elif ${REPLY_CLI_CORE_TYPE_IS_ARRAY}; then
-            declare -ga "${NAME}=()"
-        elif ${REPLY_CLI_CORE_TYPE_IS_MAP}; then
-            declare -gA "${NAME}=()"
-        elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
-            declare -gA "${NAME}=()"
-        else
-            cli::assert "Unknown type '${TYPE}}'."
-        fi
+        ::cli::core::type::to_bash::inline ${TYPE}
+        declare -g${REPLY} ${NAME}
+        ::cli::core::variable::initialize::inline "${NAME}"
 
     # user defined
     else
         local USER_DEFINED_TYPE=${REPLY}
-       
+
         # bgen optimization
         # local bgen=${CLI_BGEN_DECLARE[CLI_TYPE_${TYPE^^}]-}
         # if [[ -n ${bgen} ]]; then
@@ -186,7 +177,6 @@ self_test() {
         [minor]='integer'
     )
     test version MY_VERSION
-    return
 
     # kitchen sink
     declare -A CLI_TYPE_UDT=(

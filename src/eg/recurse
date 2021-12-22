@@ -1,0 +1,29 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]} 
+
+Summary    
+    Sample command to test Domain Specific Language.
+
+Arguments
+    --depth                     : Initial depth. Default: 0.
+    --max                       : Max depth. Default: 2.
+EOF
+}
+
+cli::eg::recurse::main() {
+    echo ${ARG_DEPTH}
+    if (( ${ARG_DEPTH} == ${ARG_MAX} )); then
+        return
+    fi
+
+    ${CLI_COMMAND[@]} --depth $(( ${ARG_DEPTH} + 1 )) --max ${ARG_MAX}
+    echo ${ARG_DEPTH}
+}
+
+self_test() {
+    return
+}   

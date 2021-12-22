@@ -3,6 +3,7 @@ cli::import cli core variable declare
 cli::import cli core variable read
 cli::import cli core variable write
 cli::import cli core variable put
+cli::import cli core variable unset
 
 help() {
     cat << EOF
@@ -44,11 +45,7 @@ cli::args::parse::main() {
 
     ARG_TYPE='map' \
         ::cli::core::variable::declare::inline ALIAS
-
     ::cli::core::variable::read::inline ALIAS < "${1-/dev/null}"
-
-    ARG_TYPE='cli_args' \
-        ::cli::core::variable::declare::inline ARGS
 
     ARG_TYPE='cli_tokens' \
         ::cli::core::variable::declare::inline TOKENS
@@ -60,20 +57,28 @@ cli::args::parse::main() {
         TOKENS_IDENTIFIER+=( "${identifier}" )
     done
 
-    ARG_ALIAS=ALIAS \
-    ARG_ARGS=ARGS \
-    ARG_TOKENS=TOKENS \
-        ::cli::args::parse::inline
+    ARG_META_ALIASES=ALIAS \
+        ::cli::args::parse::inline 'TOKENS'
+    ARG_META_ALIASES=ALIAS \
+        ::cli::args::parse::inline 'TOKENS'
+    local ARGS=${REPLY}
 
-    ::cli::core::variable::write::inline ARGS
+    ::cli::core::variable::write::inline ${ARGS}
 }
 
 ::cli::args::parse::inline() {
-    : ${ARG_ARGS?}
-    local -n ALIAS_REF=${ARG_ALIAS}
-    local -n TOKEN_REF="${ARG_TOKENS}_ID"
-    local -n IDENTIFIER_REF="${ARG_TOKENS}_IDENTIFIER"
+    : ${ARG_SCOPE?'Missing scope.'}
+    local TOKENS=${1?'Missing tokens.'}
     
+    local -n ALIAS_REF=${ARG_META_ALIASES}
+    local -n TOKEN_REF="${TOKENS}_ID"
+    local -n IDENTIFIER_REF="${TOKENS}_IDENTIFIER"
+    
+    local ARGS='REPLY_CLI_PARSE_ARGS'
+    ::cli::core::variable::unset::inline ${ARGS}
+    ARG_TYPE='cli_args' \
+        ::cli::core::variable::declare::inline ${ARGS}
+
     local -i named_count=0
     local -i current=0
     local token_name=
@@ -96,9 +101,7 @@ cli::args::parse::main() {
 
         while (( token != CLI_ARG_TOKEN_EOF )); do
 
-            if (( token == CLI_ARG_TOKEN_PATH )); then
-                SEGMENT
-            elif (( token == CLI_ARG_TOKEN_DASH )); then
+            if (( token == CLI_ARG_TOKEN_DASH )); then
                 FLAG
             elif (( token == CLI_ARG_TOKEN_DASH_DASH )); then
                 OPTION
@@ -118,7 +121,7 @@ cli::args::parse::main() {
 
         while (( token != CLI_ARG_TOKEN_EOF )); do
             # assert_token_is TOKEN_VALUE
-            ::cli::core::variable::put::inline "${ARG_ARGS}" positional "${identifier}"
+            ::cli::core::variable::put::inline ${ARGS} positional "${identifier}"
             read_token
         done
     }
@@ -151,29 +154,26 @@ cli::args::parse::main() {
         read_token
 
         if (( named_count == 0 )); then
-            ::cli::core::variable::put::inline "${ARG_ARGS}" first_named "${option}"
+            ::cli::core::variable::put::inline ${ARGS} first_named "${option}"
         fi
         named_count=$(( named_count + 1 ))
         
         # flags
         if (( token != CLI_ARG_TOKEN_VALUE )); then
-            ::cli::core::variable::put::inline "${ARG_ARGS}" named "${option}" ''
+            ::cli::core::variable::put::inline ${ARGS} named "${option}" ''
             return
         fi
 
         # list of values (typically only one but could be array or properties)
         while (( token == CLI_ARG_TOKEN_VALUE )); do
-            ::cli::core::variable::put::inline "${ARG_ARGS}" named "${option}" "${identifier}"
+            ::cli::core::variable::put::inline ${ARGS} named "${option}" "${identifier}"
             read_token 
         done
     }
 
-    SEGMENT() {
-        ::cli::core::variable::put::inline "${ARG_ARGS}" path "${identifier}"
-        read_token
-    }
-
     START
+
+    REPLY=${ARGS}
 }
 
 self_test() {
@@ -191,13 +191,10 @@ self_test() {
 		EOF
 
     diff <(
-        cli args tokenize -- x y z -h --help opt --help key=value -- a0 a1 \
+        cli args tokenize -- -h --help opt --help key=value -- a0 a1 \
         | ${CLI_COMMAND[@]} -- <( echo $'h help\nt test\n' )
     ) - <<-EOF
 		first_named help
-		path x
-		path y
-		path z
 		positional a0
 		positional a1
 		named help

@@ -1,0 +1,20 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash string literal 
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+EOF
+}
+
+::cli::bash::emit::literal::string::inline() {
+    local -n REF=${1?'Missing string variable name.'}
+    ::cli::bash::string::literal::inline "${REF}"
+    echo -n "${REPLY}"
+}
+
+self_test() {
+    local VALUE='a b c'
+    diff <( ${CLI_COMMAND[@]} -- VALUE; echo ) - <<< $'"a b c"'
+}

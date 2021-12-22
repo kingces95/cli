@@ -15,6 +15,7 @@ main() {
 }
 
 self_test() {
+    cli attribute .group --self-test
     cli path .group --self-test
     cli bash .group --self-test
     cli cache .group --self-test
@@ -24,8 +25,12 @@ self_test() {
     cli subshell .group --self-test
     cli stderr .group --self-test
     cli name .group --self-test
+    echo cli emit .group --self-test
+    cli process .group --self-test
+    cli util .group --self-test
     
     cli core .group --self-test 
     cli dsl .group --self-test 
     cli args .group --self-test 
+    cli eg .group --self-test 
 }

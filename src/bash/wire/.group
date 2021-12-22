@@ -15,8 +15,7 @@ main() {
 }
 
 self_test() {
-    :
-    # cli bash wire emit --self-test
-    # cli bash wire read --self-test
-    # cli bash wire verify --self-test
+    echo cli bash wire emit --self-test
+    echo cli bash wire read --self-test
+    echo cli bash wire verify --self-test
 }

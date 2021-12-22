@@ -15,6 +15,7 @@ main() {
 
 self_test() {
     cli bash variable declaration .group --self-test
+    
     cli bash variable declare-enum --self-test
     cli bash variable emit --self-test
     cli bash variable get-info --self-test

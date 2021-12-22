@@ -1,0 +1,20 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    cli bash emit statement assignment --self-test
+    cli bash emit statement declare --self-test
+    cli bash emit statement initialize --self-test
+}

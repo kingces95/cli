@@ -16,8 +16,11 @@ main() {
 
 self_test() {
     cli args tokenize --self-test
-    cli args initialize --self-test
-    cli args check --self-test
     cli args parse --self-test
+    cli args resolve --self-test
+    cli args check --self-test
+    cli args verify --self-test
+    echo cli args declare --self-test
+    echo cli args initialize --self-test
     echo cli args emit --self-test
 }

@@ -14,7 +14,9 @@ Description
 
     Fail if the variable is undefined.
     
-    The type is returned in REPLY and the following predicates are set:
+    The type is returned in REPLY.
+    
+    The following predicates are set:
 
         REPLY_CLI_CORE_VARIABLE_IS_INTEGER
         REPLY_CLI_CORE_VARIABLE_IS_BOOLEAN
@@ -44,7 +46,7 @@ EOF
 
     local TYPE="${SCOPE_REF["${NAME}"]}"
     [[ ${TYPE} ]] || cli::assert
-    
+
     ::cli::core::type::get_info::inline ${TYPE}
     REPLY_CLI_CORE_VARIABLE_IS_INTEGER=${REPLY_CLI_CORE_TYPE_IS_INTEGER}
     REPLY_CLI_CORE_VARIABLE_IS_BOOLEAN=${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}

@@ -14,9 +14,8 @@ main() {
 }
 
 self_test() {
-    :
-    # cli bash stack call --self-test
-    # cli bash stack hidden-attribute --self-test
-    # cli bash stack process --self-test
-    # cli bash stack trace --self-test
+    echo cli bash stack call --self-test
+    echo cli bash stack hidden-attribute --self-test
+    echo cli bash stack process --self-test
+    echo cli bash stack trace --self-test
 }

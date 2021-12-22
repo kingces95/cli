@@ -58,6 +58,7 @@ cli::args::emit::main() {
 }
 
 ::cli::args::emit::inline() {
+    # use_ARG_* instead of ARG_* to avoid conflicts (e.g. _ARG_TYPE)
     : ${_ARG_ARGS?} # e.g. CLI_ARGS
     : ${_ARG_META?} # e.g. CLI_META_GROUP_0_TYPE (map: field -> type)
     : ${_ARG_TYPE?} # e.g. CLI_TYPE_GROUP_0
@@ -73,10 +74,6 @@ cli::args::emit::main() {
     # cli::dump 'CLI_TYPE_*'
     # declare -p CLI_TYPE_CLI_GROUP_0_TYPE > /dev/stderr
 
-    # declare variable with defaults (e.g. declare -g _ARG_SELF_TEST=false)
-    # note other variables are _ARG_* instead of ARG_* to avoid conflicts (e.g. _ARG_TYPE)
-    cli::declare ${_ARG_TYPE} ${_ARG_PREFIX}
-
     # initialize variable with values (e.g. _ARG_SELF_TEST=true)
 
     local name
@@ -84,7 +81,7 @@ cli::args::emit::main() {
         local type=${META_REF[${name}]}
         local bash_name=${BASH_NAMES_REF[${name}]}
         local variable=${_ARG_PREFIX}_${bash_name^^}
-        local -n variable_ref=$variable
+        local -n variable_ref="${variable}"
 
         if [[ -n "${ARGS_NAMED_REF[$name]+set}" ]]; then
             # copy value (e.g. arg_help=true)

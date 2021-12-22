@@ -26,16 +26,16 @@ EOF
         ::cli::bash::key::literal::inline "$1"
         echo "${REPLY}"
         shift
-    done | sort | {
-        while read -r REPLY; do
-            LITERAL+=( "[" )
-            LITERAL+=( "${REPLY}" )
-            LITERAL+=( "]=" )
-            ::cli::bash::string::literal::inline "${MAP_REF["$1"]}"
-            LITERAL+=( "${REPLY}" )
-            LITERAL+=( ' ' )
-        done
-    }
+    done \
+    | sort \
+    | while read -r REPLY; do
+        LITERAL+=( "[" )
+        LITERAL+=( "${REPLY}" )
+        LITERAL+=( "]=" )
+        ::cli::bash::string::literal::inline "${MAP_REF["$1"]}"
+        LITERAL+=( "${REPLY}" )
+        LITERAL+=( ' ' )
+    done
 
     LITERAL+=( ')' )
 

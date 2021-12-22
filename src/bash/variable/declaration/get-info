@@ -24,6 +24,7 @@ Description
         REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_MAP
         REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_INTEGER_MAP
 
+        REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_NAMED
         REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_READONLY
         REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_EXPORTED
         REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_UPPER
@@ -32,12 +33,18 @@ EOF
 }
 
 ::cli::bash::variable::declaration::get_info::inline() {
+    REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_NAMED=false
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_READONLY=false
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_EXPORTED=false
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_UPPER=false
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_LOWER=false
 
     local FLAGS="${1-}"
+
+    if [[ "${FLAGS}" == *n* ]]; then
+        FLAGS="${FLAGS/n/}"
+        REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_NAMED=true
+    fi
 
     if [[ "${FLAGS}" == *r* ]]; then
         FLAGS="${FLAGS/r/}"
@@ -77,7 +84,7 @@ self_test() {
     test() {
         local EXPECTED_TYPE="$1"
         shift
-        
+
         [[ "${REPLY}" == "${EXPECTED_TYPE}" ]] \
             || cli::assert "${REPLY} != ${EXPECTED_TYPE}"
 
@@ -87,6 +94,7 @@ self_test() {
 
         local -i EXPECTED_TRUE=$#
         local -i ACTUAL_TRUE=0
+        if ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_NAMED}; then ACTUAL_TRUE+=1; fi
         if ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_READONLY}; then ACTUAL_TRUE+=1; fi
         if ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_EXPORTED}; then ACTUAL_TRUE+=1; fi
         if ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_UPPER}; then ACTUAL_TRUE+=1; fi

@@ -1,10 +1,10 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli args check
+cli::import cli args resolve
 cli::import cli core variable declare
 cli::import cli core variable read
 cli::import cli core variable write
 cli::import cli core variable put
-cli::import cli core variable resolve
 cli::import cli set intersect
 
 help() {
@@ -23,7 +23,7 @@ Description
 
     'STRUCT_META' either has a single key '*' in which case there is only a single
     valid set of 'meta' to be used to parse a command line, or it has many keys
-    each of which is a discriminating option name which determines the 'meta' to be
+    each of which is a discriminating OPTION name which determines the 'meta' to be
     used to parse all remaining arguments. For example, many CLI accept two ways of
     identifying a target resource: 'id' and 'name' + 'namespace'. In that case, 'id'
     and 'name' could be used as discriminating options, and only when 'name' is
@@ -43,81 +43,65 @@ Examples
 EOF
 }
 
-cli::args::initialize::main() {
-    : ${ARG_SCOPE?'Missing scope.'}
-    : ${ARG_META?'Missing metadata.'}
+cli::args::verify::main() {
+    cli::import cli args resolve
 
     ARG_TYPE='cli_args' \
         ::cli::core::variable::declare::inline MY_ARGS
     ::cli::core::variable::read::inline MY_ARGS
 
-    # ARG_SCOPE=${ARG_SCOPE} \
-    # ARG_META=${ARG_META} \
-    # ARG_ARGS='MY_ARGS' \
-    #     ::cli::args::initialize::inline
+    ARG_META_GROUPS=${ARG_META}_GROUP \
+        ::cli::args::resolve::inline MY_ARGS
+    local META_GROUP=${REPLY}
+
+    ARG_META_GROUP=${META_GROUP} \
+        ::cli::args::verify::inline MY_ARGS
 
     ::cli::core::variable::write::inline MY_ARGS
 }
 
-::cli::args::initialize::inline() {
+::cli::args::verify::inline() {
     : ${ARG_SCOPE?'Missing scope.'}
-    : ${ARG_META?'Missing metadata.'}
-    : ${ARG_ARGS?'Missing args.'}
 
-    local -n GROUP=${ARG_META}_GROUP
+    : ${ARG_META_GROUP?'Missing metadata.'}
+    local -n TYPE_REF=${ARG_META_GROUP}_TYPE
+    local -n DEFAULT_REF=${ARG_META_GROUP}_DEFAULT
+    local -n REQUIRE_REF=${ARG_META_GROUP}_REQUIRE
+    local -n REGEX_REF=${ARG_META_GROUP}_REGEX
+    local -n ALLOW_REF=${ARG_META_GROUP}_ALLOW
+    local -n POSITIONAL_REF=${ARG_META_GROUP}_POSITIONAL
 
-    local GROUP_ID='*'
-    if (( ${#GROUP[@]} > 1 )); then
-        ::cli::set::intersect::inline ${ARG_META}_GROUP ${ARG_ARGS}_NAMED
-        (( ${#REPLY_MAP[@]} == 1 )) || cli::assert
-        GROUP_ID="${!REPLY_MAP[@]}" 
-    fi
-
-    ::cli::core::variable::resolve::inline ${ARG_META} group ${GROUP_ID}
-    local META_NAME=${REPLY}
-    local -n TYPE_REF=${META_NAME}_TYPE
-    local -n DEFAULT_REF=${META_NAME}_DEFAULT
-    local -n REQUIRE_REF=${META_NAME}_REQUIRE
-    local -n REGEX_REF=${META_NAME}_REGEX
-    local -n ALLOW_REF=${META_NAME}_ALLOW
-    local -n POSITIONAL_REF=${META_NAME}_POSITIONAL
-
-    local -n ARGS_REF=${ARG_ARGS}
-    local -n ARGS_POSITIONAL_REF=${ARG_ARGS}_POSITIONAL
-    local -n ARGS_NAMED_REF=${ARG_ARGS}_NAMED
-
-    local option
+    local ARGS=${1?'Missing args.'}
+    local -n POSITIONAL_ARGS_REF=${ARGS}_POSITIONAL
+    local -n NAMED_ARGS_REF=${ARGS}_NAMED
 
     # trap for unknown named arguments
-    for option in "${!ARGS_NAMED_REF[@]}"; do
-        if [[ ! ${TYPE_REF[${option}]+set} ]]; then
-            cli::fail "Unexpected unknown argument '--${option}'" \
+    local OPTION
+    for OPTION in "${!NAMED_ARGS_REF[@]}"; do
+        if [[ ! ${TYPE_REF[${OPTION}]+set} ]]; then
+            cli::fail "Unexpected unknown argument '--${OPTION}'" \
                 "passed to command '${CLI_COMMAND[@]}'."
         fi
     done
 
     # initialize name arguments
-    for option in ${!TYPE_REF[@]}; do
+    for OPTION in ${!TYPE_REF[@]}; do
 
         # type
-        local type="${TYPE_REF[${option}]}"
+        local TYPE="${TYPE_REF[${OPTION}]}"
 
         # declare variable if not specified on command line
-        if [[ -z "${ARGS_NAMED_REF[${option}]+set}" ]]; then
-            local default=
+        if [[ ! "${NAMED_ARGS_REF[${OPTION}]+set}" ]]; then
+            local DEFAULT=
 
             # fail if required and missing
-            if [[ -n ${REQUIRE_REF[$option]+set} ]]; then
-                cli::fail "Missing required argument '--${option}'" \
+            [[ ! ${REQUIRE_REF[$OPTION]+set} == 'set' ]] \
+                || cli::fail "Missing required argument '--${OPTION}'" \
                     "in call to command '${CLI_COMMAND[@]}'."
 
             # switch has an explict default
-            elif [[ -n "${DEFAULT_REF[${option}]+set}" ]] ; then
-                default=${DEFAULT_REF[${option}]}
-
-            # switch has an implicit default; i.e. booleans
-            elif [[ "${type}" == 'boolean' ]] ; then
-                default=false
+            if [[ -n "${DEFAULT_REF[${OPTION}]+set}" ]] ; then
+                DEFAULT=${DEFAULT_REF[${OPTION}]}
 
             # continue if switch is optional
             else
@@ -125,69 +109,65 @@ cli::args::initialize::main() {
             fi
 
             # assign default if missing
-            ::cli::core::variable::put::inline ${ARG_ARGS} named "${option}" "${default}"
+            ::cli::core::variable::put::inline ${ARGS} named "${OPTION}" "${DEFAULT}"
         fi
 
-        local -n ARGS_NAMED_N_REF="${ARG_ARGS}_NAMED_${ARGS_NAMED_REF[$option]}"
+        local -n ARGS_NAMED_N_REF="${ARGS}_NAMED_${NAMED_ARGS_REF[$OPTION]}"
 
         # declared but empty
         if [[ -z "${ARGS_NAMED_N_REF-}" ]]; then
 
             # fail if required and empty
-            if [[ -n ${REQUIRE_REF[$option]+set} ]]; then
-                cli::fail "Required argument '--${option}'" \
+            if [[ -n ${REQUIRE_REF[$OPTION]+set} ]]; then
+                cli::fail "Required argument '--${OPTION}'" \
                     "passed to command '${CLI_COMMAND[@]}' has empty value."
             fi
         fi
 
         # allow ref
-        local allow=''
-        if [[ -n ${ALLOW_REF[$option]+set} ]]; then 
-            local -n allow_ref=${ARG_META}_ALLOW_${ALLOW_REF[${option}]}
-            allow="${!allow_ref[@]}"
+        local ALLOW=''
+        if [[ -n ${ALLOW_REF[$OPTION]+set} ]]; then 
+            local -n allow_ref=${ARG_META_GROUP}_ALLOW_${ALLOW_REF[${OPTION}]}
+            ALLOW="${!allow_ref[@]}"
         fi
 
         # element type & values
-        local -a values=()
-        local element_type
-        local value
-        case "${type}" in
-            'array') 
-                element_type='string' 
-                values=( "${ARGS_NAMED_N_REF[@]}" )
-                ;;
+        local -a VALUES=()
+        local ELEMENT_TYPE='string'
+        local VALUE
+        case "${TYPE}" in
+            'array') VALUES=( "${ARGS_NAMED_N_REF[@]}" ) ;;
             'map') 
-                element_type='string'
-                for value in "${ARGS_NAMED_N_REF[@]}"; do
-                    if [[ ! "${value}" =~ ${CLI_REGEX_PROPERTY_ARG} ]]; then
-                        cli::fail "Unexpected value '${value}' for argument '--${option}'" \
+                for VALUE in "${ARGS_NAMED_N_REF[@]}"; do
+                    if [[ ! "${VALUE}" =~ ${CLI_REGEX_PROPERTY_ARG} ]]; then
+                        cli::fail "Unexpected value '${VALUE}' for argument '--${OPTION}'" \
                             "passed to command '${CLI_COMMAND[@]}'." \
                             "Expected a value that matches regex '${CLI_REGEX_PROPERTY_ARG}'."
                     fi
-                    values+=( ${BASH_REMATCH[2]} )
+                    VALUES+=( ${BASH_REMATCH[2]} )
                 done
                 ;;
             *) 
-                element_type="${type}"
-                values=( "${ARGS_NAMED_N_REF[@]}" ) 
+                ELEMENT_TYPE="${TYPE}"
+                VALUES=( "${ARGS_NAMED_N_REF[@]}" ) 
                 ;;
         esac
 
         # check values
-        for value in "${values[@]}"; do
+        for VALUE in "${VALUES[@]}"; do
             ::cli::args::check::inline \
-                "${option}" \
-                "${value}" \
-                "${element_type}" \
-                "${REGEX_REF[${option}]-}" \
-                "${allow}"
+                "${OPTION}" \
+                "${VALUE}" \
+                "${ELEMENT_TYPE}" \
+                "${REGEX_REF[${OPTION}]-}" \
+                "${ALLOW}"
         done
     done
 
     # positional
-    if ! ${POSITIONAL_REF} && (( ${#ARGS_POSITIONAL_REF[@]} > 0 )); then
+    if ! ${POSITIONAL_REF} && (( ${#POSITIONAL_ARGS_REF[@]} > 0 )); then
         cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND[@]}'," \
-            "but got ${#ARGS_POSITIONAL_REF[@]}: '${ARGS_POSITIONAL_REF[*]}'."
+            "but got ${#POSITIONAL_ARGS_REF[@]}: '${POSITIONAL_ARGS_REF[*]}'."
     fi
 }
 
@@ -222,15 +202,6 @@ self_test() {
 			named header Foo
 			EOF
 exit
-        #     \
-        # | assert::pipe_records_eq \
-        #     'first_named id' \
-        #     'positional a0' \
-        #     'positional a1' \
-        #     'named fruit banana' \
-        #     'named id 42' \
-        #     'named help' \
-        #     'named header Foo'
 
     meta() {
         echo 'type props map'
@@ -333,10 +304,10 @@ exit
 
     meta() {
         echo 'type color string'
-        echo 'default color black'
+        echo 'DEFAULT color black'
     }
 
-    #  default (e.g. '--color black')
+    #  DEFAULT (e.g. '--color black')
     cli args tokenize \
         | cli args parse \
         | ${CLI_COMMAND[@]} -- <( meta ) \
@@ -344,7 +315,7 @@ exit
             'first_named' \
             'named color black' 
 
-    # override default value (e.g. --color white)
+    # override DEFAULT value (e.g. --color white)
     cli args tokenize -- --color white \
         | cli args parse \
         | ${CLI_COMMAND[@]} -- <( meta ) \
@@ -352,7 +323,7 @@ exit
             'first_named color' \
             'named color white'
 
-    # override default value with alias (e.g. -c white)
+    # override DEFAULT value with alias (e.g. -c white)
     cli args tokenize -- -c white \
         | cli args parse -- <( echo 'c color' ) \
         | ${CLI_COMMAND[@]} -- <( meta ) \
@@ -364,7 +335,7 @@ exit
         echo 'type help boolean'
     }
 
-    # default boolean
+    # DEFAULT boolean
     cli args tokenize \
         | cli args parse \
         | ${CLI_COMMAND[@]} -- <( meta ) \

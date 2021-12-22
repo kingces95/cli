@@ -13,5 +13,6 @@ main() {
 
 self_test() {
     cli set deflower --self-test
+    cli set intersect --self-test
     cli set test --self-test
 }

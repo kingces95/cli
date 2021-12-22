@@ -6,7 +6,7 @@ help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}
-    
+
 Summary
     Get the literal value of a bash variable as returned by declare -p.
 
@@ -69,20 +69,32 @@ EOF
         return
     fi
 
-    # test declared
-    local DECLARE
-    DECLARE=$( declare -p ${NAME} 2>/dev/null ) || return
+    local NEXT_NAME=$NAME
+    while true; do
 
-    # type
-    local _ FLAGS VALUE
-    read _ FLAGS VALUE <<< "${DECLARE}"
+        # test declared
+        local DECLARE
+        DECLARE=$( declare -p ${NEXT_NAME} 2>/dev/null ) || return
 
-    # uninitialized
-    if [[ "${VALUE}" == "${NAME}" ]]; then
-        REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=true
-    fi
+        # type
+        local _ FLAGS VALUE
+        read _ FLAGS VALUE <<< "${DECLARE}"
 
-    ::cli::bash::variable::declaration::get_info::inline "${FLAGS//-/}"
+        ::cli::bash::variable::declaration::get_info::inline "${FLAGS//-/}"
+        
+        # dereference name
+        if ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_NAMED}; then
+            NEXT_NAME=$(eval "echo \${!${NEXT_NAME}}")
+            continue
+        fi
+
+        # uninitialized
+        if [[ "${VALUE}" == "${NEXT_NAME}" ]]; then
+            REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED=true
+        fi
+
+        break;
+    done
 
     # populate cache if variable has a value and is strictly readonly
     if ! ${REPLY_CLI_BASH_VARIABLE_IS_UNINITIALIZED} &&
@@ -160,6 +172,9 @@ self_test() {
     local -A MY_MAP=(); test A MY_MAP MAP
     local -ia MY_IARRAY=(); test ai MY_IARRAY INTEGER_ARRAY ARRAY
     local -iA MY_IMAP=(); test Ai MY_IMAP INTEGER_MAP MAP 
+
+    local -n MY_STRING_REF=MY_STRING; test '' MY_STRING_REF STRING SCALER
+    local -n MY_STRING_REF_REF=MY_STRING_REF; test '' MY_STRING_REF_REF STRING SCALER
 
     local -- MY_USTRING; test '' MY_USTRING STRING SCALER UNINITIALIZED
     local -i MY_UINTEGER; test i MY_UINTEGER INTEGER SCALER UNINITIALIZED

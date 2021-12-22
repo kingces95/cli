@@ -1,0 +1,43 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli core variable find
+cli::import cli core emit variable
+cli::import cli core emit scope
+cli::import cli bash emit function
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+    Emit a function that calls another function after executing a body.
+
+Description
+    \$1 is the function name.
+    \$2 is the function to call after the body.
+
+    The body is copied from stdin.
+EOF
+}
+
+::cli::bash::emit::tail_call::inline() {
+    local NAME=${1?'Missing name.'}
+    local TAIL=${2?'Missing tail.'}
+
+    {
+        cat
+        echo
+        echo ${TAIL} '"$@"'
+
+    } | ::cli::bash::emit::function::inline "${NAME}"
+}
+
+self_test() {
+    diff <(${CLI_COMMAND[@]} -- my::function MY_TEST <<< ':'; echo) - <<-EOF
+		my::function() {
+		    :
+		    
+		    MY_TEST "\$@"
+		}
+		EOF
+}

@@ -3,6 +3,7 @@ cli::import cli core variable parse
 cli::import cli core variable declare
 cli::import cli core variable name resolve
 cli::import cli core variable get-info
+cli::import cli set test
 
 help() {
     cat << EOF
@@ -128,7 +129,7 @@ cli::core::variable::put::main() {
         TYPE="${MAPFILE[*]}"
 
         # add ordinal to map_of map
-        if [[ ! "${REF["${KEY}"]+set}" == 'set' ]]; then
+        if ! ::cli::set::test::inline REF "${KEY}"; then
             REF+=( ["${KEY}"]=${#REF[@]} )
         fi
     fi
@@ -150,6 +151,29 @@ cli::core::variable::put::main() {
 self_test() {
     local -A SCOPE=()
     local ARG_SCOPE='SCOPE'
+
+    dsl() {
+        local RESULT="MY_REPLY_CLI_DSL_META"
+        ARG_TYPE="cli_help_parse" \
+            ::cli::core::variable::declare::inline "${RESULT}"
+    
+        ::cli::core::variable::put::inline "${RESULT}" group "*" type "depth" "string"
+        ::cli::core::variable::put::inline "${RESULT}" group "*" type "max" "string"
+
+        diff <(cli::dump "${RESULT}" "${RESULT}_*") - <<-EOF
+			declare -A MY_REPLY_CLI_DSL_META_GROUP=(["*"]="0" )
+			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_ALIAS=()
+			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_ALLOW=()
+			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_DEFAULT=()
+			declare -- MY_REPLY_CLI_DSL_META_GROUP_0_POSITIONAL="false"
+			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_REGEX=()
+			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_REQUIRE=()
+			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_TYPE=([depth]="string" [max]="string" )
+			EOF
+
+        cli::import cli core variable write
+        ::cli::core::variable::write::inline "${RESULT}"
+    }
 
     escaping() {
             
@@ -518,6 +542,7 @@ self_test() {
         set -e
     }
 
+    dsl
     escaping
     builtin
     builtin_default

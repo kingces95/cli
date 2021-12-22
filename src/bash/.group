@@ -16,6 +16,7 @@ main() {
 
 self_test() {
     cli bash array .group --self-test
+    cli bash emit .group --self-test
     cli bash key .group --self-test
     cli bash map .group --self-test
     cli bash stack .group --self-test
@@ -24,6 +25,7 @@ self_test() {
     cli bash variable .group --self-test
     cli bash wire .group --self-test
 
+    cli bash filter --self-test
     cli bash group --self-test
     cli bash is-function-declared --self-test
     cli bash join --self-test

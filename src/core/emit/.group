@@ -1,0 +1,22 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    cli core emit variable --self-test
+    cli core emit global --self-test
+    cli core emit local --self-test
+    echo cli core emit liteal --self-test
+    cli core emit scope --self-test
+}

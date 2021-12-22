@@ -80,20 +80,28 @@ readonly CLI_REGEX_STRUCT_FIELD_NAME=${CLI_REGEX_VARIABLE_NAME}
 readonly CLI_REGEX_TYPE_NAME="^(map_of[[:space:]])*[a-z][a-z0-9_]*$"
 readonly CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 
+readonly -A CLI_KNOWN_COMMANDS=(
+    ['cli loader']=
+    ['cli dsl tokenize']=
+    ['cli dsl parse']=
+    ['cli dsl meta']=
+)
+
 # types
-readonly -A CLI_TYPE_CLI_META_TABLES=(
-    # TODO: remove?
+readonly -A CLI_TYPE_CLI_HELP_PARSE=(
+    [group]="map_of cli_help_parse_group"
+)
+readonly -A CLI_TYPE_CLI_HELP_PARSE_GROUP=(
     [alias]="map"
-    [type]="map_of map"
-    [require]="map_of map"
-    [default]="map_of map"
-    [regex]="map_of map"
-    [allow]="map_of map_of map"
-    [positional]="map_of boolean" \
+    [type]="map"
+    [require]="map"
+    [default]="map"
+    [regex]="map"
+    [allow]="map_of map"
+    [positional]="boolean"
 )
 readonly -A CLI_TYPE_CLI_META_GROUP=(
     [type]="map"
-    [bash_type]="map"
     [require]="map"
     [default]="map"
     [regex]="map"
@@ -102,7 +110,6 @@ readonly -A CLI_TYPE_CLI_META_GROUP=(
 )
 readonly -A CLI_TYPE_CLI_META=(
     [alias]="map"
-    [bash_name]="map"
     [group]="map_of cli_meta_group"
     #[attributes]="map_of cli_meta_attributes"
 )
@@ -274,7 +281,9 @@ inline() {
         local -n SET_REF=${1:?'Missing set'}
         shift 
 
-        local KEY=${*:?'Missing key'}
+        local KEY="$*"
+        [[ "${KEY}" ]] || cli::assert 'Missing key'
+        
         [[ ${SET_REF[${KEY}]+hit} == 'hit' ]]
     }
 
@@ -298,6 +307,7 @@ inline() {
             MAPFILE+=( "${1//[-.]/_}" )
             shift
         done
+        REPLY=${MAPFILE[0]}
     }
 
     ::cli::name::to_inline::inline() {
@@ -624,6 +634,30 @@ inline() {
     ::cli::bash::array::pop::inline() {
         (( $# > 0 )) || cli::assert 'Stack empty.'
         MAPFILE=( ${@:1:$((${#@}-1))} )
+    }
+
+    ::cli::bash::map::copy::inline() {
+        local SOURCE_MAP=${1-}
+        [[ "${SOURCE_MAP}" ]] || cli::assert 'Missing source map.'
+        shift
+
+        local TARGET_MAP=${1-}
+        [[ "${TARGET_MAP}" ]] || cli::assert 'Missing target map.'
+        shift
+
+        local -n SOURCE_REF=${SOURCE_MAP}
+        local -n TARGET_REF=${TARGET_MAP}
+
+        while (( $# > 0 )); do
+            local KEY=$1
+            shift
+
+            if ! ::cli::set::test::inline ${SOURCE_MAP} ${KEY}; then
+                continue
+            fi
+
+            TARGET_REF[${KEY}]="${SOURCE_REF[${KEY}]}"
+        done
     }
 
     ::cli::subshell::on_exit::inline() {
@@ -1028,89 +1062,6 @@ cli::loader::cache::bgen() {
     fi
 }
 
-cli::loader::initialize() {
-
-    local -A KNOWN_COMMANDS=(
-        ['cli loader']=
-        ['cli dsl tokenize']=
-        ['cli dsl parse']=
-        ['cli dsl meta']=
-    )
-
-    local COMMAND="${CLI_COMMAND[*]}"
-
-    if [[ "${KNOWN_COMMANDS[${COMMAND}]+set}" == 'set' ]]; then
-        ARG_HELP=false
-        ARG_SELF_TEST=false
-        CLI_ARGS_POSITIONAL=( "$@" )
-        return
-    fi
-
-    # somehow the metadata should have been declared
-    [[ "${CLI_SCOPE[CLI_META]+set}" ]] \
-        || cli::assert "Metadata missing for command '${CLI_COMMAND[*]}'."
-
-    # to test 'cli args' logic itself hard code logic here to skip 'cli args' 
-    # logic if there is ...
-
-    # cli::print CLI_META > /dev/stderr
-
-    cli::declare cli_tokens CLI_TOKENS
-    cli::declare cli_args CLI_ARGS
-
-    ARG_TOKENS=CLI_TOKENS \
-        ::cli::args::tokenize::inline "$@"
-    # for i in "${!CLI_TOKENS_ID[@]}"; do
-    #     cli::log ${CLI_ARG_TOKEN[CLI_TOKENS_ID[$i]]} "${CLI_TOKENS_IDENTIFIER[$i]-}"
-    # done
-
-    ARG_ARGS=CLI_ARGS \
-    ARG_TOKENS=CLI_TOKENS \
-    ARG_ALIAS=CLI_META_ALIAS \
-        ::cli::args::parse::inline
-    # cli::write CLI_ARGS > /dev/stderr
-
-    # determine the group id from the first named argument
-    local meta_group_id=0
-    if [[ -z "${CLI_META_GROUP['*']+set}" ]]; then
-
-        if [[ ${CLI_ARGS_FIRST_NAMED} == '' ]]; then
-            cli::fail \
-                "Expected a discrimiator from the set { ${!CLI_META_GROUP[@]} }" \
-                "be passed as named argument to command '${CLI_COMMAND[@]}'." \
-                "Instead no named arguments were passed."
-        fi
-
-        if [[ ! -n ${CLI_META_GROUP[${CLI_ARGS_FIRST_NAMED}]+set} ]]; then
-            cli::fail \
-                "Expected a discrimiator from the set { ${!CLI_META_GROUP[@]} }" \
-                "be passed as named argument to command '${CLI_COMMAND[@]}'." \
-                "Instead '${CLI_ARGS_FIRST_NAMED}' was passed as the first named argument."
-        fi
-
-        meta_group_id=${CLI_META_GROUP[${CLI_ARGS_FIRST_NAMED}]}
-    fi
-
-    local CLI_META_GROUP_N="CLI_META_GROUP_${meta_group_id}"
-    local CLI_META_GROUP_N_TYPE="${CLI_META_GROUP_N}_TYPE"
-    local CLI_TYPE_GROUP_TYPE_N="CLI_GROUP_${meta_group_id}"
-
-    ARG_ARGS=CLI_ARGS \
-    ARG_META="${CLI_META_GROUP_N}" \
-        ::cli::args::initialize::inline
-    # cli::write CLI_ARGS
-
-    _ARG_PREFIX='ARG' \
-    _ARG_TYPE="${CLI_TYPE_GROUP_TYPE_N}" \
-    _ARG_META="${CLI_META_GROUP_N_TYPE}" \
-    _ARG_ARGS=CLI_ARGS \
-    _ARG_BASH_NAME=CLI_META_BASH_NAME \
-        ::cli::args::emit::inline
-    # cli::dump 'ARG_*'
-
-    # cli::fail '--- CALLED ARG TOKENIZE ---'
-}
-
 cli::loader::cache::path() {
     ::cli::cache::path::inline "${CLI_SOURCE}"
     REPLY="${REPLY}/$1"
@@ -1289,6 +1240,10 @@ cli::loader::shim() {
         || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
     local CLI_SOURCE="${REPLY}"
 
+    # CLI_META
+    ::cli::name::to_symbol::inline "${CLI_COMMAND[@]}"
+    local CLI_META="CLI_META_${REPLY}"
+
     # CLI_TYPE
     local CLI_TYPE=command
     if [[ "${CLI_COMMAND[@]: -1}" == '.group' ]]; then
@@ -1386,14 +1341,14 @@ cli::main::prolog() {
     IFS="${CLI_IFS}"
 
     # establish frame
-    local -A CLI_SCOPE=(
-        [CLI_NAME]='string'
-        [CLI_COMMAND]='array'
-        [CLI_IMPORT]='array'
-    )
+    # local -A CLI_SCOPE=(
+    #     [CLI_NAME]='string'
+    #     [CLI_COMMAND]='array'
+    #     [CLI_IMPORT]='array'
+    # )
 
     # stack
-    declare -ag CLI_COMMAND_STACK+=( "${CLI_COMMAND[*]}" )
+    local -a CLI_COMMAND_STACK=( "${CLI_COMMAND_STACK[@]}" "${CLI_COMMAND[*]}" )
 
     cli::main::source "$@"
 }
@@ -1401,8 +1356,8 @@ cli::main::prolog() {
 cli::main::source() {
     cli::loader::import_parent
 
-    unset -f help
-    unset -f self_test
+    # unset -f help
+    # unset -f self_test
 
     # source the code!
     cli::loader::source "${CLI_SOURCE}"
@@ -1540,14 +1495,17 @@ cli::main::inline() {
                     if [[ "${1-}" == ---* ]]; then continue; else break; fi ;;
                 '---reply')
                     shift
-                    ${CLI_FUNCTION_INLINE} "$@"
+                    cli::main::inline -- "$@"
                     echo "${REPLY-}" ;;
                 '---mapfile')
                     shift
-                    ${CLI_FUNCTION_INLINE} "$@"
+                    cli::main::inline -- "$@"
                     for REPLY in "${MAPFILE[@]}"; do
                         echo "${REPLY-}" 
                     done ;;
+                '---pipe')
+                    shift
+                    while read -a MAPFILE; do cli::main::inline -- "$@" "${MAPFILE[@]}"; done ;;
                 '---') 
                     break ;;
                 *) cli::assert "Unexpected unknown internal option \"$1\" for command '${CLI_COMMAND[*]}'."
@@ -1574,6 +1532,72 @@ cli::main::inline() {
     # emit dependencies and function
     cli::export::imports "${CLI_IMPORT[@]}"
     declare -f ${CLI_FUNCTION_INLINE}
+}
+
+cli::main::command::load() {
+    if cli::loader::cache::test 'meta.sh'; then
+        cli::loader::source "${REPLY}"
+        return
+    fi
+    local META_SH="${REPLY}"
+    
+    cli::loader::cache::path 'help'
+    mkdir -p "${REPLY}"
+
+    local HELP="${REPLY}/help"
+    local TOKENIZE="${REPLY}/tokenize"
+    local PARSE="${REPLY}/parse"
+    local META="${REPLY}/meta"
+    local LOAD="${REPLY}/load"
+
+    if [[ -f "${HELP}" ]] && diff "${HELP}" <( cli::main -h ) > /dev/null; then
+        cli::loader::source "${META_SH}"
+        return
+    fi
+
+    cli::main -h > "${HELP}"
+    cli dsl tokenize < "${HELP}" > "${TOKENIZE}"
+    cli dsl parse < "${TOKENIZE}" > "${PARSE}"
+    cli dsl meta < "${PARSE}" > "${META}"
+    cli dsl load -- < "${META}" > "${LOAD}"
+
+    local ARG_SCOPE=CLI_SCOPE
+
+    ARG_TYPE='cli_meta'
+        ::cli::core::variable::declare::inline ${CLI_META}
+
+    ::cli::core::variable::read::inline ${CLI_META} < "${LOAD}"
+
+    ::cli::core::emit::global::inline ${CLI_META} > "${META_SH}"
+}
+
+cli::main::command::parse() {
+
+    # somehow the metadata should have been declared
+    [[ "${CLI_SCOPE[${CLI_META}]+set}" ]] \
+        || cli::assert "Metadata missing for command '${CLI_COMMAND[*]}'."
+
+    # tokenize
+    ARG_SCOPE=CLI_SCOPE \
+        ::cli::args::tokenize::inline "$@"
+
+    # parse
+    ARG_SCOPE=CLI_SCOPE \
+    ARG_META_ALIASES=${CLI_META}_ALIAS \
+        ::cli::args::parse::inline REPLY_CLI_ARGS_TOKENS
+
+    # resolve
+    ARG_SCOPE=CLI_SCOPE \
+    ARG_META_GROUPS=${CLI_META}_GROUP \
+        ::cli::args::resolve::inline REPLY_CLI_PARSE_ARGS
+    local CLI_META_GROUP=${REPLY}
+
+    # verify
+    ARG_SCOPE=CLI_SCOPE \
+    ARG_META_GROUP=${CLI_META_GROUP} \
+        ::cli::args::verify::inline REPLY_CLI_PARSE_ARGS
+
+    REPLY=${CLI_META_GROUP}
 }
 
 cli::main::command() {
@@ -1625,8 +1649,81 @@ cli::main::command() {
         done
     fi
 
-    # initialize ARG_* variables
-    cli::loader::initialize "$@"
+    if ::cli::set::test::inline CLI_KNOWN_COMMANDS "${CLI_COMMAND[*]}"; then
+        cli::main::command::known "$@"
+        return
+    fi
+
+    cli::main::command::load
+    cli::main::command::parse "$@"
+    local CLI_META_GROUP=${REPLY}
+
+    # declare locals for group
+    local -A CLI_SCOPE_LAST=()
+    local -n CLI_META_GROUP_TYPE=${CLI_META_GROUP}_TYPE
+    for REPLY in ${!CLI_META_GROUP_TYPE[@]}; do
+
+        # variable name
+        local NAME=${REPLY}
+        ::cli::name::to_symbol::inline ${NAME}
+        local VARIABLE="ARG_${REPLY}"
+
+        # variable flags
+        local TYPE="${CLI_META_GROUP_TYPE[${NAME}]}"
+        ::cli::core::type::to_bash::inline ${TYPE}
+        local FLAGS="${REPLY}"
+
+        # declare variable
+        local -${FLAGS} ${VARIABLE}
+        
+        # prolog
+        CLI_SCOPE_LAST[${VARIABLE}]=CLI_SCOPE[${VARIABLE}]
+        CLI_SCOPE[${VARIABLE}]="${TYPE}"
+
+        # initialize variable
+        if ::cli::set::test::inline REPLY_CLI_PARSE_ARGS_NAMED ${NAME}; then
+            local -n VARIABLE_REF=${VARIABLE}
+            local -n VALUE_REF="REPLY_CLI_PARSE_ARGS_NAMED_${REPLY_CLI_PARSE_ARGS_NAMED[${NAME}]}"
+            case ${TYPE} in
+                'array') VARIABLE_REF=( "${VALUE_REF[@]}" ) ;;
+                'map')
+                    local PAIR
+                    for PAIR in "${VALUE_REF[@]}"; do
+                        VARIABLE_REF[${PAIR%%=*}]="${PAIR#*=}"
+                    done
+                    ;;
+                *) VARIABLE_REF="${VALUE_REF}" ;;
+            esac
+        else
+            # default value
+            ARG_SCOPE=CLI_SCOPE \
+                ::cli::core::variable::initialize::inline ${VARIABLE}
+        fi
+
+        # declare -p ${VARIABLE} >&2
+    done
+    unset TYPE NAME VARIABLE FLAGS PAIR
+    unset -n VARIABLE_REF VALUE_REF
+
+    # cli::dump 'REPLY_CLI_PARSE_ARGS_*' >&2
+
+    cli::main::command::dispatch "${REPLY_CLI_PARSE_ARGS_POSITIONAL[@]}"
+
+    # epilog
+    for REPLY in ${!CLI_SCOPE_LAST[@]}; do
+        CLI_SCOPE[${REPLY}]=CLI_SCOPE_LAST[${REPLY}]
+    done
+}
+
+cli::main::command::known() {
+    ARG_HELP=false
+    ARG_SELF_TEST=false
+    CLI_ARGS_POSITIONAL=( "$@" )
+
+    cli::main::command::dispatch "$@"
+}
+
+cli::main::command::dispatch() {
 
     # well-known options that require loaded arguments
     while [[ "${1-}" == ---* ]]; do
@@ -1680,7 +1777,8 @@ loader_source() {
         local ALIAS="${2-}"
 
         if [[ ! "${ALIAS}" ]]; then
-            ::cli::bash::join::inline '::' ${COMMAND}
+            ::cli::name::to_bash::inline ${COMMAND}
+            ::cli::bash::join::inline '::' "${MAPFILE[@]}"
             ALIAS="${REPLY}" 
         fi
 
@@ -1804,6 +1902,8 @@ loader_source() {
         'cli bash stack trace'
 
     diff_import 'cli bash array pop'
+    diff_import 'cli bash map copy' \
+        'cli set test'
     
     diff_import_then_export_as 'cli bash which' 'cli::which'
     diff_import_then_export_as 'cli bash log' 'cli::log'
@@ -1820,7 +1920,7 @@ loader_source() {
     diff_import 'cli name to-main' \
         'cli name to-bash' \
         'cli bash join'
-    diff_import 'cli name to-symbol' \
+    diff_import_then_export 'cli name to-symbol' \
         'cli name to-bash' \
         'cli bash join'
 
@@ -1847,6 +1947,15 @@ loader_source() {
     diff_import 'cli bash variable list'
     diff_import 'cli bash variable emit' \
         'cli bash variable list'
+
+    cli::import cli core variable declare
+    cli::import cli core variable read
+    cli::import cli core emit global
+
+    cli::import cli args tokenize
+    cli::import cli args parse
+    cli::import cli args resolve
+    cli::import cli args verify
 
     # cli::import cli run-as
 
@@ -1901,6 +2010,7 @@ loader_source() {
             declare -p CLI_LOADER_LOCK
 
             cli::export::variables cli regex
+            cli::export::variables cli known
             cli::export::variables cli type
             cli::export::variables cli bgen
             cli::export::variables cli arg

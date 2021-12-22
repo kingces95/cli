@@ -1,0 +1,20 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+EOF
+}
+
+main() {
+    : # special loader case; export nothing
+}
+
+self_test() {
+    echo cli util readmap --self-test
+    echo cli util readset --self-test
+    echo cli util test --self-test
+}

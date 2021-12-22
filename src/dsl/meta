@@ -41,18 +41,13 @@ Command
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 cli::dsl::meta::main() { 
     local -A SCOPE=()
     local ARG_SCOPE="SCOPE"
 
-    ARG_TYPE="cli_meta_tables" \
-        ::cli::core::variable::declare::inline "STRUCT"
-
-    local NAME="STRUCT"
+    local RESULT="REPLY_CLI_DSL_META"
+    ARG_TYPE="cli_help_parse" \
+        ::cli::core::variable::declare::inline "${RESULT}"
 
     local group
     local name
@@ -76,27 +71,27 @@ cli::dsl::meta::main() {
 
         # anyargs
         elif (( production == CLI_DSL_PRODUCTION_ANYARGS )); then
-            ::cli::core::variable::put::inline "${NAME}" positional "${group}" true
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" positional true
 
         # alias
         elif (( production == CLI_DSL_PRODUCTION_ALIAS )); then
-            ::cli::core::variable::put::inline "${NAME}" alias "${identifier}" "${name}"
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" alias "${identifier}" "${name}"
 
         # default
         elif (( production == CLI_DSL_PRODUCTION_DEFAULT )); then
-            ::cli::core::variable::put::inline "${NAME}" default "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" default "${name}" "${identifier}"
 
         # regex
         elif (( production == CLI_DSL_PRODUCTION_REGEX )); then
-            ::cli::core::variable::put::inline "${NAME}" regex "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" regex "${name}" "${identifier}"
 
         # type
         elif (( production == CLI_DSL_PRODUCTION_TYPE )); then
-            ::cli::core::variable::put::inline "${NAME}" type "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" type "${name}" "${identifier}"
 
         # require
         elif (( production == CLI_DSL_PRODUCTION_REQUIRED )); then
-            ::cli::core::variable::put::inline "${NAME}" require "${group}" "${name}"
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" require "${name}"
 
         # flag
         # elif (( production == CLI_DSL_PRODUCTION_FLAG )); then
@@ -107,7 +102,7 @@ cli::dsl::meta::main() {
 
         # allow
         elif (( production == CLI_DSL_PRODUCTION_ALLOWED_VALUE )); then
-            ::cli::core::variable::put::inline "${NAME}" allow "${group}" "${name}" "${identifier}"
+            ::cli::core::variable::put::inline "${RESULT}" group "${group}" allow "${name}" "${identifier}"
 
         # else
         #     cli::assert "Unknown production ${production_name}."
@@ -115,40 +110,42 @@ cli::dsl::meta::main() {
 
     done
 
-    ::cli::core::variable::write::inline "${NAME}"
+    ::cli::core::variable::write::inline "${RESULT}"
 }
 
 self_test() {
-            
     diff <(cli dsl sample -h \
             | cli dsl tokenize \
             | cli dsl parse \
             | cli dsl meta \
+            | sort
         ) \
         <(cat <<-EOF
-			require * header
-			default * fruit banana
-			regex * header ^[A-Z][A-Za-z0-9_]*$
-			positional *
-			alias p my-props
-			alias l my-list
-			alias i id
-			alias h help
-			alias f fruit
-			alias d dump
-			type id id string
-			type * my-list array
-			type * run-as string
-			type * fruit string
-			type * my-props map
-			type * self-test boolean
-			type * help boolean
-			type * header string
-			type * dump boolean
-			type name name string
-			type name namespace string
-			allow * fruit orange
-			allow * fruit banana
+			group * alias d dump
+			group * alias f fruit
+			group * alias h help
+			group * alias l my-list
+			group * alias p my-props
+			group * allow fruit banana
+			group * allow fruit orange
+			group * default fruit banana
+			group * positional
+			group * regex header ^[A-Z][A-Za-z0-9_]*$
+			group * require header
+			group * type dump boolean
+			group * type fruit string
+			group * type header string
+			group * type help boolean
+			group * type my-list array
+			group * type my-props map
+			group * type run-as string
+			group * type self-test boolean
+			group id alias i id
+			group id positional
+			group id type id string
+			group name positional
+			group name type name string
+			group name type namespace string
 			EOF
         )
 }

@@ -30,6 +30,7 @@ cli::meta::declare() {
         MAPFILE+=( "${1//[-.]/_}" )
         shift
     done
+    REPLY=${MAPFILE[0]}
 }
 
 self_test() {

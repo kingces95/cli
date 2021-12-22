@@ -1,0 +1,21 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    cli bash emit literal array --self-test
+    cli bash emit literal key --self-test
+    cli bash emit literal map --self-test
+    cli bash emit literal string --self-test
+}

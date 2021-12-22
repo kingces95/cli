@@ -1,0 +1,25 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    cli bash emit indent --self-test
+    cli bash emit tail-call --self-test
+    echo cli bash emit variable --self-test
+
+    cli bash emit block .group --self-test
+    cli bash emit expression .group --self-test
+    cli bash emit literal .group --self-test
+    cli bash emit statement .group --self-test
+}

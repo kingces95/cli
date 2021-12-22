@@ -1,0 +1,19 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash emit indent
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+EOF
+}
+
+::cli::bash::emit::block::paren::inline() {
+    echo -n "("
+    ::cli::bash::emit::indent::inline $'\n'
+    echo -n ")"
+}
+
+self_test() {
+    diff <( ${CLI_COMMAND[@]} -- <<< block ) - <<< $'(\n    block\n)'
+}

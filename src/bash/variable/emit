@@ -39,7 +39,7 @@ EOF
 
 ::cli::bash::variable::emit::inline() {
     ::cli::bash::variable::list::inline "$@"
-    
+
     if (( ${#MAPFILE[@]} == 0 )); then
         return
     fi

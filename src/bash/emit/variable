@@ -1,0 +1,157 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash variable get-info
+cli::import cli bash emit expression declare
+cli::import cli bash emit literal string
+cli::import cli bash emit literal map
+cli::import cli bash emit literal array
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+    ARG_MODIFIERS are modifier flags to be added to the type flag. For example,
+    'r' for readonly or 'rg' for global read-only.
+
+    \$1 is the variable name.
+
+    Emit a declaration for a provided variable.
+EOF
+}
+
+::cli::bash::emit::variable::inline() {
+    local NAME="${1-}"
+    [[ ${NAME} ]] || cli::assert 'Missing name.'
+    
+    local -n REF="${NAME}"
+
+    ::cli::bash::variable::get_info::inline "${NAME}" \
+        || cli::assert "Variable '${NAME}' not in scope."
+
+    # declare flags
+    local FLAGS=${ARG_MODIFIERS-}
+    if ${REPLY_CLI_CORE_VARIABLE_IS_INTEGER}; then
+        FLAGS+=i
+
+    elif ${REPLY_CLI_CORE_VARIABLE_IS_MAP} || \
+        ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED} ; then
+        FLAGS+=A
+
+    elif ${REPLY_CLI_CORE_VARIABLE_IS_ARRAY}; then
+        FLAGS+=a
+    fi
+
+    # declare
+    ::cli::bash::emit::expression::declare::inline \
+        ${NAME} "${CLI_CORE_VARIABLE_EMIT_FLAG}"
+    
+    # assignment
+    echo -n '='
+
+    # value
+    if ${REPLY_CLI_CORE_VARIABLE_IS_SCALER}; then
+        ::cli::bash::emit::literal::string::inline ${NAME}
+
+    elif ${REPLY_CLI_CORE_VARIABLE_IS_MAP} || \
+        ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED}; then
+        ::cli::bash::emit::literal::map::inline ${NAME}
+
+    elif ${REPLY_CLI_CORE_VARIABLE_IS_ARRAY}; then
+        ::cli::bash::emit::literal::array::inline ${NAME}
+    fi
+
+    echo
+}
+
+self_test() {
+    local ARG_SCOPE='MY_SCOPE'
+    
+    local -A MY_SCOPE=(
+        [MY_STRING]='string'
+        [MY_BOOLEAN]='boolean'
+        [MY_INTEGER]='integer'
+        [MY_ARRAY]='array'
+        [MY_MAP]='map'
+    )
+
+    local MY_STRING='Hello world!'
+    local MY_BOOLEAN='true'
+    local -i MY_INTEGER=42
+    local -a MY_ARRAY=( a b c )
+    local -A MY_MAP=( [a]=0 )
+
+    local -A MY_SCOPE+=(
+        [MY_MODIFIED]='map_of string'
+        [MY_MODIFIED_0]='string'
+    )
+
+    local -A MY_MODIFIED=( [Hello]=0 )
+    local MY_MODIFIED_0='World!'
+
+    local -Ar CLI_TYPE_TEST=( 
+        [STRING_FIELD]='string'
+        [BOOLEAN_FIELD]='boolean'
+        [INTEGER_FIELD]='integer'
+        [ARRAY_FIELD]='array'
+        [MAP_FIELD]='map'
+    )
+
+    local -A MY_SCOPE+=(
+        [MY_TEST]='test'
+        [MY_TEST_STRING_FIELD]='string'
+        [MY_TEST_BOOLEAN_FIELD]='boolean'
+        [MY_TEST_INTEGER_FIELD]='integer'
+        [MY_TEST_ARRAY_FIELD]='array'
+        [MY_TEST_MAP_FIELD]='map'
+    )
+    local MY_TEST_STRING_FIELD='Hi world!' 
+    local MY_TEST_BOOLEAN_FIELD=true 
+    local -i MY_TEST_INTEGER_FIELD=21 
+    local -a MY_TEST_ARRAY_FIELD=( x y z )
+    local -A MY_TEST_MAP_FIELD=( [z]=26 )
+
+    diff <(${CLI_COMMAND[@]} -- <<-EOF
+		MY_STRING
+		MY_BOOLEAN
+		MY_INTEGER
+		MY_ARRAY
+		MY_MAP
+		MY_MODIFIED
+		MY_MODIFIED_0
+		MY_TEST
+		MY_TEST_MAP_FIELD
+		MY_TEST_BOOLEAN_FIELD
+		MY_TEST_STRING_FIELD
+		MY_TEST_ARRAY_FIELD
+		MY_TEST_INTEGER_FIELD
+		EOF
+    ) - <<-EOF
+		declare -- MY_STRING="Hello world!"
+		declare -- MY_BOOLEAN="true"
+		declare -i MY_INTEGER="42"
+		declare -a MY_ARRAY=(
+		    [0]="a"
+		    [1]="b"
+		    [2]="c"
+		)
+		declare -A MY_MAP=(
+		    [a]="0"
+		)
+		declare -A MY_MODIFIED=(
+		    [Hello]="0"
+		)
+		declare -- MY_MODIFIED_0="World!"
+		declare -A MY_TEST_MAP_FIELD=(
+		    [z]="26"
+		)
+		declare -- MY_TEST_BOOLEAN_FIELD="true"
+		declare -- MY_TEST_STRING_FIELD="Hi world!"
+		declare -a MY_TEST_ARRAY_FIELD=(
+		    [0]="x"
+		    [1]="y"
+		    [2]="z"
+		)
+		declare -i MY_TEST_INTEGER_FIELD="21"
+		EOF
+}

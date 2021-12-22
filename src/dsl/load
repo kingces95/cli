@@ -5,6 +5,7 @@ cli::import cli core variable write
 cli::import cli core variable save
 cli::import cli core variable load
 cli::import cli core variable read
+cli::import cli core type to-bash
 
 help() {
     cat << EOF
@@ -24,7 +25,7 @@ transform() {
     local INDEX=$(( $1 - 1 ))
     while read -a FIELDS; do
         $2 "${FIELDS[${INDEX}]}"
-        FIELDS[${INDEX}]="${MAPFILE}"
+        FIELDS[${INDEX}]="${REPLY}"
         echo "${FIELDS[@]}"
     done
 }
@@ -38,47 +39,33 @@ cli::dsl::load::main() {
 
 ::cli::dsl::load::inline() {
     local SCOPE_NAME="${ARG_SCOPE}"
-    local NAME="${ARG_NAME}"
-    local TABLES="CLI_DSL_LOAD_META_TABLES"
+    local RESULT="${ARG_NAME}"
+    local PARSE="CLI_HELP_PARSE"
 
     # declare temp variable to hold inbound stream
-    ARG_TYPE="cli_meta_tables" \
-        ::cli::core::variable::declare::inline ${TABLES}
-
-    # create temporary directory to save stream
-    cli::temp::dir
-    local DIR="${REPLY}"
-
-    # save stream
-    ::cli::core::variable::save::inline "${DIR}"
+    ARG_TYPE="cli_help_parse" \
+        ::cli::core::variable::declare::inline ${PARSE}
 
     # load stream
-    ::cli::core::variable::load::inline "${DIR}" \
-        | ::cli::core::variable::read::inline ${TABLES}
-
-# cli::dump 'CLI_DSL_LOAD_META_TABLES_*'
+    ::cli::core::variable::read::inline ${PARSE}
 
     ARG_TYPE="cli_meta" \
-        ::cli::core::variable::declare::inline ${NAME}
+        ::cli::core::variable::declare::inline ${RESULT}
 
-    # bash name
-    ::cli::core::variable::write::inline ${TABLES}_TYPE \
-        | awk '{ print $2, $2 }' \
-        | transform 2 cli::name::to-bash \
-        | ::cli::core::variable::read::inline ${NAME}_BASH_NAME
-
-    # alias
-    ::cli::core::variable::write::inline ${TABLES}_ALIAS \
-        | ::cli::core::variable::read::inline ${NAME}_ALIAS
+    # alias' must be unique across all group
+    ::cli::core::variable::write::inline ${PARSE}_GROUP \
+        | awk '$2=="alias" { print $3, $4 }' \
+        | sort \
+        | tee >(
+            sort -uC || cli::assert 'Duplicate alias detected.'
+        ) | ::cli::core::variable::read::inline ${RESULT}_ALIAS
 
     # group specific metadata; e.g. the group id is not '*'
-    ::cli::core::variable::write::inline ${TABLES} \
-        | awk '$1 != "alias"' \
-        | swap 1 2 \
-        | awk '$1 != "*"' \
-        | ::cli::core::variable::read::inline ${NAME}_GROUP
+    ::cli::core::variable::write::inline ${PARSE}_GROUP \
+        | awk '$1 != "*" && $2 != "alias"' \
+        | ::cli::core::variable::read::inline ${RESULT}_GROUP
 
-    local -n GROUP_REF=${NAME}_GROUP
+    local -n GROUP_REF=${RESULT}_GROUP
 
     local -a GROUP_NAMES=( "${!GROUP_REF[@]}" )
     if (( ${#GROUP_NAMES[@]} == 0 )); then
@@ -88,53 +75,49 @@ cli::dsl::load::main() {
     local GROUP_NAME
     for GROUP_NAME in "${GROUP_NAMES[@]}"; do
 
-        ::cli::core::variable::write::inline ${TABLES} \
-            | awk '$1 != "alias"' \
-            | swap 1 2 \
+        ::cli::core::variable::write::inline ${PARSE}_GROUP \
+            | awk '$2 != "alias"' \
             | awk -v group="${GROUP_NAME}" '$1 == "*" { $1 = group; print; }' \
-            | ::cli::core::variable::read::inline ${NAME}_GROUP
-
-        # join on the bash name (1.2 and 2.4) 
-        # and project: group id (2.2), 'bash_name', bash name (1.3), type (2.5)
-        #   1:bash_name 2:foo-bar 3:foo_bar
-        #   1:group 2:* 3:type 4:foo-bar 5:string
-        join \
-            -1 2 \
-            -2 4 \
-            -o "2.2 1.3 2.5" <(
-            ::cli::core::variable::write::inline ${NAME} \
-                | grep "bash_name" \
-                | sort
-        ) <(
-            ::cli::core::variable::write::inline ${NAME} \
-                | grep "group ${GROUP_NAME} type" \
-                | sort
-        ) \
-            | awk '{ print $1, "bash_type", $2, $3 }' \
-            | ::cli::core::variable::read::inline ${NAME}_GROUP
+			| ::cli::core::variable::read::inline ${RESULT}_GROUP
     done
 
-    ::cli::core::variable::write::inline "${NAME}"
+    ::cli::core::variable::write::inline "${RESULT}"
 }
 
 self_test() {
+    diff <(cli dsl simple -h \
+        | cli dsl tokenize \
+        | cli dsl parse \
+        | cli dsl meta \
+        | ${CLI_COMMAND[@]} -- 
+    ) - <<-EOF
+		alias p my-props
+		alias l my-list
+		alias h help
+		alias f fruit
+		alias d dump
+		group * require header
+		group * default fruit banana
+		group * regex header ^[A-Z][A-Za-z0-9_]*$
+		group * positional
+		group * type my-list array
+		group * type run-as string
+		group * type fruit string
+		group * type my-props map
+		group * type self-test boolean
+		group * type help boolean
+		group * type header string
+		group * type dump boolean
+		group * allow fruit orange
+		group * allow fruit banana
+		EOF
+
     diff <(cli dsl sample -h \
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
         | ${CLI_COMMAND[@]} -- 
     ) - <<-EOF
-		bash_name my-list my_list
-		bash_name run-as run_as
-		bash_name fruit fruit
-		bash_name my-props my_props
-		bash_name id id
-		bash_name self-test self_test
-		bash_name help help
-		bash_name header header
-		bash_name dump dump
-		bash_name name name
-		bash_name namespace namespace
 		alias p my-props
 		alias l my-list
 		alias i id
@@ -143,15 +126,6 @@ self_test() {
 		alias d dump
 		group id require header
 		group id default fruit banana
-		group id bash_type my_list array
-		group id bash_type fruit string
-		group id bash_type id string
-		group id bash_type self_test boolean
-		group id bash_type run_as string
-		group id bash_type help boolean
-		group id bash_type header string
-		group id bash_type dump boolean
-		group id bash_type my_props map
 		group id regex header ^[A-Z][A-Za-z0-9_]*$
 		group id positional
 		group id type my-list array
@@ -167,16 +141,6 @@ self_test() {
 		group id allow fruit banana
 		group name require header
 		group name default fruit banana
-		group name bash_type my_list array
-		group name bash_type fruit string
-		group name bash_type self_test boolean
-		group name bash_type run_as string
-		group name bash_type help boolean
-		group name bash_type header string
-		group name bash_type dump boolean
-		group name bash_type name string
-		group name bash_type my_props map
-		group name bash_type namespace string
 		group name regex header ^[A-Z][A-Za-z0-9_]*$
 		group name positional
 		group name type my-list array

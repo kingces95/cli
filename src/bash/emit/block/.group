@@ -1,0 +1,19 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+EOF
+}
+
+main() {
+    :
+}
+
+self_test() {
+    echo cli bash emit block curly --self-test
+    echo cli bash emit block paren --self-test
+}

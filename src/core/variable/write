@@ -63,7 +63,10 @@ EOF
 
         # boolean
         if ${REPLY_CLI_CORE_VARIABLE_IS_BOOLEAN}; then
-            ::cli::bash::write::inline "${PREFIX[@]}"
+
+            if ${REF}; then
+                ::cli::bash::write::inline "${PREFIX[@]}"
+            fi
 
         # scaler
         elif ${REPLY_CLI_CORE_VARIABLE_IS_SCALER}; then
@@ -133,9 +136,13 @@ self_test() {
     local -i MY_INTEGER=42
     diff <(${CLI_COMMAND[@]} -- MY_INTEGER) - <<< '42'
 
-    # boolean
+    # boolean true
     local MY_BOOLEAN=true
     diff <(${CLI_COMMAND[@]} -- MY_BOOLEAN) - <<< ''
+
+    # boolean false
+    local MY_BOOLEAN=false
+    diff <(${CLI_COMMAND[@]} -- MY_BOOLEAN) /dev/null
 
     # array
     local -a MY_ARRAY=( 'a a b a' )
@@ -212,6 +219,7 @@ self_test() {
     # udt
     local -A SCOPE=(
         ['META']='metadata'
+        ['META_NEVER']='boolean'
         ['META_POSITIONAL']='boolean'
         ['META_VERSION']='version'
         ['META_VERSION_MAJOR']='integer'
@@ -230,9 +238,11 @@ self_test() {
         ['allow']='map_of map'
         ['mmm']='map_of map_of map'
         ['positional']='boolean'
+        ['never']='boolean'
         ['version']='version'
     )
 
+    local META_NEVER=false
     local META_POSITIONAL=true
     local -i META_VERSION_MAJOR=1
     local -i META_VERSION_MINOR=2

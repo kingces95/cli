@@ -61,12 +61,14 @@ cli::core::variable::name::resolve::main() {
 
             # scaler
             else
-                (( $# == 0 )) || cli::assert "Expected no path but got '$@'."
+                (( $# == 0 )) || cli::assert "Scaler type '${TYPE}' has no field '$@'."
             fi
 
         # modified
         elif ${REPLY_CLI_CORE_TYPE_IS_MODIFIED}; then
             local -n ORDINAL_MAP=${NAME}
+            [[ "${ORDINAL_MAP["$i"]+set}" == 'set' ]] \
+                || cli::assert "Failed to resolve key '$i' in '${NAME}'."
             NAME=${NAME}_${ORDINAL_MAP["$i"]}
 
             ::cli::core::type::unmodify::inline "${MAPFILE[@]}"
