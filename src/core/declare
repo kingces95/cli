@@ -5,8 +5,22 @@ cli::import cli core struct emit
 cli::import cli core variable declare
 cli::import cli core variable put
 
+# Arguments when --print-struct
+#     --print-struct -s    [Flag] : Print structs
+#     --                          : Struct names
+
+# Arguments when --print
+#     --print -p           [Flag] : Print variables
+#     --                          : Variable names
+
+# Arguments when --type
+#     --type -t                   : Name of type
+#     --name -n        [Optional] : Name of variable
+#     --field -f     [Properties] : Fields of type
+#     --                          : Value
+
 help() {
-    cat << EOF | cli::core::help
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

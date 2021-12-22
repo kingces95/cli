@@ -938,97 +938,12 @@ declare_export() {
 }
 declare_export
 
-declare_core() {
-    cli::loader::scope::add() { CLI_SCOPE[$1]="$2"; }
-
-    # Arguments when --print-struct
-    #     --print-struct -s    [Flag] : Print structs
-    #     --                          : Struct names
-
-    # Arguments when --print
-    #     --print -p           [Flag] : Print variables
-    #     --                          : Variable names
-
-    # Arguments when --type
-    #     --type -t                   : Name of type
-    #     --name -n        [Optional] : Name of variable
-    #     --field -f     [Properties] : Fields of type
-    #     --                          : Value
-
-    cli::declare() {
-        : ${1?}
-        : ${2?}
-
-        arg_type="$1" \
-        arg_name="$2" \
-        arg_read=false \
-        arg_print=false \
-            ::cli::core::declare::inline
-    }
-
-    cli::put() {
-        : ${1:?}
-
-        arg_name="$1" \
-        arg_read=false \
-        arg_print=false \
-        arg_type= \
-            ::cli::core::declare::inline "${@:2}"
-    }
-
-    cli::print() {
-        : ${1:?}
-
-        arg_name="$1" \
-        arg_read=false \
-        arg_print=true \
-        arg_type= \
-            ::cli::core::declare::inline
-    }
-
-    cli::read() {
-        : ${1:?}
-
-        arg_name="$1" \
-        arg_read=true \
-        arg_print=false \
-        arg_type= \
-            ::cli::core::declare::inline
-    }
-
-    cli::write() {
-        : ${1:?}
-
-        arg_name="$1" \
-        arg_type="${2:-}" \
-            ::cli::core::write::inline
-    }
-
-    cli::save() {
-        arg_dir="${1-}" \
-            ::cli::core::save::inline
-    }
-
-    cli::load() {
-        arg_dir="${1-}" \
-            ::cli::core::load::inline
-    }
-}
-declare_core
-
 # public
 cli::help() {
     echo
     echo 'Global Arguments'
     echo '    --help -h        [Flag] : Show this message and exit.'
     echo '    --self-test      [Flag] : Runs a self test.'
-}
-
-cli::help::sourceable() {
-    cat
-    echo
-    echo Debug Arguments
-    echo    --source -s      [Flag] : Source stdin.
 }
 
 cli::import() {

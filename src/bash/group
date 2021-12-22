@@ -3,7 +3,7 @@ cli::import cli temp fifo
 cli::import cli temp remove
 
 help() {
-    cat << EOF | cli::help::sourceable
+    cat << EOF
 Command
     ${CLI_COMMAND[@]}
     

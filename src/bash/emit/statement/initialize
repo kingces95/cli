@@ -11,7 +11,7 @@ Summary
 
 Description
     \$1 is the variable name.
-    \$2 is are the flags.
+    \$2 is the flags.
 
     The initializer is copied from stdin.
 EOF

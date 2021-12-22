@@ -97,7 +97,7 @@ self_test() {
         # declare -p MAPFILE >&2
         # TODO MAPFILE should contain modified type not unmodified type
         [[ "${EXPECTED}" == "${REPLY}" ]] \
-            || cli::assert "${EXPECTED} != ${REPLY}"
+            || cli::assert "For '${NAME}', expected != actual; '${EXPECTED}' != '${REPLY}'"
         
         test_flags "$@"
     }
@@ -113,5 +113,5 @@ self_test() {
     SCOPE['MY_ARRAY']='array'; test array MY_ARRAY ARRAY BUILTIN
     SCOPE['MY_MAP']='map'; test map MY_MAP MAP BUILTIN
     SCOPE['MY_UDT']='udt'; test udt MY_UDT USER_DEFINED
-    SCOPE['MY_MODIFIED']='map_of string'; test '' MY_MODIFIED MODIFIED
+    SCOPE['MY_MODIFIED']='map_of string'; test 'map_of string' MY_MODIFIED MODIFIED
 }

@@ -1,7 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash emit block paren 
-cli::import cli bash emit expression key 
-cli::import cli bash emit literal string 
+cli::import cli bash emit expression key-value 
 
 help() {
     cat << EOF
@@ -10,7 +9,7 @@ Command
 EOF
 }
 
-::cli::bash::emit::literal::array::inline() {
+::cli::bash::emit::initializer::array::inline() {
     local NAME="$1"
     local -n REF=${1?'Missing map variable name.'}
 
@@ -18,16 +17,10 @@ EOF
     for (( INDEX=0; INDEX < ${#REF[@]}; INDEX++ )); do
         local VALUE="${REF[$INDEX]}"
 
-        ::cli::bash::emit::expression::key::inline ${INDEX}
-        echo -n '='
-        ::cli::bash::emit::literal::string::inline VALUE
+        ::cli::bash::emit::expression::key_value::inline "${INDEX}" VALUE
         
         echo
     done | ::cli::bash::emit::block::paren::inline
-
-    # local -n REF=${1?'Missing array variable name.'}
-    # ::cli::bash::array::literal::inline "${REF[@]}"
-    # echo -n "${REPLY}"
 }
 
 self_test() {

@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash emit literal key
+cli::import cli bash key literal 
 
 help() {
     cat << EOF
@@ -10,7 +10,10 @@ EOF
 
 ::cli::bash::emit::expression::key::inline() {
     echo -n "["
-    ::cli::bash::emit::literal::key::inline "$1"
+
+    ::cli::bash::key::literal::inline "$1"
+    echo -n "${REPLY}"
+
     echo -n "]"
 }
 

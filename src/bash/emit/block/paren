@@ -15,5 +15,5 @@ EOF
 }
 
 self_test() {
-    diff <( ${CLI_COMMAND[@]} -- <<< block ) - <<< $'(\n    block\n)'
+    diff <( ${CLI_COMMAND[@]} -- <<< block; echo ) - <<< $'(\n    block\n)'
 }

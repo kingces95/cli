@@ -11,24 +11,12 @@ main() {
     readonly CLI_CORE_REGEX_TYPE_NAME="^[a-z][a-z0-9_]*$"
     readonly CLI_CORE_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 
-    cli::core::help() {
-        cat <<-EOF 
-
-			Core Arguments
-			    --name -n    [Required] : The variable name. Regex: ${CLI_CORE_REGEX_GLOBAL_NAME}.
-			    --type -t               : The variable type. Regex: ${CLI_CORE_REGEX_TYPE_NAME}.
-			EOF
-        
-        cli::help::sourceable
-    }
-
     cli::export cli core
 }
 
 self_test() {
-    cli core variable .group --self-test
-
     cli core type .group --self-test
     cli core variable .group --self-test
     cli core emit .group --self-test
+    echo cli core declare --self-test
 }

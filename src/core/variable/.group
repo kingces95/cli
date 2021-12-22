@@ -21,16 +21,19 @@ main() {
 self_test() {
     cli core variable name .group --self-test
 
-    echo cli core variable get-info --self-test
+    cli core variable get-info --self-test
     cli core variable parse --self-test
-    cli core variable resolve --self-test   # name
-    cli core variable write --self-test     # name
-    cli core variable save --self-test      # dir
-    cli core variable load --self-test      # dir
-    cli core variable initialize --self-test   # name, scope
-    cli core variable get --self-test       # name, type   
-    cli core variable declare --self-test   # name, type, scope
-    cli core variable put --self-test       # name, type, scope
-    cli core variable read --self-test      # name, type, scope
-    echo cli core variable print --self-test
+    cli core variable resolve --self-test
+    cli core variable write --self-test
+    cli core variable save --self-test
+    cli core variable load --self-test
+    cli core variable initialize --self-test
+    cli core variable get --self-test
+    cli core variable declare --self-test
+    cli core variable put --self-test
+    cli core variable read --self-test
+    cli core variable children --self-test
+    cli core variable find --self-test
+    cli core variable match --self-test
+    cli core variable unset --self-test
 }

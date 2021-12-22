@@ -1,9 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type to-bash
 cli::import cli core variable get-info
 cli::import cli core variable get
-cli::import cli core emit literal
-cli::import cli bash emit statement initialize
+cli::import cli bash emit variable
 
 help() {
     cat << EOF
@@ -38,13 +36,7 @@ EOF
         return
     fi
 
-    # declare flags
-    ::cli::core::type::to_bash::inline "${TYPE[@]}"
-    FLAGS+=${REPLY}
-
-    ::cli::core::emit::literal::inline ${NAME} \
-        | ::cli::bash::emit::statement::initialize::inline ${NAME} ${FLAGS}
-    echo
+    ::cli::bash::emit::variable::inline ${NAME} ${FLAGS}
 }
 
 self_test() {

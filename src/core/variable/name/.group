@@ -15,5 +15,7 @@ main() {
 }
 
 self_test() {
-    cli core variable name resolve --self-test   # name, type
+    cli core variable name resolve --self-test
+    cli core variable name fields --self-test
+    cli core variable name modifications --self-test
 }

@@ -14,6 +14,6 @@ main() {
 }
 
 self_test() {
-    echo cli bash emit block curly --self-test
-    echo cli bash emit block paren --self-test
+    cli bash emit block curly --self-test
+    cli bash emit block paren --self-test
 }

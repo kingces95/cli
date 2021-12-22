@@ -17,5 +17,7 @@ self_test() {
     cli bash emit expression declare --self-test
     cli bash emit expression index --self-test
     cli bash emit expression key --self-test
-    echo cli bash emit expression map --self-test
+    cli bash emit expression key-value --self-test
+    cli bash emit expression map --self-test
+    cli bash emit expression array --self-test
 }

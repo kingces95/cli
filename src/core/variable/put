@@ -170,9 +170,6 @@ self_test() {
 			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_REQUIRE=()
 			declare -A MY_REPLY_CLI_DSL_META_GROUP_0_TYPE=([depth]="string" [max]="string" )
 			EOF
-
-        cli::import cli core variable write
-        ::cli::core::variable::write::inline "${RESULT}"
     }
 
     escaping() {

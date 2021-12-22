@@ -14,7 +14,7 @@ main() {
 }
 
 self_test() {
-    cli core emit variable --self-test
-    cli core emit global --self-test
-    cli core emit scope --self-test
+    cli bash emit initializer string --self-test
+    cli bash emit initializer array --self-test
+    cli bash emit initializer map --self-test
 }

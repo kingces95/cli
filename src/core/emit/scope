@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli core variable get-info
-cli::import cli bash emit literal map
+cli::import cli bash emit expression map
 
 help() {
     cat << EOF
@@ -22,7 +22,7 @@ EOF
     done
 
     echo -n "CLI_SCOPE+="
-    ::cli::bash::emit::literal::map::inline CLI_CORE_VARIABLE_EMIT_SCOPE
+    ::cli::bash::emit::expression::map::inline CLI_CORE_VARIABLE_EMIT_SCOPE
     echo
 }
 
