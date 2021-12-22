@@ -18,10 +18,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::cache::test::inline() {
     local CACHE="$1"
     local SOURCE="$2"

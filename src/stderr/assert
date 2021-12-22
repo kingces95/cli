@@ -18,10 +18,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::stderr::assert::inline() {
     if (( $# == 0 )); then 
         set 'Condition failed'

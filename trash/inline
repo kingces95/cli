@@ -28,11 +28,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_required 'name'
-    cli::meta::add_optional 'function' 'inline'
-}
-
 inline() {
     : ${arg_name?'Unexpected lack of inline function name.'}
     : ${arg_function:='inline'}

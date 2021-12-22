@@ -15,10 +15,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 main() {
     local -A names=()
 

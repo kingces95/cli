@@ -12,10 +12,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::stderr::on_err::inline() {
     local -a CLI_PIPESTATUS=( "${PIPESTATUS[@]}" )
     local CLI_TRAP_EXIT_CODE=${1-'?'}

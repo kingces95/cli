@@ -26,10 +26,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_optional 'name' 'RESULT'
-}
-
 inline() {
     : ${arg_name=RESULT}
     : ${1?"Unexpected missing key."}

@@ -36,10 +36,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::args::check::inline() {
     local name="${1-}"
     local value="${2-}"

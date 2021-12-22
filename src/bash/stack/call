@@ -17,10 +17,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 # see https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
 ::cli::bash::stack::call::inline() {
     

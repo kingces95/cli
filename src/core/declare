@@ -69,14 +69,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::core::import
-
-    cli::meta::add_flag 'read'
-    cli::meta::add_flag 'print'
-    cli::meta::allow_positional
-}
-
 ::cli::core::declare::inline() {
     : ${arg_name:?}
     : ${arg_type=}

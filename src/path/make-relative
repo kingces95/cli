@@ -20,10 +20,6 @@ Credit
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::path::make_relative::inline() {
     local source=$1
     local target=$2

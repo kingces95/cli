@@ -19,10 +19,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 inline() {
     local -a record=()
     local flags

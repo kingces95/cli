@@ -26,10 +26,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_required name '' ${CLI_REGEX_STRUCT_NAME}
-}
-
 ::cli::core::struct::define::inline() {
     : ${arg_name?}
     [[ "${arg_name}" =~ "${CLI_REGEX_STRUCT_NAME}" ]] || cli::assert 

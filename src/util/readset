@@ -23,10 +23,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_optional 'name' 'RESULT'
-}
-
 inline() {
     : ${arg_name=RESULT}
 

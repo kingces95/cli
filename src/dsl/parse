@@ -31,10 +31,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 yield() {
     echo "${arg_group}" "${arg_name}" "${CLI_DSL_PRODUCTION[$1]}" "${2-}"
 }

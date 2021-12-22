@@ -11,10 +11,6 @@ Command
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 # name of function which declares variables and verifies/assigns values
 INITIALIZE=initialize
 

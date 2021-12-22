@@ -12,10 +12,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 main() {
     ::cli::io::dir::remove::inline "$@"
 }

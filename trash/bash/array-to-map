@@ -21,10 +21,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 main() {
     : ${1:?'Missing array name.'}
     : ${2:?'Missing map name.'}

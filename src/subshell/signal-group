@@ -15,10 +15,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::subshell::signal_group::inline() {
     local SIGNAL=${1-'SIGINT'}
     read PID < <(ps -p ${BASHPID} -o pgid=)

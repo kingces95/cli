@@ -15,10 +15,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::path::dir::inline() { 
     REPLY="$(dirname $1)"
 }

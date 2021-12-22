@@ -28,10 +28,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 main() {
     local ARG_PREFIX=${1}
     local ARG_TYPE=${2}

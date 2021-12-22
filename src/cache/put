@@ -15,10 +15,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::cache::put::inline() {
     local CACHE="$1"
 

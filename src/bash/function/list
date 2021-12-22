@@ -14,26 +14,6 @@ Description
     All variables which match any of the positional arguments are copied to stdout.
 
     If a variable does not exist, nothing is printed.
-
-Arguments
-    --                      : The variables names to emit.
-EOF
-    cat << EOF
-
-Examples
-    Emit the embedded variable 'MY_STRING'.
-        declare MY_STRING='Hello World!'
-        declare -p MY_STRING \\
-            | ${CLI_COMMAND[@]} ---source ---mapfile MY_STRING
-
-    Emit the embedded variables that start with 'MY_'.
-        declare MY_STRING='Hello World!'
-        declare -i MY_NUMBER=42
-        declare -p MY_STRING MY_NUMBER \\
-            | ${CLI_COMMAND[@]} ---source ---mapfile MY_* \
-
-    Emit nothing.
-        ${CLI_COMMAND[@]} -- ''
 EOF
 }
 

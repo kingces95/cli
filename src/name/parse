@@ -15,10 +15,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::name::parse::inline() {
     MAPFILE=()
     while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do

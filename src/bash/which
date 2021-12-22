@@ -19,10 +19,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::bash::which::main() {
     ::cli::bash::which::inline "$@" || return 1
     echo ${REPLY}

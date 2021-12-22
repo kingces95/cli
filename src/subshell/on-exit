@@ -13,10 +13,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 ::cli::subshell::on_exit::inline() {
     local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
     local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}

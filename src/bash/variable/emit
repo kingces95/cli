@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash variable list
-cli::import cli bash emit variable
+# cli::import cli bash emit variable
 
 help() {
     cat << EOF
@@ -44,12 +44,13 @@ EOF
     if (( ${#MAPFILE[@]} == 0 )); then
         return
     fi
+    declare -p "${MAPFILE[@]}"
 
-    set "${MAPFILE[@]}"
-    while (( $# > 0 )); do
-        ::cli::bash::emit::variable::inline "$1"
-        shift
-    done
+    # set "${MAPFILE[@]}"
+    # while (( $# > 0 )); do
+    #     ::cli::bash::emit::variable::inline "$1"
+    #     shift
+    # done
 }
 
 self_test() {

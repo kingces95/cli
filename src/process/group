@@ -13,10 +13,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 main() {
     ::cli::proc::parent::inline "$@"
     declare -p REPLY

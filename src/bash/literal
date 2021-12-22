@@ -24,10 +24,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::literal::inline() {
     local literal="$*"
     

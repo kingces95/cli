@@ -13,10 +13,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::return::inline() {
     return ${1-0}
 }

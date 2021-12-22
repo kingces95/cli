@@ -19,10 +19,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 my_trap() {
     ::cli::bash::callstack::inline2 $1 1
 }

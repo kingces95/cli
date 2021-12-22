@@ -19,10 +19,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::temp::dir::inline() {
     ::cli::temp::file::inline "$@"
     rm -f "${REPLY}"

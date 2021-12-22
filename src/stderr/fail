@@ -16,10 +16,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::stderr::fail::inline() {
     echo "$*" \
         | ::cli::stderr::dump::inline

@@ -11,10 +11,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::test::main() {
     echo "TESTING!"
     echo "CLI_COMMAND=${CLI_COMMAND-}, \$0=$0, args=$@"

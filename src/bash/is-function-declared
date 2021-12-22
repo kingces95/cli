@@ -13,10 +13,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::is_function_declared::inline() {
     declare -F "${1-}" > /dev/null
 }

@@ -10,10 +10,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::stack::process::inline() {
     local ARG_START_PID=${1-$$}
     local ARG_END_PID=${2-${CLI_PID-}}

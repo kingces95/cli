@@ -17,10 +17,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::name::from_inline::inline() {
     set -- "${1//::_/::.}"
     set -- "${1//_/-}"

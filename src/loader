@@ -623,11 +623,10 @@ inline() {
         
     ::cli::bash::variable::emit::inline() {
         ::cli::bash::variable::list::inline "$@"
-        
+
         if (( ${#MAPFILE[@]} == 0 )); then
             return
         fi
-
         declare -p "${MAPFILE[@]}"
     }
 
@@ -888,7 +887,7 @@ inline() {
 }
 inline
 
-declare_export() {
+declare_export2() {
 
     cli::export::functions::print() {
         local glob
@@ -904,8 +903,51 @@ declare_export() {
         done < <(declare -F)
     }
 
-    cli::export::variable::merge() {
-        declare -p "$@" | sed 's/=/+=/'
+    cli::export() {
+        cli::export::variables "$@"
+        cli::export::functions "$@"
+    }
+
+    cli::export::functions() {
+        cli::export::functions::print "$@" \
+            | while read; do declare -f "${REPLY}"; done
+    }
+
+    cli::export::variables() {
+        ::cli::name::to_symbol::inline "$@"
+        local GLOB=${REPLY}
+
+        local NAME
+        ::cli::bash::variable::list::inline "${GLOB}*" \
+            | while read NAME; do
+                ::cli::bash::variable::get_info::inline "${NAME}"
+                echo "declare -${REPLY}g ${NAME}=" 
+            done
+    }
+
+    cli::export::imports() {
+        if (( $# == 0 )); then
+            return
+        fi
+
+        printf 'cli::import %s\n' "$@"
+    }
+}
+
+declare_export() {
+
+    cli::export::functions::print() {
+        local glob
+
+        for i in "$@"; do 
+            glob+="${i}::"
+        done
+
+        while read keyword flags name; do
+            if [[ "${name}" == ${glob}* ]]; then
+                echo "${name}"
+            fi
+        done < <(declare -F)
     }
 
     cli::export() {
@@ -931,9 +973,11 @@ declare_export() {
     }
 
     cli::export::imports() {
-        if (( $# > 0 )); then
-            printf 'cli::import %s\n' "$@"
+        if (( $# == 0 )); then
+            return
         fi
+
+        printf 'cli::import %s\n' "$@"
     }
 }
 declare_export

@@ -6,19 +6,15 @@ Command
     ${CLI_COMMAND[@]}
 
 Summary
-    Verifies cli names convert them to bash names.
+    Convert cli name to bash names. Replace dash and period with underbar.
 
 Description
-    Argument \$1 is the name of the array to append results. 
+    \$1 - \$n are the names to covert to bash names. 
     
+    MAPFILE contains the result.
+
     Assert remaining positional arguments match regex \${CLI_REGEX_NAME}.
-
-    Replace dashes and period with underbar and store the result in \$1.
 EOF
-}
-
-cli::meta::declare() {
-    cli::meta::allow_positional
 }
 
 ::cli::name::to_bash::inline() {

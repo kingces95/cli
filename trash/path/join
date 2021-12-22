@@ -40,13 +40,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_required 'delimiter' '/'
-    cli::meta::add_optional 'base'
-    cli::meta::allow_positional
-    # TODO: Allowed values: ...
-}
-
 inline() {
     local GLOB="?([.])[a-zA-Z0-9]*([a-zA-Z0-9-])"
   

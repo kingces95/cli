@@ -18,10 +18,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::cache::path::inline() {
     ::cli::path::name::inline "$1"
     local NAME="${REPLY}"

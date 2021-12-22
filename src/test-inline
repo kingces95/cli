@@ -10,10 +10,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::test_inline::inline() {
     echo 'Hello world!' "$@"
 }

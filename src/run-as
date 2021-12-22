@@ -21,12 +21,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_required 'command'
-    cli::meta::add_required 'user'
-    cli::meta::allow_positional
-}
-
 ::cli::run_as::inline() {
     local -a args=($(printf %q "${arg_command}"))
 

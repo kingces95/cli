@@ -19,10 +19,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::temp::file::inline() {
     
     # create and return a temporary file

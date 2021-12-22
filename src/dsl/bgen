@@ -11,10 +11,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 main() {
     emit "$@" 
     # \

@@ -9,10 +9,6 @@ Command
 EOF
 }
 
-cli::meta::declare() {
-    :
-}
-
 main() {
     :;
 }

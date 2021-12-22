@@ -26,10 +26,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::group::inline() {
     local ARG_KEYS=${1-1}
 

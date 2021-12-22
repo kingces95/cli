@@ -10,10 +10,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    :; #cli::meta::allow_positional
-}
-
 main() {
     echo "CLI_COMMAND=${CLI_COMMAND-}, \$0=$0, args=$@"
     declare -p CLI_LOADER_IMPORT CLI_LOADER_SOURCED CLI_LOADER_SOURCED_PATHS

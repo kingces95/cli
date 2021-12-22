@@ -31,10 +31,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 main() {
     local CLI_TRAP_EXIT_CODE=${1-??}
     local CLI_TRAP_TYPE=${2-'UNKNOWN_TRAP_TYPE'}

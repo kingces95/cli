@@ -88,11 +88,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_required 'cli'
-    cli::meta::add_flag 'dry-run'
-}
-
 # shim functions abstracting paths
 CLI_SHIM_NAMESPACE='cli::shim'
 CLI_SHIM_IS_COMMAND="${CLI_SHIM_NAMESPACE}::is_command"

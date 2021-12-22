@@ -26,10 +26,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::bash::variable::declare::main() {
     ::cli::bash::variable::declare::inline "$@" || return 1
 

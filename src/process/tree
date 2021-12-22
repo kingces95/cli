@@ -14,10 +14,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 main() {
     ::cli::process::tree::inline "$@"
     declare -p MAP

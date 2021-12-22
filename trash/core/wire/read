@@ -20,10 +20,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::core::wire::read::main() {
     source ${1-'/dev/null'}
     

@@ -17,10 +17,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 cli::bash::join::main() {
     ::cli::bash::join::inline "$@"
     echo "${REPLY}"

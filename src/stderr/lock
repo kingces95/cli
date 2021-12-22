@@ -13,10 +13,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::stderr::lock::inline() {
     flock -x "${CLI_LOADER_LOCK}" cat
 }

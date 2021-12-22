@@ -27,10 +27,6 @@ Examples
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_optional result 'RESULT'
-}
-
 inline() {
     local -a _result=()
     local -n ref_result=${arg_result:-RESULT}

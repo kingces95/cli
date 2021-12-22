@@ -19,10 +19,6 @@ Description
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::name::to_symbol::inline() {
     ::cli::name::to_bash::inline "$@"
     ::cli::bash::join::inline '_' "${MAPFILE[@]^^}"

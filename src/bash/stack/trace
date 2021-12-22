@@ -12,10 +12,6 @@ Summary
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::allow_positional
-}
-
 ::cli::bash::stack::trace::inline() {
     ::cli::bash::stack::call::inline
     if [[ -n "${CLI_STACK_SHOW_PROCESS-}" ]]; then

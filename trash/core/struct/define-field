@@ -45,11 +45,6 @@ Arguments
 EOF
 }
 
-cli::meta::declare() {
-    cli::meta::add_required 'name' '' ${CLI_REGEX_STRUCT_NAME}
-    cli::meta::add_required 'type' '' ${CLI_REGEX_TYPE_NAME}
-}
-
 ::cli::core::struct::define_field::inline() {
     : ${arg_struct?}
     : ${arg_name?}
