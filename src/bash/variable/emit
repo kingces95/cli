@@ -1,5 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash variable list
+cli::import cli bash emit variable
 
 help() {
     cat << EOF
@@ -44,7 +45,11 @@ EOF
         return
     fi
 
-    declare -p "${MAPFILE[@]}"
+    set "${MAPFILE[@]}"
+    while (( $# > 0 )); do
+        ::cli::bash::emit::variable::inline "$1"
+        shift
+    done
 }
 
 self_test() {
@@ -81,26 +86,32 @@ self_test() {
         | diff <(:) - || cli::assert
 
     ${CLI_COMMAND[@]} -- 'MY_*' \
-        | sort -k3 \
         | diff <(cat <<-EOF
-			declare -a MY_ARRAY=([0]="a")
+			declare -a MY_ARRAY=(
+			    [0]="a"
+			)
 			declare -a MY_EMPTY_ARRAY=()
 			declare -A MY_EMPTY_MAP=()
 			declare -- MY_EMPTY_STRING=""
-			declare -A MY_MAP=([a]="0" )
+			declare -A MY_MAP=(
+			    [a]="0"
+			)
 			declare -i MY_NUMBER="42"
 			declare -- MY_STRING="Hello world!"
 			EOF
         ) -
 
     ${CLI_COMMAND[@]} -- MY_ARRAY MY_EMPTY_ARRAY MY_EMPTY_MAP MY_EMPTY_STRING MY_MAP MY_NUMBER MY_STRING \
-        | sort -k3 \
         | diff <(cat <<-EOF
-			declare -a MY_ARRAY=([0]="a")
+			declare -a MY_ARRAY=(
+			    [0]="a"
+			)
 			declare -a MY_EMPTY_ARRAY=()
 			declare -A MY_EMPTY_MAP=()
 			declare -- MY_EMPTY_STRING=""
-			declare -A MY_MAP=([a]="0" )
+			declare -A MY_MAP=(
+			    [a]="0"
+			)
 			declare -i MY_NUMBER="42"
 			declare -- MY_STRING="Hello world!"
 			EOF
