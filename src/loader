@@ -436,6 +436,18 @@ inline() {
             done
         done
     }
+        
+    ::cli::bash::printf::inline() {
+        local FORMAT=${1-}
+        [[ $"{FORMAT}" ]] || cli::assert 'Missing format.'
+        shift
+
+        if (( $# == 0 )); then
+            return
+        fi
+
+        printf "${FORMAT}" "$@"
+    }
 
     ::cli::bash::log::inline() {
         echo "$@" >&2
@@ -904,54 +916,12 @@ inline() {
 }
 inline
 
-declare_export() {
-
-    cli::export::functions::print() {
-        local GLOB
-
-        for i in "$@"; do 
-            GLOB+="${i}::"
-        done
-        GLOB+='*'
-
-        ::cli::bash::function::list::inline "${GLOB}"
-    }
-
-    cli::export() {
-        cli::export::variables "$@"
-        cli::export::functions "$@"
-    }
-
-    cli::export::functions() {
-        cli::export::functions::print "$@" \
-            | while read; do 
-                declare -f "${REPLY}"
-            done
-    }
-
-    cli::export::variables() {
-        local -u GLOB
-
-        for i in "$@"; do 
-            GLOB+="${i^^}_"; 
-        done
-
-        while read _ type value; do
-            echo "declare ${type}g ${value}" 
-        done < <( cli::dump "${GLOB}*" )
-    }
-
-    cli::export::imports() {
-        if (( $# == 0 )); then
-            return
-        fi
-
-        printf 'cli::import %s\n' "$@"
-    }
-}
-declare_export
-
 # public
+cli::export() {
+    cli::loader::emit::variables "$@"
+    cli::loader::emit::functions "$@"
+}
+
 cli::help() {
     echo
     echo 'Global Arguments'
@@ -971,6 +941,47 @@ cli::import() {
 }
 
 # loader
+cli::loader::emit::functions() {
+    cli::loader::function::list "$@" \
+        | while read; do 
+            declare -f "${REPLY}"
+        done
+}
+
+cli::loader::emit::variables() {
+    local DECLARE FLAGS VALUE
+
+    cli::loader::variable::list "$@" \
+        | while read DECLARE FLAGS VALUE; do
+            echo "declare ${FLAGS}g ${VALUE}" 
+        done
+}
+
+cli::loader::function::list() {
+    local GLOB
+
+    for i in "$@"; do 
+        GLOB+="${i}::"
+    done
+    GLOB+='*'
+
+    ::cli::bash::function::list::inline "${GLOB}"
+}
+
+cli::loader::variable::list() {
+    local -u GLOB
+
+    for i in "$@"; do 
+        GLOB+="${i^^}_"; 
+    done
+
+    cli::dump "${GLOB}*"
+}
+
+cli::loader::emit::imports() {
+    ::cli::bash::printf::inline 'cli::import %s\n' "$@"
+}
+
 cli::loader::cache::bgen() {
 
     # allow hard coded metadata of logic that is itself necessary to parse help
@@ -1458,7 +1469,7 @@ cli::main::inline() {
     fi
 
     # emit dependencies and function
-    cli::export::imports "${CLI_IMPORT[@]}"
+    cli::loader::emit::imports "${CLI_IMPORT[@]}"
     declare -f ${CLI_FUNCTION_INLINE}
 }
 
@@ -1752,7 +1763,7 @@ loader_source() {
         ::cli::bash::function::is_declared::inline ${FQN} \
             || cli::assert "Expected ${FQN} to be inlined into loader."
         local EXISTING_FUNCTION=$(
-            cli::export::imports "$@"
+            cli::loader::emit::imports "$@"
             declare -f ${FQN}
         )
 
@@ -1838,6 +1849,7 @@ loader_source() {
         'cli bash filter glob'
     diff_import_then_export_as 'cli bash which' 'cli::which'
     diff_import_then_export_as 'cli bash log' 'cli::log'
+    diff_import 'cli bash printf'
     diff_import_then_export_as 'cli bash return' 'cli::return'
     diff_import_then_export_as 'cli bash join' 'cli::join'
     diff_import_then_export_as 'cli bash literal' 'cli::literal'
@@ -1922,7 +1934,7 @@ loader_source() {
         shopt -p | sort -k2 -k3
         echo
 
-        #cli::export::variables cli | sort -k4
+        #cli::loader::emit::variables cli | sort -k4
         {
             (
                 CLI_LOADER_SOURCED_PATHS=()
@@ -1936,12 +1948,12 @@ loader_source() {
             declare -p CLI_LOADER_IMPORTED
             declare -p CLI_LOADER_LOCK
 
-            cli::export::variables cli regex
-            cli::export::variables cli known
-            cli::export::variables cli type
-            cli::export::variables cli bgen
-            cli::export::variables cli arg
-            cli::export::variables cli meta attributes
+            cli::loader::emit::variables cli regex
+            cli::loader::emit::variables cli known
+            cli::loader::emit::variables cli type
+            cli::loader::emit::variables cli bgen
+            cli::loader::emit::variables cli arg
+            cli::loader::emit::variables cli meta attributes
 
         } | sort -k2 -k3
         echo
@@ -1951,10 +1963,10 @@ loader_source() {
         echo
 
         echo '# TOC of cli::*'
-        cli::export::functions::print cli | sed 's/^/# /'
+        cli::loader::function::list cli | sed 's/^/# /'
         echo 
 
-        cli::export::functions cli
+        cli::loader::emit::functions cli
         echo
 
         declare -f cli

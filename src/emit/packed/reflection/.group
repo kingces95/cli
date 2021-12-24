@@ -13,7 +13,6 @@ cli::emit::reflection::contains() {
 }
 
 main() {
-    :
     cli::export::import cli_emit
     cli::export cli emit reflection
 }
