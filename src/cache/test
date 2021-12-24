@@ -13,8 +13,8 @@ Description
 
     Argument $2 is the source from which the generated file depends.
     
-    Succeeds if the generated file exists and is older than the source file,
-    otherwise false.
+    Success if the generated file exists and is older than the source 
+    file, otherwise failure.
 EOF
 }
 

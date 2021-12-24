@@ -8,13 +8,12 @@ Command
     ${CLI_COMMAND[@]}
 
 Summary
-    Set a variable to the cache directory given the path to a command.
+    Get a command's cache directory.
 
 Arguments
-    Argument \$1 is the name of the variable to set.
+    \$1 is the path to a command.
 
-    Argument \$2 is the path to the command whose cache directory will be
-    assigned to the variable named by $1.
+    REPLY is the cache directory of the command.
 EOF
 }
 

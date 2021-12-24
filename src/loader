@@ -940,7 +940,7 @@ cli::import() {
     "$@" ---import
 }
 
-# loader
+# loader library
 cli::loader::emit::functions() {
     cli::loader::function::list "$@" \
         | while read; do 
@@ -955,6 +955,10 @@ cli::loader::emit::variables() {
         | while read DECLARE FLAGS VALUE; do
             echo "declare ${FLAGS}g ${VALUE}" 
         done
+}
+
+cli::loader::emit::imports() {
+    ::cli::bash::printf::inline 'cli::import %s\n' "$@"
 }
 
 cli::loader::function::list() {
@@ -976,10 +980,6 @@ cli::loader::variable::list() {
     done
 
     cli::dump "${GLOB}*"
-}
-
-cli::loader::emit::imports() {
-    ::cli::bash::printf::inline 'cli::import %s\n' "$@"
 }
 
 cli::loader::cache::bgen() {
@@ -1011,6 +1011,7 @@ cli::loader::cache::test() {
     ::cli::cache::test::inline "${REPLY}" "${CLI_SOURCE}"
 }
 
+# loader core
 cli::loader::import_parent() {
     local command=( "${CLI_COMMAND[@]}" )
 
@@ -1121,7 +1122,7 @@ cli::loader::import() {
 }
 
 cli::loader::source::exports() {
-    # echo "testing ${CLI_COMMAND[@]}" >&2
+
     if ! cli::loader::cache::test 'exports.sh'; then 
         ${CLI_COMMAND[@]} ---exports > /dev/null
     fi
@@ -1510,35 +1511,6 @@ cli::main::command::load() {
     ::cli::core::emit::global::inline ${CLI_META} > "${META_SH}"
 }
 
-cli::main::command::parse() {
-
-    # somehow the metadata should have been declared
-    [[ "${CLI_SCOPE[${CLI_META}]+set}" ]] \
-        || cli::assert "Metadata missing for command '${CLI_COMMAND[*]}'."
-
-    # tokenize
-    ARG_SCOPE=CLI_SCOPE \
-        ::cli::args::tokenize::inline "$@"
-
-    # parse
-    ARG_SCOPE=CLI_SCOPE \
-    ARG_META_ALIASES=${CLI_META}_ALIAS \
-        ::cli::args::parse::inline REPLY_CLI_ARGS_TOKENS
-
-    # resolve
-    ARG_SCOPE=CLI_SCOPE \
-    ARG_META_GROUPS=${CLI_META}_GROUP \
-        ::cli::args::resolve::inline REPLY_CLI_PARSE_ARGS
-    local CLI_META_GROUP=${REPLY}
-
-    # verify
-    ARG_SCOPE=CLI_SCOPE \
-    ARG_META_GROUP=${CLI_META_GROUP} \
-        ::cli::args::verify::inline REPLY_CLI_PARSE_ARGS
-
-    REPLY=${CLI_META_GROUP}
-}
-
 cli::main::command() {
 
     # parsing
@@ -1594,7 +1566,9 @@ cli::main::command() {
     fi
 
     cli::main::command::load
-    cli::main::command::parse "$@"
+
+    ARG_SCOPE=CLI_SCOPE \
+        ::cli::dispatch::parse::inline "$@"
     local CLI_META_GROUP=${REPLY}
 
     # declare locals for group
@@ -1895,10 +1869,7 @@ loader_source() {
     cli::import cli core variable read
     cli::import cli core emit global
 
-    cli::import cli args tokenize
-    cli::import cli args parse
-    cli::import cli args resolve
-    cli::import cli args verify
+    cli::import cli dispatch parse
 
     # cli::import cli run-as
 

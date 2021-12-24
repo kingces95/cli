@@ -6,12 +6,12 @@ Command
     ${CLI_COMMAND[@]}
 
 Summary
-    Set variable to the name of the path.
+    Get the name of a path.
 
 Description
-    Argument $1 is the name of the variable to set with the name of the path.
-    
-    Argument $2 is a unix path. 
+    Argument \$1 is a unix path.
+
+    REPLY is the name of the path.
 EOF
 }
 

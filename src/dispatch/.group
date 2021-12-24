@@ -1,0 +1,19 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Description
+
+EOF
+}
+
+main() {
+    : # special loader case; export nothing
+}
+
+self_test() {
+    cli main parse --self-test
+}
