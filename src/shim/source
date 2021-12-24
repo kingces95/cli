@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import cli bash which
-cli::import cli bash is-function-declared
+cli::import cli bash function is-declared
 
 help() {
     cat << EOF
@@ -41,7 +41,7 @@ EOF
             || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
 
         # verify the shim published a function of the same name.
-        ::cli::bash::is_function_declared::inline "${NAME}" \
+        ::cli::bash::function::is_declared::inline "${NAME}" \
             || cli::assert "Shim '$1' failed to define function ${NAME}."
     fi
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash filter
+cli::import cli bash filter glob
 cli::import cli bash map keys
 
 help() {
@@ -23,7 +23,7 @@ EOF
     : "${ARG_SCOPE?'Missing scope.'}"
 
     ::cli::bash::map::keys::inline ${ARG_SCOPE} \
-        | ::cli::bash::filter::inline "$@"
+        | ::cli::bash::filter::glob::inline "$@"
 }
 
 self_test() {

@@ -24,10 +24,10 @@ self_test() {
     cli bash type .group --self-test
     cli bash variable .group --self-test
     cli bash wire .group --self-test
+    cli bash function .group --self-test
+    cli bash filter .group --self-test
 
-    cli bash filter --self-test
     cli bash group --self-test
-    cli bash is-function-declared --self-test
     cli bash join --self-test
     cli bash literal --self-test
     cli bash log --self-test

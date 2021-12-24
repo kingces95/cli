@@ -6,14 +6,14 @@ Command
     ${CLI_COMMAND[@]}
 
 Description
+
 EOF
 }
 
 main() {
-    :
+    : # special loader case; export nothing
 }
 
 self_test() {
-    cli bash function is-declared --self-test
-    cli bash function list --self-test
+    cli bash filter glob --self-test
 }

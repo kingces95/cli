@@ -38,42 +38,40 @@ EOF
 }
 
 ::cli::bash::variable::list::inline() {
-    MAPFILE=()
 
-    for name in "$@"; do
+    local NAME
+    for NAME in "$@"; do
 
-        if [[ ! "${name}" ]]; then
+        if [[ ! "${NAME}" ]]; then
             continue
 
-        elif [[ "${name}" =~ ^.*[*]$ ]]; then
-            for match in $(eval "echo \${!${name}}"); do
+        elif [[ "${NAME}" =~ ^.*[*]$ ]]; then
+
+            local MATCH
+            for MATCH in $(eval "echo \${!${NAME}}"); do
                 # do not recurse! test -v arr=() is false
-                MAPFILE+=( "${match}" )
+                echo "${MATCH}"
             done
 
-        elif [[ -v "${name}" ]]; then
-            MAPFILE+=( "${name}" )
+        elif [[ -v "${NAME}" ]]; then
+            echo "${NAME}"
 
         else
             # declare -a arr=()
-            for match in $(eval "echo \${!${name}*}"); do
-                if [[ "${match}" == "${name}" ]]; then
-                    MAPFILE+=( "${name}" )
+            local MATCH
+            for MATCH in $(eval "echo \${!${NAME}*}"); do
+                if [[ "${MATCH}" == "${NAME}" ]]; then
+                    echo "${NAME}"
                 fi
             done
         fi
-    done
+    done | sort
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} ---mapfile \
-        | diff <(:) - || cli::assert
-
-    ${CLI_COMMAND[@]} ---mapfile MY_NOT_DEFINED \
-        | diff <(:) - || cli::assert
-
-    ${CLI_COMMAND[@]} ---mapfile MY_NOT_DEFINED* \
-        | diff <(:) - || cli::assert
+    diff <(${CLI_COMMAND[@]} --) /dev/null
+    diff <(${CLI_COMMAND[@]} -- MY_NOT_DEFINED) /dev/null
+    diff <(${CLI_COMMAND[@]} -- 'MY_NOT_DEFINED*') /dev/null
 
     # declared
     local MY_DECL_STRING
@@ -93,51 +91,42 @@ self_test() {
     local -i MY_NUMBER=42
 
     # basic reporting
-    ${CLI_COMMAND[@]} ---mapfile 'MY_STRING' \
-        | diff <(echo 'MY_STRING') -
-    ${CLI_COMMAND[@]} ---mapfile 'MY_STR*' \
-        | diff <(echo 'MY_STRING') -
+    diff <(${CLI_COMMAND[@]} -- MY_STRING) - <<< 'MY_STRING'
+    diff <(${CLI_COMMAND[@]} -- 'MY_STR*') - <<< 'MY_STRING'
 
     # declared only variables are not reported
-    ${CLI_COMMAND[@]} ---mapfile \
+    diff <(${CLI_COMMAND[@]} -- \
         MY_DECL_ARRAY \
         MY_DECL_MAP \
         MY_DECL_STRING \
-        MY_DECL_NUMBER \
-        | diff <(:) - || cli::assert
+        MY_DECL_NUMBER) /dev/null
 
     # initialized values are reported (wild card)
-    ${CLI_COMMAND[@]} ---mapfile 'MY_*' \
-        | sort -k3 \
-        | diff <(cat <<-EOF
-			MY_ARRAY
-			MY_EMPTY_ARRAY
-			MY_EMPTY_MAP
-			MY_EMPTY_STRING
-			MY_MAP
-			MY_NUMBER
-			MY_STRING
-			EOF
-        ) -
+    diff <(${CLI_COMMAND[@]} 'MY_*') - <<-EOF
+		MY_ARRAY
+		MY_EMPTY_ARRAY
+		MY_EMPTY_MAP
+		MY_EMPTY_STRING
+		MY_MAP
+		MY_NUMBER
+		MY_STRING
+		EOF
 
     # initialized values are reported (explicit)
-    ${CLI_COMMAND[@]} ---mapfile \
+    diff <(${CLI_COMMAND[@]} \
         MY_ARRAY \
         MY_EMPTY_ARRAY \
         MY_EMPTY_MAP \
         MY_EMPTY_STRING \
         MY_MAP \
         MY_NUMBER \
-        MY_STRING \
-        | sort -k3 \
-        | diff <(cat <<-EOF
-			MY_ARRAY
-			MY_EMPTY_ARRAY
-			MY_EMPTY_MAP
-			MY_EMPTY_STRING
-			MY_MAP
-			MY_NUMBER
-			MY_STRING
-			EOF
-        ) -
+        MY_STRING) - <<-EOF
+		MY_ARRAY
+		MY_EMPTY_ARRAY
+		MY_EMPTY_MAP
+		MY_EMPTY_STRING
+		MY_MAP
+		MY_NUMBER
+		MY_STRING
+		EOF
 }

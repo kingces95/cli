@@ -13,11 +13,11 @@ Arguments
 EOF
 }
 
-::cli::bash::is_function_declared::inline() {
+::cli::bash::function::is_declared::inline() {
     declare -F "${1-}" > /dev/null
 }
 
 self_test() {
-    ::cli::bash::is_function_declared::inline self_test || cli::assert
-    ! ::cli::bash::is_function_declared::inline missing || cli::assert
+    ::cli::bash::function::is_declared::inline self_test || cli::assert
+    ! ::cli::bash::function::is_declared::inline missing || cli::assert
 }

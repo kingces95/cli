@@ -39,12 +39,8 @@ EOF
 }
 
 ::cli::bash::variable::emit::inline() {
-    ::cli::bash::variable::list::inline "$@"
-
-    if (( ${#MAPFILE[@]} == 0 )); then
-        return
-    fi
-    declare -p "${MAPFILE[@]}"
+    ::cli::bash::variable::list::inline "$@" \
+        | while read; do declare -p ${REPLY}; done
 
     # set "${MAPFILE[@]}"
     # while (( $# > 0 )); do
@@ -54,14 +50,9 @@ EOF
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} -- \
-        | diff <(:) - || cli::assert
-
-    ${CLI_COMMAND[@]} -- MY_NOT_DEFINED \
-        | diff <(:) - || cli::assert
-
-    ${CLI_COMMAND[@]} -- MY_NOT_DEFINED* \
-        | diff <(:) - || cli::assert
+    diff <(${CLI_COMMAND[@]} --) /dev/null
+    diff <(${CLI_COMMAND[@]} -- MY_NOT_DEFINED) /dev/null
+    diff <(${CLI_COMMAND[@]} -- 'MY_NOT_DEFINED*') /dev/null
 
     # declared
     local MY_DECL_STRING
@@ -80,41 +71,28 @@ self_test() {
     local -A MY_MAP=([a]=0)
     local -i MY_NUMBER=42
 
-    ${CLI_COMMAND[@]} -- 'MY_STRING' \
-        | diff <(echo 'declare -- MY_STRING="Hello world!"') -
+    diff <(${CLI_COMMAND[@]} -- MY_DECL_ARRAY MY_DECL_MAP MY_DECL_STRING MY_DECL_NUMBER) /dev/null
+    diff <(${CLI_COMMAND[@]} -- MY_STRING) - <<< 'declare -- MY_STRING="Hello world!"'
 
-    ${CLI_COMMAND[@]} -- 'MY_DECL_ARRAY MY_DECL_MAP MY_DECL_STRING MY_DECL_NUMBER' \
-        | diff <(:) - || cli::assert
+    diff <(${CLI_COMMAND[@]} -- 'MY_*') \
+        - <<-EOF
+		declare -a MY_ARRAY=([0]="a")
+		declare -a MY_EMPTY_ARRAY=()
+		declare -A MY_EMPTY_MAP=()
+		declare -- MY_EMPTY_STRING=""
+		declare -A MY_MAP=([a]="0" )
+		declare -i MY_NUMBER="42"
+		declare -- MY_STRING="Hello world!"
+		EOF
 
-    ${CLI_COMMAND[@]} -- 'MY_*' \
-        | diff <(cat <<-EOF
-			declare -a MY_ARRAY=(
-			    [0]="a"
-			)
-			declare -a MY_EMPTY_ARRAY=()
-			declare -A MY_EMPTY_MAP=()
-			declare -- MY_EMPTY_STRING=""
-			declare -A MY_MAP=(
-			    [a]="0"
-			)
-			declare -i MY_NUMBER="42"
-			declare -- MY_STRING="Hello world!"
-			EOF
-        ) -
-
-    ${CLI_COMMAND[@]} -- MY_ARRAY MY_EMPTY_ARRAY MY_EMPTY_MAP MY_EMPTY_STRING MY_MAP MY_NUMBER MY_STRING \
-        | diff <(cat <<-EOF
-			declare -a MY_ARRAY=(
-			    [0]="a"
-			)
-			declare -a MY_EMPTY_ARRAY=()
-			declare -A MY_EMPTY_MAP=()
-			declare -- MY_EMPTY_STRING=""
-			declare -A MY_MAP=(
-			    [a]="0"
-			)
-			declare -i MY_NUMBER="42"
-			declare -- MY_STRING="Hello world!"
-			EOF
-        ) -
+    diff <(${CLI_COMMAND[@]} -- MY_ARRAY MY_EMPTY_ARRAY MY_EMPTY_MAP MY_EMPTY_STRING MY_MAP MY_NUMBER MY_STRING) \
+        - <<-EOF
+		declare -a MY_ARRAY=([0]="a")
+		declare -a MY_EMPTY_ARRAY=()
+		declare -A MY_EMPTY_MAP=()
+		declare -- MY_EMPTY_STRING=""
+		declare -A MY_MAP=([a]="0" )
+		declare -i MY_NUMBER="42"
+		declare -- MY_STRING="Hello world!"
+		EOF
 }

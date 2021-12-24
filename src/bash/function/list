@@ -1,4 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::import cli bash filter glob
 
 help() {
     cat << EOF
@@ -6,118 +7,40 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    List variables that are initialized and match a provided name.
+    List functions that match a provided name.
 
 Description
-    Positional arguments \$1, \$2, etc are variable names that optionally end in '*'.
+    Positional arguments \$1, \$2, etc are function names that optionally end in '*'.
 
-    All variables which match any of the positional arguments are copied to stdout.
-
-    If a variable does not exist, nothing is printed.
+    If a function does not exist, nothing is copied to stdout.
 EOF
 }
 
-::cli::bash::variable::list::inline() {
-    MAPFILE=()
-
-    for name in "$@"; do
-
-        if [[ ! "${name}" ]]; then
-            continue
-
-        elif [[ "${name}" =~ ^.*[*]$ ]]; then
-            for match in $(eval "echo \${!${name}}"); do
-                # do not recurse! test -v arr=() is false
-                MAPFILE+=( "${match}" )
-            done
-
-        elif [[ -v "${name}" ]]; then
-            MAPFILE+=( "${name}" )
-
-        else
-            # declare -a arr=()
-            for match in $(eval "echo \${!${name}*}"); do
-                if [[ "${match}" == "${name}" ]]; then
-                    MAPFILE+=( "${name}" )
-                fi
-            done
-        fi
-    done
+::cli::bash::function::list::inline() {
+    declare -F \
+        | awk '{ print $3 }' \
+        | ::cli::bash::filter::glob::inline "$@"
 }
 
 self_test() {
-    ${CLI_COMMAND[@]} ---mapfile \
-        | diff <(:) - || cli::assert
+    diff <(${CLI_COMMAND[@]} --) /dev/null
+    diff <(${CLI_COMMAND[@]} -- NOT_DEFINED) /dev/null
+    diff <(${CLI_COMMAND[@]} -- 'NOT_DEFINED*') /dev/null
 
-    ${CLI_COMMAND[@]} ---mapfile MY_NOT_DEFINED \
-        | diff <(:) - || cli::assert
+    MY_FUNCTION() {
+        :
+    }
 
-    ${CLI_COMMAND[@]} ---mapfile MY_NOT_DEFINED* \
-        | diff <(:) - || cli::assert
+    MY_OTHER_FUNCTION() {
+        :
+    }
 
-    # declared
-    local MY_DECL_STRING
-    local -a MY_DECL_ARRAY
-    local -A MY_DECL_MAP
-    local -i MY_DECL_NUMBER
-
-    # declared and initialized
-    local MY_EMPTY_STRING=""
-    local -a MY_EMPTY_ARRAY=()
-    local -A MY_EMPTY_MAP=()
-
-    # declared, initialized, and set
-    local MY_STRING='Hello world!'
-    local -a MY_ARRAY=(a)
-    local -A MY_MAP=([a]=0)
-    local -i MY_NUMBER=42
-
-    # basic reporting
-    ${CLI_COMMAND[@]} ---mapfile 'MY_STRING' \
-        | diff <(echo 'MY_STRING') -
-    ${CLI_COMMAND[@]} ---mapfile 'MY_STR*' \
-        | diff <(echo 'MY_STRING') -
-
-    # declared only variables are not reported
-    ${CLI_COMMAND[@]} ---mapfile \
-        MY_DECL_ARRAY \
-        MY_DECL_MAP \
-        MY_DECL_STRING \
-        MY_DECL_NUMBER \
-        | diff <(:) - || cli::assert
+    diff <(${CLI_COMMAND[@]} -- 'MY_FUNCTION') - <<< 'MY_FUNCTION'
+    diff <(${CLI_COMMAND[@]} -- 'MY_FUNC*') - <<< 'MY_FUNCTION'
 
     # initialized values are reported (wild card)
-    ${CLI_COMMAND[@]} ---mapfile 'MY_*' \
-        | sort -k3 \
-        | diff <(cat <<-EOF
-			MY_ARRAY
-			MY_EMPTY_ARRAY
-			MY_EMPTY_MAP
-			MY_EMPTY_STRING
-			MY_MAP
-			MY_NUMBER
-			MY_STRING
-			EOF
-        ) -
-
-    # initialized values are reported (explicit)
-    ${CLI_COMMAND[@]} ---mapfile \
-        MY_ARRAY \
-        MY_EMPTY_ARRAY \
-        MY_EMPTY_MAP \
-        MY_EMPTY_STRING \
-        MY_MAP \
-        MY_NUMBER \
-        MY_STRING \
-        | sort -k3 \
-        | diff <(cat <<-EOF
-			MY_ARRAY
-			MY_EMPTY_ARRAY
-			MY_EMPTY_MAP
-			MY_EMPTY_STRING
-			MY_MAP
-			MY_NUMBER
-			MY_STRING
-			EOF
-        ) -
+    diff <(${CLI_COMMAND[@]} 'MY_*') - <<-EOF
+		MY_FUNCTION
+		MY_OTHER_FUNCTION
+		EOF
 }
