@@ -865,7 +865,7 @@ cli::source() {
     ::cli::shim::source::inline "$1" \
         || cli::assert "Failed to find shim '$1' for import of '$*'."
 
-    "$@" ---import
+    "$@" ---source
 }
 
 # loader library
@@ -959,7 +959,7 @@ cli::loader::import_parent() {
 
     # import parent
     # echo "${CLI_COMMAND[@]} -> ${COMMAND[@]}" >&2
-    "${COMMAND[@]}" ---import >&2
+    "${COMMAND[@]}" ---source >&2
 }
 
 cli::loader::backpatch() {
@@ -1125,7 +1125,7 @@ cli::loader::shim() {
                     echo "${CLI_SOURCE}" ;;
                 '---cache')
                     echo "${CLI_CACHE}" ;;
-                '---import')
+                '---source')
                     cli::loader::import ;;
                 '---backpatch')
                     cli::loader::backpatch ;;
