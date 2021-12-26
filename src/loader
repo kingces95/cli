@@ -201,81 +201,6 @@ declare -A CLI_SCOPE=()
 declare -a CLI_IMPORT_CLI_LOADER=()
 declare -n CLI_IMPORT='CLI_IMPORT_CLI_LOADER'
 
-# emulate bgen
-bgen() {
-    cli::bash::declare::type::cli_meta_tables() {
-        cli::loader::scope::add $1 CLI_META_TABLES
-
-        declare -Ag \
-            "$1_ALIAS" \
-            "$1_ALLOW" \
-            "$1_DEFAULT" \
-            "$1_POSITIONAL" \
-            "$1_REGEX" \
-            "$1_REQUIRE" \
-            "$1_TYPE"
-    }
-    cli::bash::declare::type::cli_meta_group() {
-        cli::loader::scope::add $1 CLI_META_GROUP
-
-        declare -Ag \
-            "$1_ALIAS" \
-            "$1_DEFAULT" \
-            "$1_REGEX" \
-            "$1_REQUIRE" \
-            "$1_BASH_TYPE" \
-            "$1_TYPE"
-
-        declare -g \
-            "$1_POSITIONAL"
-    }
-    cli::bash::declare::type::cli_meta() {
-        cli::loader::scope::add $1 CLI_META
-
-        declare -Ag \
-            "$1_ALIAS" \
-            "$1_GROUP" \
-            "$1_BASH_NAME"
-    }
-    cli::bash::declare::type::cli_meta_attributes() {
-        cli::loader::scope::add $1 CLI_META_ATTRIBUTES
-
-        declare -Ag \
-            "$1_TYPE" \
-            "$1_BLOB"
-    }
-    cli::bash::declare::type::cli_tokens() {
-        cli::loader::scope::add $1 CLI_TOKENS
-
-        declare -ag \
-            "$1_ID" \
-            "$1_IDENTIFIER"
-    }
-    cli::bash::declare::type::cli_args() {
-        cli::loader::scope::add $1 CLI_ARGS
-
-        declare -g \
-            "$1_FIRST_NAMED"
-
-        declare -Ag \
-            "$1_NAMED"
-
-        declare -ga \
-            "$1_PATH" \
-            "$1_POSITIONAL"
-    }
-
-    declare -Ag CLI_BGEN_DECLARE=(
-        [CLI_TYPE_CLI_META_TABLES]=cli::bash::declare::type::cli_meta_tables
-        [CLI_TYPE_CLI_META_GROUP]=cli::bash::declare::type::cli_meta_group
-        [CLI_TYPE_CLI_META]=cli::bash::declare::type::cli_meta
-        [CLI_TYPE_CLI_META_ATTRIBUTES]=cli::bash::declare::type::cli_meta_attributes
-        [CLI_TYPE_CLI_TOKENS]=cli::bash::declare::type::cli_tokens
-        [CLI_TYPE_CLI_ARGS]=cli::bash::declare::type::cli_args
-    )
-}
-bgen
-
 inline() {
 
     ::cli::set::test::inline() {
@@ -985,25 +910,6 @@ cli::loader::variable::list() {
     cli::dump "${GLOB}*"
 }
 
-cli::loader::cache::bgen() {
-
-    # allow hard coded metadata of logic that is itself necessary to parse help
-    ! ::cli::bash::function::is_declared::inline cli::meta::declare \
-        || cli::assert 'Custom metadata deprecated'
-
-    [[ ! "${CLI_SCOPE[CLI_META]+set}" ]] \
-        || cli::assert "Metadata should have not been declared outside of cli::meta::declare."
-
-    # test cache 
-    # cli::log "BGEN ${CLI_COMMAND[@]} -> ${CLI_LOADER_BGEN_PATH}"
-    if ! ::cli::cache::test::inline "${CLI_LOADER_BGEN_PATH}"; then
-
-        # generate (like ngen)
-        cli::loader::dsl::bgen \
-            | ::cli::cache::put::inline "${CLI_LOADER_BGEN_PATH}"
-    fi
-}
-
 cli::loader::cache::path() {
     ::cli::cache::path::inline "${CLI_SOURCE}"
     REPLY="${REPLY}/$1"
@@ -1525,19 +1431,16 @@ cli::main::command() {
         while true; do
             case "$1" in
                 '---tokenize')
-                    cli::loader::dsl::tokenize ;;
+                    cli::main -h | cli dsl tokenize ;;
                 '---parse')
-                    cli::loader::dsl::parse ;;
+                    ${CLI_COMMAND[@]} ---tokenize | cli dsl parse ;;
                 '---meta')
-                    cli::loader::dsl::meta ;;
+                    ${CLI_COMMAND[@]} ---parse | cli dsl meta ;;
                 '---load')
-                    cli::loader::dsl::load ;;
-                '---bgen')
-                    cli::loader::dsl::bgen ;;
-                '---wire')
-                    cli::loader::dsl::wire ;;
-                '---wire-bash')
-                    cli::loader::dsl::wire_bash ;;
+                    ${CLI_COMMAND[@]} ---meta | cli dsl load -- ;;
+                '---build')
+                    cli::main -h \
+                        | ARG_SCOPE=CLI_SCOPE cli dsl build -- "${CLI_META}" ;;
                 *) break ;;
             esac 
             return
@@ -1664,14 +1567,6 @@ cli::main::command::dispatch() {
 cli::dump() {
     ::cli::bash::variable::emit::inline "$@"
 }
-
-cli::loader::dsl::tokenize() { cli::main -h | cli dsl tokenize; }
-cli::loader::dsl::parse() { cli::loader::dsl::tokenize | cli dsl parse; }
-cli::loader::dsl::meta() { cli::loader::dsl::parse | cli dsl meta; }
-cli::loader::dsl::load() { cli::loader::dsl::meta | cli dsl load --; }
-cli::loader::dsl::bgen() { cli::loader::dsl::load -- | cli dsl bgen; }
-cli::loader::dsl::wire() { cli::loader::dsl::load -- | cli core wire load -- CLI_META cli_meta | sort -u; }
-cli::loader::dsl::wire_bash() { cli::loader::dsl::wire | cli core wire read | sort -u; }
 
 loader_source() {
 
