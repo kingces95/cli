@@ -19,10 +19,6 @@ Arguments
     --my-props -p  [Properties] : A map.
     --                          : Arbitrary arguments.
 
-Global Arguments
-    --help -h            [Flag] : Show this message and exit.
-    --self-test          [Flag] : Runs a self test.
-
 Examples
     --ignore-me -i   [Required] : Default 10.
 EOF

@@ -45,6 +45,8 @@ EOF
 }
 
 cli::dsl::tokenize::main() { 
+    [[ -v CLI_DSL_LITERAL_COLON ]] || cli::assert
+
     local line
     local word=
     local last_word=

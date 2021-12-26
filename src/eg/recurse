@@ -25,5 +25,13 @@ cli::eg::recurse::main() {
 }
 
 self_test() {
-    return
+    rm "$(${CLI_COMMAND[@]} ---cache)/meta.sh"
+
+    diff <(${CLI_COMMAND[@]}) - <<-EOF
+		0
+		1
+		2
+		1
+		0
+		EOF
 }   

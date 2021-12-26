@@ -24,26 +24,28 @@ EOF
 }
 
 ::cli::shim::source::inline() {
-    local NAME="$1"
-    local SHIM_ROOT_DIR_NAME="CLI_SHIM_ROOT_DIR_${NAME^^}"
+    local NAME="${1-}"
+    [[ ${NAME} ]] || cli::assert 'Missing shim name.'
 
-    if [[ ! -v "${SHIM_ROOT_DIR_NAME}" ]]; then
-            
-        # resolve the path to the shim by searching PATH
-        ::cli::bash::which::inline "$1" || return 1
-        local SHIM_PATH="${REPLY}"
-        
-        # source the shim
-        source "${SHIM_PATH}"
-
-        # verify shim published the path to the root of its commands
-        [[ -v "${SHIM_ROOT_DIR_NAME}" ]] \
-            || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
-
-        # verify the shim published a function of the same name.
-        ::cli::bash::function::is_declared::inline "${NAME}" \
-            || cli::assert "Shim '$1' failed to define function ${NAME}."
+    local -n SHIM_ROOT_DIR_NAME="CLI_SHIM_ROOT_DIR_${NAME^^}"
+    if [[ "${SHIM_ROOT_DIR_NAME-}" ]]; then
+        return 0
     fi
+
+    # resolve the path to the shim by searching PATH
+    ::cli::bash::which::inline "$1" || return 1
+    local SHIM_PATH="${REPLY}"
+    
+    # source the shim
+    source "${SHIM_PATH}"
+
+    # verify shim published the path to the root of its commands
+    [[ "${SHIM_ROOT_DIR_NAME-}" ]] \
+        || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
+
+    # verify the shim published a function of the same name.
+    ::cli::bash::function::is_declared::inline "${NAME}" \
+        || cli::assert "Shim '$1' failed to define function ${NAME}."
 }
 
 self_test() {

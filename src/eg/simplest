@@ -1,0 +1,19 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]} 
+
+Summary    
+    Sample command to test Domain Specific Language.
+EOF
+}
+
+cli::eg::simplest::main() {
+    :    
+}
+
+self_test() {
+    return
+}   
