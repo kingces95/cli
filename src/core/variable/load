@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli path name
+cli::source cli path name
 
 help() {
 cat << EOF
@@ -37,7 +37,7 @@ EOF
 }
 
 self_test() {
-    cli::import cli core variable save
+    cli::source cli core variable save
 
     cli::temp::dir
     local DIR="${REPLY}"

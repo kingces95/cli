@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli stderr lock
-cli::import cli temp file
+cli::source cli stderr lock
+cli::source cli temp file
 
 help() {
     cat << EOF

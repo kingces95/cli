@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable parse
-cli::import cli core variable declare
-cli::import cli core variable name resolve
-cli::import cli core variable get-info
-cli::import cli set test
+cli::source cli core variable parse
+cli::source cli core variable declare
+cli::source cli core variable name resolve
+cli::source cli core variable get-info
+cli::source cli set test
 
 help() {
     cat << EOF

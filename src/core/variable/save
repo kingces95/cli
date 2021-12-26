@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash write
+cli::source cli bash write
 
 help() {
 cat << EOF

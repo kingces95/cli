@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::import_group
-cli::import cli-assert
+cli::source cli-assert
 
 help() {
     cat << EOF

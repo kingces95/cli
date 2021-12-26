@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable list
-# cli::import cli bash emit variable
+cli::source cli bash variable list
+# cli::source cli bash emit variable
 
 help() {
     cat << EOF

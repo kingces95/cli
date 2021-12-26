@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-# cli::import cli core variable declare
-cli::import cli core type is-builtin
-cli::import cli core type is-modified
-cli::import cli bash write
+# cli::source cli core variable declare
+cli::source cli core type is-builtin
+cli::source cli core type is-modified
+cli::source cli bash write
 
 help() {
     cat << EOF

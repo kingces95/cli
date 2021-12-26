@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash emit block paren 
-cli::import cli bash emit expression key-value 
+cli::source cli bash emit block paren 
+cli::source cli bash emit expression key-value 
 
 help() {
     cat << EOF

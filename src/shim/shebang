@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli path make-absolute
-cli::import cli path name
-cli::import cli shim source
+cli::source cli path make-absolute
+cli::source cli path name
+cli::source cli shim source
 
 help() {
     cat << EOF

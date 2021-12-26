@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable is-declared
+cli::source cli bash variable is-declared
 
 help() {
     cat << EOF

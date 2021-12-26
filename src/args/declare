@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli args tokenize
-cli::import cli args parse
-cli::import cli args resolve
-cli::import cli args verify
+cli::source cli args tokenize
+cli::source cli args parse
+cli::source cli args resolve
+cli::source cli args verify
 
 help() {
     cat << EOF

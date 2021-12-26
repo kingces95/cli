@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable get-info
-cli::import cli core variable get
-cli::import cli bash emit variable
+cli::source cli core variable get-info
+cli::source cli core variable get
+cli::source cli bash emit variable
 
 help() {
     cat << EOF

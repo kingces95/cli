@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli-assert
+cli::source cli-assert
 
 help() {
     cat << EOF
@@ -52,7 +52,7 @@ inline() {
 
         # emit dependencies
         if (( ${#imports[@]} > 0 )); then
-            printf 'cli::import %s\n' "${imports[@]}"
+            printf 'cli::source %s\n' "${imports[@]}"
         fi
 
         # emit and rename function

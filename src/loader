@@ -857,7 +857,7 @@ cli::help() {
     echo '    --self-test      [Flag] : Runs a self test.'
 }
 
-cli::import() {
+cli::source() {
     (( $# > 0 )) || cli::assert 'Missing import.'
     
     CLI_IMPORT+=( "$*" )
@@ -886,7 +886,7 @@ cli::loader::emit::variables() {
 }
 
 cli::loader::emit::imports() {
-    ::cli::bash::printf::inline 'cli::import %s\n' "$@"
+    ::cli::bash::printf::inline 'cli::source %s\n' "$@"
 }
 
 cli::loader::function::list() {
@@ -1601,7 +1601,7 @@ loader_source() {
     }
 
     diff_import() {
-        cli::import $1
+        cli::source $1
 
         if [[ -n "${CLI_LOADER_IMPORT_DISABLE-}" ]]; then
             while (( $# > 0 )); do 
@@ -1745,12 +1745,12 @@ loader_source() {
         'cli path name' \
         'cli shim source'
 
-    # cli::import cli bash array pop
+    # cli::source cli bash array pop
     diff_import 'cli bash variable list'
     diff_import 'cli bash variable emit' \
         'cli bash variable list'
 
-    cli::import cli dispatch parse
+    cli::source cli dispatch parse
 
     cli::loader::main() {
         echo "set -$-"
@@ -1806,7 +1806,7 @@ loader_source() {
         printf '%s\n' "${CLI_IMPORT_CLI_LOADER[@]}" \
             | sort -u \
             | mapfile -t
-        printf '# cli::import %s\n' "${MAPFILE[@]}"
+        printf '# cli::source %s\n' "${MAPFILE[@]}"
         echo
 
         for import in "${MAPFILE[@]}"; do

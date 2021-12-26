@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable declare
-cli::import cli core variable put
-cli::import cli core variable write
+cli::source cli core variable declare
+cli::source cli core variable put
+cli::source cli core variable write
 
 help() {
     cat << EOF

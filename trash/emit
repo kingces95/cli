@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 source $(cli loader ---exports)
 cli::import_group
-cli::import cli emit initialize
-cli::import cli_emit
+cli::source cli emit initialize
+cli::source cli_emit
 
 help() {
     cat << EOF

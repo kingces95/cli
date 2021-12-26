@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable get-info
-cli::import cli bash emit expression declare
-cli::import cli bash emit literal string
-cli::import cli bash emit literal map
-cli::import cli bash emit literal array
+cli::source cli bash variable get-info
+cli::source cli bash emit expression declare
+cli::source cli bash emit literal string
+cli::source cli bash emit literal map
+cli::source cli bash emit literal array
 
 help() {
     cat << EOF

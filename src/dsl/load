@@ -1,11 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable declare
-cli::import cli core variable put
-cli::import cli core variable write
-cli::import cli core variable save
-cli::import cli core variable load
-cli::import cli core variable read
-cli::import cli core type to-bash
+cli::source cli core variable declare
+cli::source cli core variable put
+cli::source cli core variable write
+cli::source cli core variable save
+cli::source cli core variable load
+cli::source cli core variable read
+cli::source cli core type to-bash
 
 help() {
     cat << EOF

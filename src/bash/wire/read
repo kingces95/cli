@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable declare
-cli::import cli bash wire verify
+cli::source cli bash variable declare
+cli::source cli bash wire verify
 
 help() {
     cat << EOF

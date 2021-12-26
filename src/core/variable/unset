@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable children
+cli::source cli core variable children
 
 help() {
     cat << EOF | cli::core::type::help

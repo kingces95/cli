@@ -40,7 +40,7 @@ EOF
 }
 
 self_test() {
-    cli::import cli temp file
+    cli::source cli temp file
 
     mapfile -t < <(
         # create temp file

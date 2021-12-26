@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source $(cli loader ---exports)
 cli::import_parent_group
-cli::import cli-assert
+cli::source cli-assert
 cli::import_inline cli bash stack trace
 
 help() {

@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable get-info
-cli::import cli bash emit statement initialize
-cli::import cli bash emit initializer string
-cli::import cli bash emit initializer map
-cli::import cli bash emit initializer array
+cli::source cli bash variable get-info
+cli::source cli bash emit statement initialize
+cli::source cli bash emit initializer string
+cli::source cli bash emit initializer map
+cli::source cli bash emit initializer array
 
 help() {
     cat << EOF

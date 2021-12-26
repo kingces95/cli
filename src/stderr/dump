@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli stderr cat
-cli::import cli subshell signal-group
+cli::source cli stderr cat
+cli::source cli subshell signal-group
 
 help() {
     cat << EOF

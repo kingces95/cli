@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable get-info
-cli::import cli core variable name fields
+cli::source cli core variable get-info
+cli::source cli core variable name fields
 
 help() {
     cat << EOF
@@ -91,7 +91,7 @@ self_test() {
     ${CLI_COMMAND[@]} --- MY_MAP_OF
     diff <(declare -p MY_MAP_OF) - <<< 'declare -A MY_MAP_OF=()'
 
-    cli::import cli core variable declare
+    cli::source cli core variable declare
 
     declare -A CLI_TYPE_VERSION=(
         [major]='integer'

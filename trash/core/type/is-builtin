@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type is-scaler
+cli::source cli core type is-scaler
 
 help() {
     cat << EOF | cli::core::type::help

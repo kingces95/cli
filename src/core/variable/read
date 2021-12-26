@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable put
-cli::import cli core variable declare
+cli::source cli core variable put
+cli::source cli core variable declare
 
 help() {
     cat << EOF
@@ -19,7 +19,7 @@ EOF
 }
 
 cli::core::variable::read::main() {
-    cli::import cli core variable parse
+    cli::source cli core variable parse
 
     ::cli::core::variable::parse::inline "$@"
     local NAME=${REPLY}

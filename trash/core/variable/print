@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type is-scaler
-cli::import cli core type is-modified
-cli::import cli bash string literal
-cli::import cli bash array literal
-cli::import cli bash map literal
+cli::source cli core type is-scaler
+cli::source cli core type is-modified
+cli::source cli bash string literal
+cli::source cli bash array literal
+cli::source cli bash map literal
 
 help() {
     cat << EOF

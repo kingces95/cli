@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli_emit
+cli::source cli_emit
 
 help() {
     cat << EOF
@@ -35,8 +35,8 @@ Description
         #!/usr/bin/env bash
         source $(cli loader ---exports)
 
-    This will define 'cli::import' and 'cli::export' and 'cli::export_import'.
-    Commands must use 'cli::import' instead of 'source' to reference libraries.
+    This will define 'cli::source' and 'cli::export' and 'cli::export_import'.
+    Commands must use 'cli::source' instead of 'source' to reference libraries.
     Libraries use 'cli::export' to emit functions and variables with common
     prefixes and 'cli::export_import' to reference other libraries.
 
@@ -66,7 +66,7 @@ Description
 
         #!/usr/bin/env bash
         source $(cli loader ---exports)
-        source /dev/stdin < <(cli::import integrate area .group)
+        source /dev/stdin < <(cli::source integrate area .group)
         help() {
             echo "Arguments"
             echo "    --radius     [Required] : Radius of the circle."

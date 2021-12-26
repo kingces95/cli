@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type get
+cli::source cli core type get
 
 help() {
     cat << EOF | cli::core::type::help

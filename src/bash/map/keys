@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash yield
+cli::source cli bash yield
 
 help() {
     cat << EOF

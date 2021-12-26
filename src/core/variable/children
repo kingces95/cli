@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable get-info
-cli::import cli core variable name fields
-cli::import cli core variable name modifications
+cli::source cli core variable get-info
+cli::source cli core variable name fields
+cli::source cli core variable name modifications
 
 help() {
     cat << EOF | cli::core::type::help

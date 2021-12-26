@@ -1,11 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli args check
-cli::import cli args resolve
-cli::import cli core variable declare
-cli::import cli core variable read
-cli::import cli core variable write
-cli::import cli core variable put
-cli::import cli set intersect
+cli::source cli args check
+cli::source cli args resolve
+cli::source cli core variable declare
+cli::source cli core variable read
+cli::source cli core variable write
+cli::source cli core variable put
+cli::source cli set intersect
 
 help() {
     cat << EOF
@@ -44,7 +44,7 @@ EOF
 }
 
 cli::args::verify::main() {
-    cli::import cli args resolve
+    cli::source cli args resolve
 
     ARG_TYPE='cli_args' \
         ::cli::core::variable::declare::inline MY_ARGS

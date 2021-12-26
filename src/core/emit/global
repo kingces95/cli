@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable find
-cli::import cli core emit variable
-cli::import cli core emit scope
-cli::import cli bash emit function
+cli::source cli core variable find
+cli::source cli core emit variable
+cli::source cli core emit scope
+cli::source cli bash emit function
 
 help() {
     cat << EOF

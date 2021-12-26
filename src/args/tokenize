@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core variable declare
-cli::import cli core variable unset
+cli::source cli core variable declare
+cli::source cli core variable unset
 
 help() {
     cat << EOF

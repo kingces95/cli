@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash key literal
-cli::import cli bash string literal
+cli::source cli bash key literal
+cli::source cli bash string literal
 
 help() {
     cat << EOF

@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type unmodified
-cli::import cli core type get
-cli::import cli core type get-info
+cli::source cli core type unmodified
+cli::source cli core type get
+cli::source cli core type get-info
 
 help() {
     cat << EOF

@@ -77,21 +77,21 @@ cli::main() {
 }
 
 cli::export::cli::meta::declare() {
-    echo "cli::import $@"
+    echo "cli::source $@"
 }
 
 cli::export::import_group() {
     local segments=( ${CLI_COMMAND[@]} )
     local length=${#segments[@]}
     local group="${segments[@]:0:$(( length - 1 ))}"
-    echo "cli::import ${group} .group"
+    echo "cli::source ${group} .group"
 }
 
 :;() {
     local segments=( ${CLI_COMMAND[@]} )
     local length=${#segments[@]}
     local parent_group="${segments[@]:0:$(( length - 2 ))}"
-    echo "cli::import ${parent_group} .group"
+    echo "cli::source ${parent_group} .group"
 }
 
 main() {

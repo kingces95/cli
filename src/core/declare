@@ -1,9 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash variable emit
-cli::import cli core type is-scaler
-cli::import cli core struct emit
-cli::import cli core variable declare
-cli::import cli core variable put
+cli::source cli bash variable emit
+cli::source cli core type is-scaler
+cli::source cli core struct emit
+cli::source cli core variable declare
+cli::source cli core variable put
 
 # Arguments when --print-struct
 #     --print-struct -s    [Flag] : Print structs

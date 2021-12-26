@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash write
-cli::import cli core type get
-cli::import cli core variable resolve
-cli::import cli core variable get-info
+cli::source cli bash write
+cli::source cli core type get
+cli::source cli core variable resolve
+cli::source cli core variable get-info
 
 help() {
     cat << EOF

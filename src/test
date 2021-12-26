@@ -1,5 +1,5 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-# cli::import cli test-inline
+# cli::source cli test-inline
 
 help() {
     cat << EOF

@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash emit expression key
-cli::import cli bash emit initializer string
+cli::source cli bash emit expression key
+cli::source cli bash emit initializer string
 
 help() {
     cat << EOF

@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type get-info
-cli::import cli core type get
-cli::import cli core type unmodify
+cli::source cli core type get-info
+cli::source cli core type get
+cli::source cli core type unmodify
 
 help() {
     cat << EOF
@@ -23,7 +23,7 @@ EOF
 }
 
 cli::core::variable::name::resolve::main() {
-    cli::import cli core variable parse
+    cli::source cli core variable parse
 
     ::cli::core::variable::parse::inline "$@"
     shift $(( ${#MAPFILE[@]} ))

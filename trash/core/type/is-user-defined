@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli core type is-builtin
-cli::import cli core type is-modified
+cli::source cli core type is-builtin
+cli::source cli core type is-modified
 
 help() {
     cat << EOF | cli::core::type::help

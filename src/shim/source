@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli bash which
-cli::import cli bash function is-declared
+cli::source cli bash which
+cli::source cli bash function is-declared
 
 help() {
     cat << EOF

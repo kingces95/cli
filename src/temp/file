@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli temp remove
-cli::import cli subshell on-exit
+cli::source cli temp remove
+cli::source cli subshell on-exit
 
 help() {
     cat << EOF

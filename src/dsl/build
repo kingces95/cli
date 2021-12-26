@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::import cli dsl load
-cli::import cli core variable declare
-cli::import cli core variable read
-cli::import cli core emit global
+cli::source cli dsl load
+cli::source cli core variable declare
+cli::source cli core variable read
+cli::source cli core emit global
 
 help() {
     cat << EOF
