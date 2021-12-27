@@ -911,8 +911,7 @@ cli::loader::variable::list() {
 }
 
 cli::loader::cache::path() {
-    ::cli::cache::path::inline "${CLI_SOURCE}"
-    REPLY="${REPLY}/$1"
+    REPLY="${CLI_CACHE}/$1"
 }
 
 cli::loader::cache::test() {
@@ -1018,7 +1017,7 @@ cli::loader::import() {
         return
     fi
 
-    # missing-group
+    # missing group
     if [[ ! -f "${CLI_SOURCE}" ]]; then
         [[ "${CLI_TYPE}" == 'group' ]] || cli::assert
         return
@@ -1081,39 +1080,53 @@ cli::loader::shim() {
     local -a CLI_COMMAND=( "${CLI_NAME}" "${MAPFILE[@]}" )
     shift ${#MAPFILE[@]}
 
-    # CLI_SOURCE
-    ::cli::shim::which::inline "${CLI_COMMAND[@]}" \
-        || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
-    local CLI_SOURCE="${REPLY}"
+    # CLI_SYMBOL
+    ::cli::name::to_symbol::inline "${CLI_COMMAND[@]}"
+    local CLI_SYMBOL="CLI_LOADER_${REPLY}"
 
     # CLI_META
-    ::cli::name::to_symbol::inline "${CLI_COMMAND[@]}"
-    local CLI_META="CLI_META_${REPLY}"
+    local CLI_META="${CLI_SYMBOL}_META"
 
-    # CLI_CACHE
-    ::cli::cache::path::inline "${CLI_SOURCE}"
-    local CLI_CACHE="${REPLY}"
-
-    # CLI_FUNCTION_MAIN
-    ::cli::name::to_main::inline "${CLI_COMMAND[@]}"
-    local CLI_FUNCTION_MAIN="${REPLY}"
-
-    # CLI_TYPE
-    local CLI_TYPE=command
-    if [[ "${CLI_COMMAND[@]: -1}" == '.group' ]]; then
-        CLI_TYPE=group
+    # CLI_SOURCE
+    local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
+    if [[ ! -v CLI_SOURCE ]]; then
+        ::cli::shim::which::inline "${CLI_COMMAND[@]}" \
+            || cli::assert "Failed to find shim for '${CLI_COMMAND[@]}'."
+        CLI_SOURCE="${REPLY}"
     fi
 
-    # verify source exists and is executable (except for .group files which are optional)
-    if [[ "${CLI_TYPE}" == 'group' ]]; then
-        [[ ! -f "${CLI_SOURCE}" || -x "${CLI_SOURCE}" ]] \
-            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
-    else
-        [[ -f "${CLI_SOURCE}" ]] \
-            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' does not exist."
+    # CLI_CACHE
+    local -n CLI_CACHE="${CLI_SYMBOL}_CACHE"
+    if [[ ! -v CLI_CACHE ]]; then
+        ::cli::cache::path::inline "${CLI_SOURCE}"
+        CLI_CACHE="${REPLY}"
+    fi
 
-        [[ -x "${CLI_SOURCE}" ]] \
-            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
+    # CLI_FUNCTION_MAIN
+    local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
+    if [[ ! -v CLI_FUNCTION_MAIN ]]; then
+        ::cli::name::to_main::inline "${CLI_COMMAND[@]}"
+        CLI_FUNCTION_MAIN="${REPLY}"
+    fi
+
+    # CLI_TYPE
+    local -n CLI_TYPE="${CLI_SYMBOL}_TYPE"
+    if [[ ! -v CLI_TYPE ]]; then
+        CLI_TYPE=command
+
+        # verify source exists and is executable (except for .group files which are optional)
+        if [[ "${CLI_COMMAND[@]: -1}" == '.group' ]]; then
+            CLI_TYPE=group
+
+            [[ ! -f "${CLI_SOURCE}" || -x "${CLI_SOURCE}" ]] \
+                || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
+        else    
+            [[ -f "${CLI_SOURCE}" ]] \
+                || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' does not exist."
+
+            [[ -x "${CLI_SOURCE}" ]] \
+                || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
+        fi
     fi
 
     if [[ "${1-}" == ---* ]]; then
@@ -1397,14 +1410,13 @@ cli::main::command::load() {
     fi
     local META_SH="${REPLY}"
     
-    cli::loader::cache::path 'help'
-    mkdir -p "${REPLY}"
+    mkdir -p "${CLI_CACHE}"
 
-    local HELP="${REPLY}/help"
-    local TOKENIZE="${REPLY}/tokenize"
-    local PARSE="${REPLY}/parse"
-    local META="${REPLY}/meta"
-    local LOAD="${REPLY}/load"
+    local HELP="${CLI_CACHE}/help"
+    local TOKENIZE="${CLI_CACHE}/tokenize"
+    local PARSE="${CLI_CACHE}/parse"
+    local META="${CLI_CACHE}/meta"
+    local LOAD="${CLI_CACHE}/load"
 
     if [[ -f "${META_SH}" && -f "${HELP}" ]] \
         && diff "${HELP}" <( cli::main -h ) > /dev/null; then
