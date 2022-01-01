@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::function::main() {
     :
 }
 
-self_test() {
+cli::bash::function::self_test() {
     cli bash function is-declared --self-test
     cli bash function list --self-test
 }

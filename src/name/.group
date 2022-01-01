@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::name::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::name::self_test() {
     cli name from-inline --self-test
     cli name parse --self-test
     cli name to-bash --self-test

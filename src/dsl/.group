@@ -8,7 +8,7 @@ Command
 EOF
 }
 
-main() {
+cli::dsl::main() {
     readonly CLI_DSL_ARG_CHAR_GLOB="[a-zA-Z0-9_-]"
     readonly CLI_DSL_ARG_ALIAS_GLOB="-@(${CLI_DSL_ARG_CHAR_GLOB})" 
     readonly CLI_DSL_ARG_NAME_GLOB="--@(${CLI_DSL_ARG_CHAR_GLOB})+(${CLI_DSL_ARG_CHAR_GLOB})"
@@ -62,12 +62,12 @@ main() {
     cli::export cli dsl
 }
 
-self_test() {
-    cli dsl simple --self-test
-    cli dsl sample --self-test
-    cli dsl tokenize --self-test
-    cli dsl parse --self-test
-    echo cli dsl meta --self-test
-    cli dsl load --self-test
-    echo cli dsl bgen --self-test
+cli::dsl::self_test() {
+    ( cli dsl simple --self-test )
+    ( cli dsl sample --self-test )
+    ( cli dsl tokenize --self-test )
+    ( cli dsl parse --self-test )
+    ( cli dsl meta --self-test )
+    ( cli dsl load --self-test )
+    ( echo cli dsl bgen --self-test )
 }

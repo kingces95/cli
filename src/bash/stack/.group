@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::stack::main() {
     :
 }
 
-self_test() {
+cli::bash::stack::self_test() {
     echo cli bash stack call --self-test
     echo cli bash stack hidden-attribute --self-test
     echo cli bash stack process --self-test

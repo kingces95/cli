@@ -9,10 +9,10 @@ Description
 EOF
 }
 
-main() {
+cli::bash::type::main() {
     :
 }
 
-self_test() {
+cli::bash::type::self_test() {
     cli bash type get-info --self-test
 }

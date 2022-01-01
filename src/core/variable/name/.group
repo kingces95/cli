@@ -10,11 +10,11 @@ Description
 EOF
 }
 
-main() {
+cli::core::variable::name::main() {
     :
 }
 
-self_test() {
+cli::core::variable::name::self_test() {
     cli core variable name resolve --self-test
     cli core variable name fields --self-test
     cli core variable name modifications --self-test

@@ -14,6 +14,6 @@ cli::eg::simplest::main() {
     :    
 }
 
-self_test() {
+cli::eg::simplest::self_test() {
     return
 }   

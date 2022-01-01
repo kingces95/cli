@@ -7,12 +7,12 @@ Command
 EOF
 }
 
-cli::emit::reflection::contains() {
+cli::emit::packed::reflection::contains() {
     while read; do cli::emit::library_name ${REPLY}; done \
         | emit::function_contains ${arg_name}
 }
 
-main() {
+cli::emit::packed::reflection::main() {
     cli::export::import cli_emit
     cli::export cli emit reflection
 }

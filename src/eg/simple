@@ -36,6 +36,6 @@ cli::eg::simple::main() {
     fi
 }
 
-self_test() {
+cli::eg::simple::self_test() {
     return
 }   

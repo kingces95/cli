@@ -215,7 +215,7 @@ cli::dsl::parse::main() {
     START
 }
 
-self_test() {
+cli::dsl::parse::self_test() {
     diff <(cli dsl sample -h \
             | cli dsl tokenize \
             | cli dsl parse

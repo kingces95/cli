@@ -43,6 +43,6 @@ cli::dsl::sample::main() {
     fi
 }
 
-self_test() {
+cli::dsl::sample::self_test() {
     return
 }   

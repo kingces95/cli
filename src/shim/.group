@@ -10,12 +10,13 @@ Description
 EOF
 }
 
-main() {
+cli::shim::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::shim::self_test() {
     cli shim shebang --self-test
     cli shim source --self-test
     cli shim which --self-test
+    cli shim probe --self-test
 }

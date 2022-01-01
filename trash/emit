@@ -204,7 +204,7 @@ self_test() (
                 '--') shift; arg_=( "$@" ); break ;;
                 *)
                     echo "Unexpected argument '$1'." >&2
-                    exit 1
+                    return 1
                 ;;
             esac
             if (( $# > 0 )); then shift; fi
@@ -213,7 +213,7 @@ self_test() (
         # required
         if [[ -z "${arg_header}" ]]; then
             echo "Missing required argument '--header'." >&2
-            exit 1
+            return 1
         fi
         
         # allowed values
@@ -222,14 +222,14 @@ self_test() (
             'banana') ;;
             *)
                 echo "Unexpected value '${arg_fruit}' for argument '--fruit'." >&2
-                exit 1
+                return 1
             ;;
         esac
         
         # regex
         if [[ ! "${arg_header}" =~ ^[A-Z][A-Za-z0-9_]*$ ]]; then
             echo "Unexpected value '${arg_header}' for argument '--header' does not match regex ^[A-Z][A-Za-z0-9_]*$." >&2
-            exit 1
+            return 1
         fi
     }
 

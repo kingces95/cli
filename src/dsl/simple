@@ -28,7 +28,7 @@ Examples
 EOF
 }
 
-main() {
+cli::dsl::simple::main() {
     echo "${ARG_HEADER}"
     if [[ "${ARG_DUMP}" == 'true' ]]; then
         declare -p
@@ -40,6 +40,6 @@ main() {
     fi
 }
 
-self_test() {
+cli::dsl::simple::self_test() {
     return
 }   

@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::set::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::set::self_test() {
     cli set deflower --self-test
     cli set intersect --self-test
     cli set test --self-test

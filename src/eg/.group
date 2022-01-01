@@ -10,11 +10,11 @@ Description
 EOF
 }
 
-main() {
+cli::eg::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::eg::self_test() {
     cli eg recurse --self-test
     cli eg simple --self-test
 }

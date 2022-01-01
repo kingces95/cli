@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::emit::initializer::main() {
     :
 }
 
-self_test() {
+cli::bash::emit::initializer::self_test() {
     cli bash emit initializer string --self-test
     cli bash emit initializer array --self-test
     cli bash emit initializer map --self-test

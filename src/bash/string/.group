@@ -9,10 +9,10 @@ Description
 EOF
 }
 
-main() {
+cli::bash::string::main() {
     :
 }
 
-self_test() {
+cli::bash::string::self_test() {
     cli bash string literal --self-test
 }

@@ -15,7 +15,7 @@ cli::emit::section() {
     echo
 }
 
-main() {
+cli::emit::packed::section::main() {
     :
     cli::export::import cli_emit
     cli::export cli emit

@@ -10,11 +10,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::bash::self_test() {
     cli bash array .group --self-test
     cli bash emit .group --self-test
     cli bash key .group --self-test
@@ -23,10 +23,8 @@ self_test() {
     cli bash string .group --self-test
     cli bash type .group --self-test
     cli bash variable .group --self-test
-    cli bash wire .group --self-test
     cli bash function .group --self-test
     cli bash filter .group --self-test
-
     cli bash group --self-test
     cli bash join --self-test
     cli bash literal --self-test

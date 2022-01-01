@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::cache::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::cache::self_test() {
     cli cache path --self-test
     cli cache put --self-test
     cli cache test --self-test

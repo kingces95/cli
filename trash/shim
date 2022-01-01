@@ -124,7 +124,7 @@ main() {
     # fail
     else
         echo "Command \"${unix_path}\" not found."
-        exit 1
+        return 1
     fi
 }
 
@@ -174,7 +174,7 @@ initialize() {
             '--') shift; arg_=( "$@" ); break ;;
             *)
                 echo "Unexpected argument '$1'."
-                exit 1
+                return 1
             ;;
         esac
         if (( $# > 0 )); then shift; fi

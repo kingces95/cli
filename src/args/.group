@@ -10,11 +10,11 @@ Description
 EOF
 }
 
-main() {
+cli::args::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::args::self_test() {
     cli args tokenize --self-test
     cli args parse --self-test
     cli args resolve --self-test

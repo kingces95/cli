@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::emit::block::main() {
     :
 }
 
-self_test() {
+cli::bash::emit::block::self_test() {
     cli bash emit block curly --self-test
     cli bash emit block paren --self-test
 }

@@ -9,10 +9,10 @@ Description
 EOF
 }
 
-main() {
+cli::bash::key::main() {
     :
 }
 
-self_test() {
+cli::bash::key::self_test() {
     cli bash key literal --self-test
 }

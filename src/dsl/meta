@@ -113,7 +113,7 @@ cli::dsl::meta::main() {
     ::cli::core::variable::write::inline "${RESULT}"
 }
 
-self_test() {
+cli::dsl::meta::self_test() {
     diff <(cli dsl sample -h \
             | cli dsl tokenize \
             | cli dsl parse \
@@ -141,9 +141,7 @@ self_test() {
 			group * type run-as string
 			group * type self-test boolean
 			group id alias i id
-			group id positional
 			group id type id string
-			group name positional
 			group name type name string
 			group name type namespace string
 			EOF

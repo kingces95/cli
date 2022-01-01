@@ -164,7 +164,7 @@ cli::core::wire::read::main() {
     ARG_REPLY_VALUE_REF+=( "$1" )
 }
 
-self_test() {
+self_test() (
     inline() { ::cli::core::wire::read::inline "$@"; }
 
     declare -A CLI_TYPE_VERSION=(
@@ -582,4 +582,4 @@ self_test() {
     test_bad_value
     test_too_many_values
     test_missing_field
-}
+)

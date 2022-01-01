@@ -7,10 +7,10 @@ Command
 EOF
 }
 
-main() {
+cli::attribute::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::attribute::self_test() {
     cli attribute is-defined --self-test
 }

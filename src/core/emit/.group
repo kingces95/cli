@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::core::emit::main() {
     :
 }
 
-self_test() {
+cli::core::emit::self_test() {
     cli core emit variable --self-test
     cli core emit global --self-test
     cli core emit scope --self-test

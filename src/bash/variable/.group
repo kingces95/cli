@@ -9,13 +9,12 @@ Description
 EOF
 }
 
-main() {
+cli::bash::variable::main() {
     :
 }
 
-self_test() {
+cli::bash::variable::self_test() {
     cli bash variable declaration .group --self-test
-
     cli bash variable declare-enum --self-test
     echo cli bash variable emit --self-test
     cli bash variable get-info --self-test

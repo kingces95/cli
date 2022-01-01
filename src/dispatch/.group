@@ -10,10 +10,10 @@ Description
 EOF
 }
 
-main() {
+cli::dispatch::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::dispatch::self_test() {
     cli main parse --self-test
 }

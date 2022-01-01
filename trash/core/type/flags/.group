@@ -7,7 +7,7 @@ Command
 EOF
 }
 
-main() {
+cli::core::type::flags::main() {
     :
 }
 

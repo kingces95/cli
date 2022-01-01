@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::array::main() {
     :
 }
 
-self_test() {
+cli::bash::array::self_test() {
     cli bash array literal --self-test
     cli bash array pop --self-test
 }

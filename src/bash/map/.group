@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::map::main() {
     :
 }
 
-self_test() {
+cli::bash::map::self_test() {
     cli bash map copy --self-test
     cli bash map keys --self-test
     cli bash map literal --self-test

@@ -9,11 +9,11 @@ Description
 EOF
 }
 
-main() {
+cli::bash::emit::statement::main() {
     :
 }
 
-self_test() {
+cli::bash::emit::statement::self_test() {
     cli bash emit statement assignment --self-test
     cli bash emit statement declare --self-test
     cli bash emit statement initialize --self-test

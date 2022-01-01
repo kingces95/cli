@@ -9,11 +9,11 @@ Summary
 EOF
 }
 
-main() {
+cli::util::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::util::self_test() {
     echo cli util readmap --self-test
     echo cli util readset --self-test
     echo cli util test --self-test

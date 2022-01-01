@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::stderr::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::stderr::self_test() {
     cli stderr cat --self-test
     cli stderr on-err --self-test
     cli stderr lock --self-test

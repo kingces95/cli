@@ -67,7 +67,7 @@ cli::imports::group() {
         | while read; do cli::imports::command "${REPLY}"; done
 }
 
-main() {
+cli::imports::main() {
     local prefix=
     local indent=
     local -A seen=

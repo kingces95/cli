@@ -102,6 +102,6 @@ predicate() {
     fi
 }
 
-main() {
+cli::find::main() {
     find "${ARG_CLI}"
 }

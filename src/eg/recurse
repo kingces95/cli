@@ -24,8 +24,11 @@ cli::eg::recurse::main() {
     echo ${ARG_DEPTH}
 }
 
-self_test() {
-    rm "$(${CLI_COMMAND[@]} ---cache)/meta.sh"
+cli::eg::recurse::self_test() {
+    local CACHE="$(${CLI_COMMAND[@]} ---cache)/meta.sh"
+    if [[ -f "${CACHE}" ]]; then
+        rm "${CACHE}"
+    fi
 
     diff <(${CLI_COMMAND[@]}) - <<-EOF
 		0

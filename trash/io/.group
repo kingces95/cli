@@ -9,7 +9,7 @@ Command
 EOF
 }
 
-main() {
+cli::io::main() {
     :;
 }
 

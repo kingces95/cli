@@ -12,7 +12,7 @@ cli::emit::library_name() {
     echo "${name// /::}"
 }
 
-main() {
+cli::emit::packed::main() {
     :
     cli::export::import cli_emit
     cli::export cli emit

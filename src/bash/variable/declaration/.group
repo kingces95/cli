@@ -9,10 +9,10 @@ Description
 EOF
 }
 
-main() {
+cli::bash::variable::declaration::main() {
     :
 }
 
-self_test() {
+cli::bash::variable::declaration::self_test() {
     cli bash variable declaration get-info --self-test
 }

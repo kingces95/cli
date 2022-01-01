@@ -44,7 +44,7 @@ cli::dsl::build::main() (
 	::cli::core::emit::global::inline ${NAME}
 )
 
-self_test() {
+cli::dsl::build::self_test() (
     local -A MY_SCOPE=()
     local ARG_SCOPE=MY_SCOPE
 
@@ -132,4 +132,4 @@ self_test() {
 		    [MY_META_GROUP_0_TYPE]="map"
 		)
 		EOFF
-}
+)

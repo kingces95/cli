@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::subshell::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::subshell::self_test() {
     cli subshell on-exit --self-test
     echo cli subshell signal-group --self-test
 }

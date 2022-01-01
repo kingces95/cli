@@ -172,7 +172,7 @@ cli::dsl::tokenize::main() {
     yield $CLI_DSL_TOKEN_EOF
 }
 
-self_test() (    
+cli::dsl::tokenize::self_test() (    
     diff <(cli dsl sample -h \
             | cli dsl tokenize \
         ) \

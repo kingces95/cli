@@ -14,13 +14,12 @@ Description
 EOF
 }
 
-main() {
+cli::core::variable::main() {
     :
 }
 
-self_test() {
+cli::core::variable::self_test() {
     cli core variable name .group --self-test
-
     cli core variable get-info --self-test
     cli core variable parse --self-test
     cli core variable resolve --self-test

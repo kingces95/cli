@@ -125,7 +125,7 @@ self_test() {
         | ${CLI_COMMAND[@]} -x -- meta data allow color white \
         | ${CLI_COMMAND[@]} -x -- meta data allow color black \
         | ${CLI_COMMAND[@]} -x -p -- meta data allow color
-exit
+return
 
     cli type define --name metadata_type \
         | cli type define-field --name allow -- map_of set \

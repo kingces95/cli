@@ -9,11 +9,11 @@ Summary
 EOF
 }
 
-main() {
+cli::temp::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::temp::self_test() {
     cli temp dir --self-test
     cli temp fifo --self-test
     cli temp file --self-test

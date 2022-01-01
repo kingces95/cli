@@ -10,10 +10,10 @@ Description
 EOF
 }
 
-main() {
+cli::bash::filter::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::bash::filter::self_test() {
     cli bash filter glob --self-test
 }

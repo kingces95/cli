@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::core::type::main() {
     :
 }
 
-self_test() {
+cli::core::type::self_test() {
     cli core type emit --self-test
     cli core type get --self-test
     cli core type get-info --self-test

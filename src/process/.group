@@ -7,11 +7,11 @@ Command
 EOF
 }
 
-main() {
+cli::process::main() {
     : # special loader case; export nothing
 }
 
-self_test() {
+cli::process::self_test() {
     echo cli process parent --self-test
     echo cli process tree --self-test
 }
