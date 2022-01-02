@@ -205,695 +205,54 @@ declare -n CLI_IMPORT='CLI_LOADER_CLI_LOADER_IMPORT'
 
 inline() {
 
-    cli::set::test() {
-        local -n SET_REF=${1:?'Missing set'}
-        shift 
-
-        local KEY="$*"
-        [[ "${KEY}" ]] || cli::assert 'Missing key'
-        
-        [[ ${SET_REF[${KEY}]+hit} == 'hit' ]]
-    }
-
-    cli::set::deflower() {
-        local -n SET_REF=${1?'Missing set'}
-        local KEY=${2?'Missing element value'}
-
-        if cli::set::test "$@"; then
-            return 1
-        fi
-
-        SET_REF[${KEY}]=true
-    }
-
-    cli::name::to_bash() {
-        MAPFILE=()
-        while (( $# > 0 )); do
-            [[ "$1" =~ ${CLI_REGEX_NAME} ]] || cli::assert \
-                "Unexpected cli name \"$1\" does not match regex ${CLI_REGEX_NAME}."
-
-            MAPFILE+=( "${1//[-.]/_}" )
-            shift
-        done
-        REPLY=${MAPFILE[0]}
-    }
-
-    cli::name::to_inline() {
-        cli::name::to_bash "$@"
-        cli::bash::join '::' "${MAPFILE[@]}"
-    }
-
-    cli::name::to_function() {
-        cli::name::to_bash "$@"
-        cli::bash::join "::" "${MAPFILE[@]}"
-    }
-
-    cli::name::to_symbol() {
-        cli::name::to_bash "$@"
-        cli::bash::join '_' "${MAPFILE[@]^^}"
-    }
-        
-    cli::name::parse() {
-        MAPFILE=()
-        while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do
-            MAPFILE+=( "$1" )
-            shift
-        done
-    }
-
-    cli::attribute::is_defined() {
-        local target_type=${1-}; shift
-        local target=${1-}; shift
-        local type=${1-}; shift
-
-        # expand assertion as more target types are needed
-        [[ ${target_type} == 'METHOD' ]] || cli::assert
-
-        # target identifies a method (or type, or command, or what-have-you)
-        [[ ${target} != 'METHOD' ]] || \
-            [[ ${target} =~ ${CLI_REGEX_BASH_NAME} ]] || cli::assert
-
-        local -n targets="CLI_META_ATTRIBUTES_${target_type}"
-        local index=${targets[${target}]:-}
-        local -n ref="CLI_META_ATTRIBUTES_${target_type}_${index}_TYPE"
-
-        # search the types of attributes decorating the target for a match
-        for attribute in "${ref[@]}"; do
-            if [[ "${attribute}" == "${type}" ]]; then
-                return 0
-            fi
-        done
-
-        return 1
-    }
-
-    cli::path::get_info() {
-        REPLY_CLI_PATH_EXISTS=false
-        REPLY_CLI_PATH_IS_FILE=false
-        REPLY_CLI_PATH_IS_DIRECTORY=false
-        REPLY_CLI_PATH_IS_EXECUTABLE=false
-        REPLY_CLI_PATH_IS_WRITABLE=false
-        REPLY_CLI_PATH_IS_SYMBOLIC_LINK=false
-
-        if [[ ! "${1-}" || ! -e "${1}" ]]; then
-            return
-        fi
-
-        REPLY_CLI_PATH_EXISTS=true
-
-        if [[ -f "${1}" ]]; then
-            REPLY_CLI_PATH_IS_FILE=true
-
-        elif [[ -d "${1}" ]]; then
-            REPLY_CLI_PATH_IS_DIRECTORY=true
-
-        elif [[ -L "${1}" ]]; then
-            REPLY_CLI_PATH_IS_SYMBOLIC_LINK=true
-        fi
-
-        if [[ -w "${1}" ]]; then
-            REPLY_CLI_PATH_IS_WRITABLE=true
-        fi
-
-        if [[ -x "${1}" ]]; then
-            REPLY_CLI_PATH_IS_EXECUTABLE=true
-        fi
-    }
-
-    cli::path::dir() { 
-        REPLY="$(dirname $1)"
-    }
-
-    cli::path::name() { 
-        REPLY="${1##*/}"; 
-    }
-
-    cli::path::make_absolute() {
-
-        if [[ ! "${1-}" ]]; then
-            REPLY="${PWD}"
-
-        elif [[ ! "$1" =~ ^/ ]]; then
-            REPLY="${PWD}/${1##./}"
-
-        else
-            REPLY="$1"
-        fi
-    }
-
-    cli::cache::path() {
-        cli::path::name "$1"
-        local NAME="${REPLY}"
-
-        cli::path::dir "$1"
-        local DIR="${REPLY}"
-
-        REPLY="${DIR}/.cli/${NAME}"
-    }
-
-    cli::cache::put() {
-        local CACHE="$1"
-
-        cli::path::dir "${CACHE}"
-        local DIR="${REPLY}"
-
-        mkdir -p "${DIR}"
-
-        cli::temp::file
-        local TEMP="${REPLY}"
-
-        cat > "${TEMP}"
-
-        mv "${TEMP}" "${CACHE}"
-
-        REPLY="${CACHE}"
-    }
-
-    cli::cache::test() {
-        local CACHE="$1"
-        shift
-
-        # if the cache does not exist than fail
-        if [[ ! -f "${CACHE}" ]]; then 
-            return 1
-        fi
-
-        while (( $# > 0 )); do
-            local SOURCE="$1"
-            shift
-
-            # if the source is not older than the cache, then the cache is outdated
-            if [[ ! "${SOURCE}" -ot "${CACHE}" ]]; then
-                return 1
-            fi
-        done
-    }
-
-    cli::stderr::lock() {
-        flock -x "${CLI_LOADER_LOCK}" cat
-    }
-
-    cli::bash::function::list() {
-        declare -F \
-            | awk '{ print $3 }' \
-            | cli::bash::filter::glob "$@"
-    }
-        
-    cli::bash::filter::glob() {
-        while read -r; do
-            local FILTER
-            for FILTER in "$@"; do
-                if [[ "${REPLY}" == ${FILTER} ]]; then
-                    echo "${REPLY}"
-                    break;
-                fi
-            done
-        done
-    }
-        
-    cli::bash::printf() {
-        local FORMAT=${1-}
-        [[ $"{FORMAT}" ]] || cli::assert 'Missing format.'
-        shift
-
-        if (( $# == 0 )); then
-            return
-        fi
-
-        printf "${FORMAT}" "$@"
-    }
-
-    cli::bash::log() {
-        echo "$@" >&2
-    }
-
-    cli::bash::which() {
-        MAPFILE=()
-
-        local NAME="$1"
-        shift
-
-        local IFS=:
-        local -a DIRS=( ${PATH} )
-
-        for dir in "${DIRS[@]}"; do
-            local PROBE="${dir}/${NAME}"
-            MAPFILE+=( "${PROBE}" )
-            cli::path::get_info "${PROBE}"
-
-            if ${REPLY_CLI_PATH_IS_EXECUTABLE}; then
-                REPLY="${PROBE}"
-                return 0
-            fi
-        done
-
-        return 1
-    }
-
-    cli::bash::return() {
-        return ${1-0}
-    }
-
-    cli::bash::join() {
-        local DELIMITER=${1?'Missing delimiter'}
-        shift
-
-        REPLY=""
-        while (( $# > 0 )); do
-            REPLY+="$1"
-            shift
-
-            if (( $# > 0 )); then 
-                REPLY+="${DELIMITER}"
-            fi
-        done
-    }
-
-    cli::bash::stack::call() {
-        
-        # argument counts by frame
-        set -- ${BASH_ARGV[@]}
-
-        # bash stack
-        local -i argc=0
-        for (( i=0; i<${#FUNCNAME[@]}; i++ )); do
-            local -a args=()
-            local inline_args=''
-            local funcname="${FUNCNAME[$i]}"
-
-            if (( i == ${#FUNCNAME[@]}-1 )); then funcname='bash::main'; fi
-
-            # reverse argv for i-th frame
-            for (( j=${BASH_ARGC[$i]}-1; j>=0; j-- )); do
-                args+=( "$(cli::bash::literal "${BASH_ARGV[${j}+${argc}]}")" )
-            done
-
-            # pop argc stack for i-th frame
-            argc+=${BASH_ARGC[$i]}
-
-            if [[ ! "${CLI_STACK_SHOW_HIDDEN-}" ]] \
-                && cli::attribute::is_defined \
-                    'METHOD' "${funcname}" 'cli_bash_stack_hidden_attribute'; then
-                continue
-            fi
-
-            # inline args when they won't disturb formatting
-            inline_args="${args[@]}"
-            if (( ${#inline_args} > 80 )); then
-                inline_args=
-            else
-                args=()
-            fi
-
-            printf '%-50s %s:%s\n' \
-                "${funcname} ${inline_args}" "${BASH_SOURCE[$i]}" ${BASH_LINENO[$i-1]-}
-
-            for arg in "${args[@]}"; do
-                echo "${arg}"
-            done | sed 's/^/  /'
-        done
-    }
-
-    cli::bash::stack::process() {
-        local ARG_START_PID=${1-$$}
-        local ARG_END_PID=${2-${CLI_PID-}}
-
-        # load process poset and associated command lines
-        local -a pid_parent=()
-        local -a pid_cmd=()
-        while read pid ppid cmd; do
-            pid_parent[${pid}]=${ppid}
-            pid_cmd[${pid}]="${cmd}"
-        done < <(ps -o pid=,ppid=,args=)
-
-        # subprocess stack
-        local pid=${BASHPID}
-        local -a subshell=( ${BASHPID} )
-        while (( $pid != $$ )); do
-            echo "(${pid}) subshell"
-            pid=${pid_parent[${pid}]}
-        done
-
-        # process stack
-        local pid=${ARG_START_PID}
-        for (( i=0; ${pid} > 0; i++ )); do
-
-            echo -n "(${pid}) "
-            local inline_args=${pid_cmd[${pid}]}
-            if (( ${#inline_args} < 80 )); then
-                echo "${inline_args}"
-            else
-                echo "${inline_args}" \
-                    | sed -e $'s/--/\\\n  --/g'
-            fi
-
-            if (( ${pid} == ${ARG_END_PID-0} )); then break; fi
-            pid=${pid_parent[${pid}]-0}
-        done
-    }
-
-    cli::bash::stack::trace() {
-        cli::bash::stack::call
-        if [[ -n "${CLI_STACK_SHOW_PROCESS-}" ]]; then
-            cli::bash::stack::process
-        fi
-    }
-
-    cli::bash::function::is_declared() {
-        declare -F "${1-}" > /dev/null
-    }
-
-    cli::bash::literal() {
-        local literal="$*"
-        
-        #echo "if [[ ! \"${literal}\" =~ ^[a-zA-Z_-]* ]]; then"
-        if [[ "${literal}" =~ ^[a-zA-Z0-9_-]*$ ]]; then
-            echo "${literal}"
-            return 0
-        fi
-
-        local ARRAY=( "$*" )
-        literal=$(declare -p ARRAY)
-
-        # 0123456789012345678901
-        # declare -a ARRAY=([0]="foo")
-        literal="${literal:22}"
-        literal="${literal:0: -1}"
-
-        echo "${literal}"
-    }
-
-    cli::bash::variable::list() {
-
-        local NAME
-        for NAME in "$@"; do
-
-            if [[ ! "${NAME}" ]]; then
-                continue
-
-            elif [[ "${NAME}" =~ ^.*[*]$ ]]; then
-
-                local MATCH
-                for MATCH in $(eval "echo \${!${NAME}}"); do
-                    # do not recurse! test -v arr=() is false
-                    echo "${MATCH}"
-                done
-
-            elif [[ -v "${NAME}" ]]; then
-                echo "${NAME}"
-
-            else
-                # declare -a arr=()
-                local MATCH
-                for MATCH in $(eval "echo \${!${NAME}*}"); do
-                    if [[ "${MATCH}" == "${NAME}" ]]; then
-                        echo "${NAME}"
-                    fi
-                done
-            fi
-        done | sort
-    }
-        
-    cli::bash::variable::emit() {
-        cli::bash::variable::list "$@" \
-            | while read; do declare -p ${REPLY}; done
-    }
-
-    cli::bash::array::pop() {
-        (( $# > 0 )) || cli::assert 'Stack empty.'
-        MAPFILE=( ${@:1:$((${#@}-1))} )
-    }
-
-    cli::bash::map::copy() {
-        local SOURCE_MAP=${1-}
-        [[ "${SOURCE_MAP}" ]] || cli::assert 'Missing source map.'
-        shift
-
-        local TARGET_MAP=${1-}
-        [[ "${TARGET_MAP}" ]] || cli::assert 'Missing target map.'
-        shift
-
-        local -n SOURCE_REF=${SOURCE_MAP}
-        local -n TARGET_REF=${TARGET_MAP}
-
-        while (( $# > 0 )); do
-            local KEY=$1
-            shift
-
-            if ! cli::set::test ${SOURCE_MAP} ${KEY}; then
-                continue
-            fi
-
-            TARGET_REF[${KEY}]="${SOURCE_REF[${KEY}]}"
-        done
-    }
-
-    cli::subshell::on_exit() {
-        local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
-        local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
-
-        if (( ${#CLI_SUBSHELL_ON_EXIT[@]} == 0 )); then
-            cli::subshell::on_exit::trap() {
-                local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
-                for delegate in ${CLI_SUBSHELL_ON_EXIT[@]}; do
-                    ${delegate}
-                done
-            }
-            trap cli::subshell::on_exit::trap EXIT
-        fi
-
-        CLI_SUBSHELL_ON_EXIT+=( "$@" )
-    }
-        
-    cli::temp::remove() {
-
-        local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-
-        # unlink files/directories
-        for FILE in "$@"; do
-            if ! ${CLI_SUBSHELL_TEMP_FILE_BASHPID[${FILE}]-}; then
-                continue
-            fi
-            
-            unset "CLI_SUBSHELL_TEMP_FILE_BASHPID[${FILE}]"
-
-            if [[ ! -a "${FILE}" ]]; then
-                :
-            elif [[ -d "${FILE}" ]]; then
-                rm -f -r "${FILE}"
-                rm -f -r "${FILE}"
-            else
-                rm -f "${FILE}"
-            fi
-        done
-    }
-
-    cli::temp::file() {
-
-        # create and return a temporary file
-        local TEMP_FILE=$(mktemp "${1-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
-
-        # record the temporary file 
-        declare -gA "CLI_SUBSHELL_TEMP_FILE_${BASHPID}+=()"
-        local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-
-        # cleanup
-        if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
-            cli::temp::file::on_exit() {
-
-                # unlink files/directories
-                local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-                cli::temp::remove "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
-            }
-
-            cli::subshell::on_exit \
-                cli::temp::file::on_exit
-        fi
-
-        CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${TEMP_FILE}"]='true' )
-        REPLY="${TEMP_FILE}"
-    }
-
-    cli::temp::dir() {
-        cli::temp::file "$@"
-        rm -f "${REPLY}"
-        mkdir "${REPLY}"
-    }
-
-    cli::temp::fifo() {
-        cli::temp::file "$@"
-        rm -f "${REPLY}"
-        mkfifo "${REPLY}"
-    }
-
-    cli::subshell::signal_group() {
-        local SIGNAL=${1-'SIGINT'}
-        read PID < <(ps -p ${BASHPID} -o pgid=)
-        kill -${SIGNAL} -${PID}
-    }
-
-    cli::stderr::cat() {
-
-        # create a temporary file
-        cli::temp::file
-
-        # write to file instead of stderr so generator can take lock
-        cat > "${REPLY}"
-
-        # lock and copy file to stderr
-        cat "${REPLY}" \
-            | cli::stderr::lock >&2 
-
-        # cleanup
-        rm "${REPLY}"
-    }
-
-    cli::stderr::dump() {
-
-        # copy stdin to stderr
-        cli::stderr::cat
-
-        # issue control-c
-        cli::subshell::signal_group
-    }
-
-    cli::stderr::assert() {
-        if (( $# == 0 )); then 
-            set 'Condition failed'
-        fi
-
-        {
-            echo "ASSERT FAILED:" "$*"
-            cli::bash::stack::trace \
-                | sed 's/^/  /'
-        } | cli::stderr::dump
-    }
-
-    cli::stderr::fail() {
-        echo "$*" \
-            | cli::stderr::dump
-    }
-
-    cli::stderr::on_err() {
-        local -a CLI_PIPESTATUS=( "${PIPESTATUS[@]}" )
-        local CLI_TRAP_EXIT_CODE=${1-'?'}
-        local BPID="${BASHPID}"
-
-        # only dump if we are exiting after the trap; e.g. errexit is set (set -e)
-        #   -e  Exit immediately if a command exits with a non-zero status.
-        if [[ ! $- =~ e ]]; then
-            return
-        fi
-
-        {
-            echo -n "TRAP ERR: exit=${CLI_TRAP_EXIT_CODE}"
-            if (( ${#CLI_PIPESTATUS[@]} > 1 )); then
-                echo -n ", pipe=[$(cli::bash::join ',' "${CLI_PIPESTATUS[@]}")]"
-            fi
-            echo ", bpid=${BPID}, pid=$$"
-            echo "BASH_COMMAND ERR: ${BASH_COMMAND}"
-
-            cli::bash::stack::trace | sed 's/^/  /'
-        } | cli::stderr::dump
-    }
-
-    cli::shim::source() {
-        local NAME="${1-}"
-        [[ ${NAME} ]] || cli::assert 'Missing shim name.'
-
-        local -n SHIM_ROOT_DIR_NAME="CLI_SHIM_ROOT_DIR_${NAME^^}"
-        if [[ "${SHIM_ROOT_DIR_NAME-}" ]]; then
-            return 0
-        fi
-
-        # resolve the path to the shim by searching PATH
-        cli::bash::which "$1" || return 1
-        
-        # source the shim
-        source "${REPLY}"
-
-        # verify shim published the path to the root of its commands
-        [[ "${SHIM_ROOT_DIR_NAME-}" ]] \
-            || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
-
-        # verify the shim published a function of the same name.
-        cli::bash::function::is_declared "${NAME}" \
-            || cli::assert "Shim '$1' failed to define function ${NAME}."
-    }
-
-    cli::shim::probe() {
-        cli::shim::which "${1-}"
-        shift
-
-        MAPFILE=()
-
-        local IFS=/
-        REPLY="${REPLY}/$*"
-        MAPFILE+=( "${REPLY}" )
-
-        # probe for .sh
-        if [[ ! -f "${REPLY}" ]]; then
-            REPLY+='.sh'
-            MAPFILE+=( "${REPLY}" )
-        fi
-
-        [[ -f "${REPLY}" ]]
-    }
-
-
-    cli::shim::which() {
-        local NAME="$1"
-        shift
-
-        cli::shim::source "${NAME}" || return 1
-
-        local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${NAME^^}"
-        [[ "${SHIM_ROOT_DIR_REF-}" ]] || cli::assert
-
-        REPLY="${SHIM_ROOT_DIR_REF}"
-    }
-
-    cli::shim::shebang() {
-
-        # CLI_NAME
-        [[ "${CLI_NAME}" ]] \
-            || cli::assert "Shebang failed to declare 'CLI_NAME'." 
-
-        # SHIM_ROOT_DIR_REF
-        cli::shim::source "${CLI_NAME}" \
-            || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
-        local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
-
-        # SOURCE_PATH
-        cli::path::make_absolute "$1"
-        local SOURCE_PATH="${REPLY}"
-        shift
-
-        # REL_PATH
-        local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
-        (( ${#REL_PATH} < ${#SOURCE_PATH} )) \
-            || cli::assert "Source path '${SOURCE_PATH}' is not a subpath of '${SHIM_ROOT_DIR_REF}'." 
-
-        # COMMAND
-        local IFS=/
-        local -a COMMAND=( ${CLI_NAME} ${REL_PATH} )
-        IFS=${CLI_IFS}
-
-        set "${COMMAND[@]}" "$@"
-
-        # epilog
-        unset REL_PATH
-        unset SOURCE_PATH
-        unset COMMAND
-        unset -n SHIM_ROOT_DIR_REF
-
-        # post conditions
-        [[ -v CLI_NAME ]] || cli::assert
-
-        "$@" 
-    }
+    source "${CLI_SHIM_ROOT_DIR_CLI}/set/test.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/set/deflower.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/name/to-bash.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/name/to-inline.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/name/to-function.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/name/to-symbol.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/name/parse.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/attribute/is-defined.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/path/get-info.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/path/dir.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/path/name.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/path/make-absolute.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/cache/path.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/cache/put.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/cache/test.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/stderr/lock.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/function/list.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/filter/glob.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/printf.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/log.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/which.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/return.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/join.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/stack/call.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/stack/process.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/stack/trace.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/function/is-declared.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/literal.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/variable/list.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/variable/emit.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/array/pop.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/bash/map/copy.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/subshell/on-exit.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/subshell/signal-group.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/temp/remove.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/temp/file.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/temp/dir.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/temp/fifo.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/stderr/cat.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/stderr/dump.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/stderr/assert.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/stderr/fail.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/stderr/on-err.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/shim/source.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/shim/probe.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/shim/which.sh"
+    source "${CLI_SHIM_ROOT_DIR_CLI}/shim/shebang.sh"
 }
-inline
 
 # public
 cli::export() {
@@ -1104,6 +463,9 @@ cli::loader::shim() {
 
         while true; do
             case "$1" in
+                '---eval0')
+                    shift
+                    eval "$@" ;;
                 '---assert')
                     cli::assert ;;
                 '---subshell-assert')
@@ -1886,11 +1248,14 @@ cli::assert() {
     cli::stderr::assert "$@"
 }
 
-cli::initialize
-
 # shim
 source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
-cli::bash::function::is_declared 'cli' || cli::assert
-[[ -v CLI_SHIM_ROOT_DIR_CLI ]] || cli::assert
+inline
+cli::initialize
+
+# cli::bash::function::is_declared 'cli' || cli::assert
+# [[ -v CLI_SHIM_ROOT_DIR_CLI ]] || cli::assert
 
 cli loader "$@"
+
+# cat src/loader | egrep -o cli::[a-z:_]+ | sort -u | grep -v cli::loader
