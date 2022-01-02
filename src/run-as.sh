@@ -21,7 +21,7 @@ Examples
 EOF
 }
 
-::cli::run_as::inline() {
+cli::run_as::inline() {
     local -a args=($(printf %q "${arg_command}"))
 
     for i in "$@"; do

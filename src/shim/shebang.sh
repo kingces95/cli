@@ -21,19 +21,19 @@ Details
 EOF
 }
 
-::cli::shim::shebang::inline() {    
+cli::shim::shebang::inline() {    
 
     # CLI_NAME
     [[ "${CLI_NAME}" ]] \
         || cli::assert "Shebang failed to declare 'CLI_NAME'." 
 
     # SHIM_ROOT_DIR_REF
-    ::cli::shim::source::inline "${CLI_NAME}" \
+    cli::shim::source::inline "${CLI_NAME}" \
         || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
     local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
 
     # SOURCE_PATH
-    ::cli::path::make_absolute::inline "$1"
+    cli::path::make_absolute::inline "$1"
     local SOURCE_PATH="${REPLY}"
     shift
 
@@ -80,6 +80,6 @@ cli::shim::shebang::self_test() (
     PATH="${DIR}:${PATH}"
 
     # discover, source, and invoke the shim with the command
-    diff <(CLI_NAME=foo ::cli::shim::shebang::inline "${FOO_BAR}" -- a0 a1 a2) - <<< 'bar -- a0 a1 a2' \
+    diff <(CLI_NAME=foo cli::shim::shebang::inline "${FOO_BAR}" -- a0 a1 a2) - <<< 'bar -- a0 a1 a2' \
         || cli::assert
 )

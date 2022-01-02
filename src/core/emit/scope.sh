@@ -12,17 +12,17 @@ Description
 EOF
 }
 
-::cli::core::emit::scope::inline() {
+cli::core::emit::scope::inline() {
     : "${ARG_SCOPE?'Missing scope.'}"
 
     local -A CLI_CORE_VARIABLE_EMIT_SCOPE=()
     while read NAME; do
-        ::cli::core::variable::get_info::inline "${NAME}"
+        cli::core::variable::get_info::inline "${NAME}"
         CLI_CORE_VARIABLE_EMIT_SCOPE+=( [${NAME}]="${REPLY}" )
     done
 
     echo -n "CLI_SCOPE+="
-    ::cli::bash::emit::expression::map::inline CLI_CORE_VARIABLE_EMIT_SCOPE
+    cli::bash::emit::expression::map::inline CLI_CORE_VARIABLE_EMIT_SCOPE
     echo
 }
 

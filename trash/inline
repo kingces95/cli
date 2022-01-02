@@ -38,7 +38,7 @@ inline() {
         # disable loader
         cli() { echo '/dev/null'; }
         cli::main() { return; }
-        cli::cli::meta::declare() { return; }
+        clicli::meta::declare() { return; }
         cli::import_group() { return; }
         cli::import_parent_group() { return; }
 

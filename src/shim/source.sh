@@ -23,7 +23,7 @@ Description
 EOF
 }
 
-::cli::shim::source::inline() {
+cli::shim::source::inline() {
     local NAME="${1-}"
     [[ ${NAME} ]] || cli::assert 'Missing shim name.'
 
@@ -33,7 +33,7 @@ EOF
     fi
 
     # resolve the path to the shim by searching PATH
-    ::cli::bash::which::inline "$1" || return 1
+    cli::bash::which::inline "$1" || return 1
     
     # source the shim
     source "${REPLY}"
@@ -43,7 +43,7 @@ EOF
         || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
 
     # verify the shim published a function of the same name.
-    ::cli::bash::function::is_declared::inline "${NAME}" \
+    cli::bash::function::is_declared::inline "${NAME}" \
         || cli::assert "Shim '$1' failed to define function ${NAME}."
 }
 

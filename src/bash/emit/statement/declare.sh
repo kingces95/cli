@@ -8,8 +8,8 @@ Command
 EOF
 }
 
-::cli::bash::emit::statement::declare::inline() {
-    ::cli::bash::emit::expression::declare::inline "$@"
+cli::bash::emit::statement::declare::inline() {
+    cli::bash::emit::expression::declare::inline "$@"
     echo
 }
 

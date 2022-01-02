@@ -13,7 +13,7 @@ Description
 EOF
 }
 
-::cli::subshell::on_exit::inline() {
+cli::subshell::on_exit::inline() {
     local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
     local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
 
@@ -34,7 +34,7 @@ cli::subshell::on_exit::self_test() {
     handler_a() { echo "a"; }
     handler_b() { echo "b"; }
 
-    inline() { ::cli::subshell::on_exit::inline "$@"; }
+    inline() { cli::subshell::on_exit::inline "$@"; }
 
     # multipule handlers
     diff <( inline handler_a handler_b ) <(printf '%s\n' a b) \

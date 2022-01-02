@@ -18,7 +18,7 @@ Description
 EOF
 }
 
-::cli::bash::map::copy::inline() {
+cli::bash::map::copy::inline() {
     local SOURCE_MAP=${1-}
     [[ "${SOURCE_MAP}" ]] || cli::assert 'Missing source map.'
     shift
@@ -34,7 +34,7 @@ EOF
         local KEY=$1
         shift
 
-        if ! ::cli::set::test::inline ${SOURCE_MAP} ${KEY}; then
+        if ! cli::set::test::inline ${SOURCE_MAP} ${KEY}; then
             continue
         fi
 

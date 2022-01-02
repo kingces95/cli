@@ -66,7 +66,7 @@ cli::util::readmap::self_test() {
 
     declare -A RESULT=()
     ${CLI_COMMAND[@]} ---emit | source /dev/stdin
-    ::cli::util::readmap::inline "$'\n'" "$'\t'"
+    cli::util::readmap::inline "$'\n'" "$'\t'"
     assert::pipe_eq_exact < <(declare -p RESULT) \
         "declare -A RESULT=([\$'\n']=\$'\t' )"
 }

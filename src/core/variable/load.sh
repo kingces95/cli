@@ -17,14 +17,14 @@ Description
 EOF
 }
 
-::cli::core::variable::load::inline() {
+cli::core::variable::load::inline() {
     local DIR="$1"
     [[ -d "${DIR}" ]] || cli::assert "Directory '$DIR' not found."
 
     set "${DIR}/*"
 
     for FILE in $@; do
-        ::cli::path::name::inline "${FILE}"
+        cli::path::name::inline "${FILE}"
         local FILE_NAME="${REPLY}"
     
         [[ "${FILE_NAME}" =~ ${CLI_REGEX_VARIABLE_NAME} ]] \
@@ -42,7 +42,7 @@ cli::core::variable::load::self_test() (
     cli::temp::dir
     local DIR="${REPLY}"
 
-    ::cli::core::variable::save::inline "${DIR}" <<-EOF
+    cli::core::variable::save::inline "${DIR}" <<-EOF
 			foo r00 r01 r02
 			foo r10 r11 r12
 			bar s00 s01 s\ 02

@@ -19,11 +19,11 @@ EOF
 }
 
 cli::core::variable::parse::main() {
-    ::cli::core::variable::parse::inline "$@"
+    cli::core::variable::parse::inline "$@"
     declare -p MAPFILE REPLY
 }
 
-::cli::core::variable::parse::inline() {
+cli::core::variable::parse::inline() {
     local ARGS=( "$@" )
     MAPFILE=()
 

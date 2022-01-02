@@ -13,9 +13,9 @@ Summary
 EOF
 }
 
-::cli::bash::emit::function::inline() {
+cli::bash::emit::function::inline() {
     echo -n "$1() "
-    ::cli::bash::emit::block::curly::inline
+    cli::bash::emit::block::curly::inline
     echo
 }
 

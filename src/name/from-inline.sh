@@ -17,7 +17,7 @@ Description
 EOF
 }
 
-::cli::name::from_inline::inline() {
+cli::name::from_inline::inline() {
     set -- "${1//::_/::.}"
     set -- "${1//_/-}"
     set -- ${1//::/ }

@@ -39,7 +39,7 @@ cli::core::wire::read::main() {
         ARG_REPLY_TYPE=REPLY_TYPE \
         ARG_REPLY_KEY=REPLY_KEY \
         ARG_REPLY_VALUE=REPLY_VALUE \
-            ::cli::core::wire::read::inline "${RECORD[@]}"
+            cli::core::wire::read::inline "${RECORD[@]}"
 
         for (( i=0; i<${#REPLY_NAME[@]}; i++ )); do
             local -a REPLY=()
@@ -51,12 +51,12 @@ cli::core::wire::read::main() {
             fi
             REPLY+=( "${REPLY_VALUE[$i]}" )
 
-            ::cli::bash::write::inline "${REPLY[@]}"
+            cli::bash::write::inline "${REPLY[@]}"
         done
     done
 }
 
-::cli::core::wire::read::inline() {
+cli::core::wire::read::inline() {
     : ${ARG_REPLY_NAME?}
     : ${ARG_REPLY_TYPE?}
     : ${ARG_REPLY_KEY?}
@@ -85,7 +85,7 @@ cli::core::wire::read::main() {
     shift
 
     # update scope 
-    if ! arg_type="${ARG_TYPE}" ::cli::core::type::is_builtin::inline; then
+    if ! arg_type="${ARG_TYPE}" cli::core::type::is_builtin::inline; then
         ARG_REPLY_NAME_REF+=( CLI_SCOPE )
         ARG_REPLY_TYPE_REF+=( map )
         ARG_REPLY_KEY_REF+=( ${ARG_NAME} )
@@ -115,14 +115,14 @@ cli::core::wire::read::main() {
     # no explicit value
     if (( $# == 0 )); then 
 
-        if ! ::cli::core::type::is_scaler::inline ${ARG_TYPE}; then
+        if ! cli::core::type::is_scaler::inline ${ARG_TYPE}; then
             cli::fail "Missing value for type '${ARG_TYPE[*]}'." \
                 "Non-scaler types hae no default value."
         fi
 
         # report default value
         local VALUE
-        ::cli::core::variable::initialize::inline VALUE ${ARG_TYPE} 
+        cli::core::variable::initialize::inline VALUE ${ARG_TYPE} 
         ARG_REPLY_VALUE_REF+=( ${VALUE} ) 
         return
     fi
@@ -165,7 +165,7 @@ cli::core::wire::read::main() {
 }
 
 self_test() (
-    inline() { ::cli::core::wire::read::inline "$@"; }
+    inline() { cli::core::wire::read::inline "$@"; }
 
     declare -A CLI_TYPE_VERSION=(
         [MAJOR]='integer'

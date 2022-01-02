@@ -10,7 +10,7 @@ Summary
 EOF
 }
 
-::cli::dump::inline() {
+cli::dump::inline() {
     :
 }
 

@@ -17,7 +17,7 @@ Description
 EOF
 }
 
-::cli::bash::variable::declaraiton::print::inline() {
+cli::bash::variable::declaraiton::print::inline() {
     local ARGS=( "$@" )
     local FLAGS=()
 

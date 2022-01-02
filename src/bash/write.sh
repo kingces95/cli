@@ -22,7 +22,7 @@ Description
 EOF
 }
 
-::cli::bash::write::inline() {
+cli::bash::write::inline() {
     MAPFILE=()
     local COUNT=$#
 

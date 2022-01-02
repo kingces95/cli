@@ -27,12 +27,12 @@ cli::set::intersect::main() {
         SET1["$i"]=
     done
 
-    ::cli::set::intersect::inline SET0 SET1
+    cli::set::intersect::inline SET0 SET1
 
     printf '%s\n' "${!REPLY_MAP[@]}" | sort
 }
 
-::cli::set::intersect::inline() {
+cli::set::intersect::inline() {
     declare -gA REPLY_MAP=()
 
     local SET0_NAME=$1
@@ -43,7 +43,7 @@ cli::set::intersect::main() {
 
     local ELEMENT
     for ELEMENT in "${!SET0_REF[@]}"; do
-        if ::cli::set::test::inline ${SET1_NAME} "${ELEMENT}"; then
+        if cli::set::test::inline ${SET1_NAME} "${ELEMENT}"; then
             REPLY_MAP["${ELEMENT}"]=
         fi
     done

@@ -16,9 +16,9 @@ Examples
 EOF
 }
 
-::cli::stderr::fail::inline() {
+cli::stderr::fail::inline() {
     echo "$*" \
-        | ::cli::stderr::dump::inline
+        | cli::stderr::dump::inline
 }
 
 cli::stderr::fail::self_test() {
@@ -30,7 +30,7 @@ cli::stderr::fail::self_test() {
             if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1; then exit 1; fi 
         }
 
-        diff <( test "::cli::stderr::fail::inline 'Bad news'" ) \
+        diff <( test "cli::stderr::fail::inline 'Bad news'" ) \
             <( echo 'Bad news' ) || cli::assert
     fi
 }

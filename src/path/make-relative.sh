@@ -20,7 +20,7 @@ Credit
 EOF
 }
 
-::cli::path::make_relative::inline() {
+cli::path::make_relative::inline() {
     local source=$1
     local target=$2
 

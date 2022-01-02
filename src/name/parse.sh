@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-::cli::name::parse::inline() {
+cli::name::parse::inline() {
     MAPFILE=()
     while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do
         MAPFILE+=( "$1" )

@@ -17,14 +17,14 @@ Description
 EOF
 }
 
-::cli::core::variable::initialize::inline() {
+cli::core::variable::initialize::inline() {
     local SCOPE_NAME="${ARG_SCOPE-}"
     [[ "${SCOPE_NAME}" ]] || cli::assert 'Missing scope.'
 
     local NAME="${1-}"
     [[ "${NAME}" ]] || cli::assert 'Missing name.'
 
-    ::cli::core::variable::get_info::inline ${NAME}
+    cli::core::variable::get_info::inline ${NAME}
 
     local TYPE="${REPLY}"
     local -n REF="${NAME}"
@@ -44,13 +44,13 @@ EOF
         ${REPLY_CLI_CORE_VARIABLE_IS_USER_DEFINED} || cli::assert
 
         ARG_TYPE=${TYPE} \
-            ::cli::core::variable::name::fields::inline ${NAME}
+            cli::core::variable::name::fields::inline ${NAME}
         local FIELD_NAMES=( "${MAPFILE[@]}" )
 
         # recursively initialize fields
         local FIELD_NAME
         for FIELD_NAME in "${FIELD_NAMES[@]}"; do
-            ::cli::core::variable::initialize::inline "${FIELD_NAME}"
+            cli::core::variable::initialize::inline "${FIELD_NAME}"
         done
     fi
 }
@@ -99,7 +99,7 @@ cli::core::variable::initialize::self_test() (
     )
 
     ARG_TYPE=version \
-        ::cli::core::variable::declare::inline MY_VERSION
+        cli::core::variable::declare::inline MY_VERSION
 
     MY_VERSION_MAJOR=1
     MY_VERSION_MINOR=2

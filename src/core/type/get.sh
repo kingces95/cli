@@ -19,11 +19,11 @@ Description
 EOF
 }
 
-::cli::core::type::get::inline() {
-    ::cli::core::type::resolve::inline "${1-}"
+cli::core::type::get::inline() {
+    cli::core::type::resolve::inline "${1-}"
     local TYPE_NAME="${REPLY}"
 
-    ::cli::bash::variable::get_info::inline "${TYPE_NAME}" || cli::assert \
+    cli::bash::variable::get_info::inline "${TYPE_NAME}" || cli::assert \
         "Expected type '$@' to be declared as '${TYPE_NAME}', but actually not."
 
     REPLY="${TYPE_NAME}"

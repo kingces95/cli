@@ -27,11 +27,11 @@ main() {
 
     source /dev/stdin
     declare -Ag $2
-    ::cli::bash::array_to_map::inline $1 $2
+    cli::bash::array_to_map::inline $1 $2
     declare -p $2
 }
 
-::cli::bash::array_to_map::inline() {
+cli::bash::array_to_map::inline() {
     declare -n ARRAY_REF=$1
     declare -n MAP_REF=$2
 

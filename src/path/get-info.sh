@@ -21,7 +21,7 @@ Description
 EOF
 }
 
-::cli::path::get_info::inline() {
+cli::path::get_info::inline() {
     REPLY_CLI_PATH_EXISTS=false
     REPLY_CLI_PATH_IS_FILE=false
     REPLY_CLI_PATH_IS_DIRECTORY=false

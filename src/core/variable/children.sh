@@ -20,14 +20,14 @@ Description
 EOF
 }
 
-::cli::core::variable::children::inline() {
+cli::core::variable::children::inline() {
     [[ ${ARG_SCOPE} ]] || cli::assert 'Missing scope.'
     local -n SCOPE_REF=${ARG_SCOPE}
 
     local NAME="$1"
     [[ ${NAME} ]] || cli::assert 'Missing variable name.'
 
-    if ! ::cli::core::variable::get_info::inline "${NAME}" \
+    if ! cli::core::variable::get_info::inline "${NAME}" \
         || ${REPLY_CLI_CORE_VARIABLE_IS_BUILTIN}; then
         MAPFILE=()
         return
@@ -35,11 +35,11 @@ EOF
 
     if ${REPLY_CLI_CORE_VARIABLE_IS_USER_DEFINED}; then
         ARG_TYPE="${REPLY}" \
-            ::cli::core::variable::name::fields::inline ${NAME}
+            cli::core::variable::name::fields::inline ${NAME}
 
     elif ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED}; then
         ARG_TYPE="${REPLY}" \
-            ::cli::core::variable::name::modifications::inline ${NAME}
+            cli::core::variable::name::modifications::inline ${NAME}
     fi
 }
 

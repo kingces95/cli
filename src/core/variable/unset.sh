@@ -18,7 +18,7 @@ Description
 EOF
 }
 
-::cli::core::variable::unset::inline() {
+cli::core::variable::unset::inline() {
     [[ ${ARG_SCOPE} ]] || cli::assert 'Missing scope.'
     local -n SCOPE_REF=${ARG_SCOPE}
 
@@ -26,8 +26,8 @@ EOF
         local NAME="$1"
         shift
 
-        ::cli::core::variable::children::inline ${NAME}
-        ::cli::core::variable::unset::inline "${MAPFILE[@]}"
+        cli::core::variable::children::inline ${NAME}
+        cli::core::variable::unset::inline "${MAPFILE[@]}"
 
         unset "SCOPE_REF[${NAME}]"
         unset ${NAME}

@@ -44,11 +44,11 @@ cli::args::parse::main() {
     ARG_SCOPE='SCOPE'
 
     ARG_TYPE='map' \
-        ::cli::core::variable::declare::inline ALIAS
-    ::cli::core::variable::read::inline ALIAS < "${1-/dev/null}"
+        cli::core::variable::declare::inline ALIAS
+    cli::core::variable::read::inline ALIAS < "${1-/dev/null}"
 
     ARG_TYPE='cli_tokens' \
-        ::cli::core::variable::declare::inline TOKENS
+        cli::core::variable::declare::inline TOKENS
 
     while read token_name identifier; do
         local token="CLI_ARG_TOKEN_${token_name}"
@@ -58,15 +58,15 @@ cli::args::parse::main() {
     done
 
     ARG_META_ALIASES=ALIAS \
-        ::cli::args::parse::inline 'TOKENS'
+        cli::args::parse::inline 'TOKENS'
     ARG_META_ALIASES=ALIAS \
-        ::cli::args::parse::inline 'TOKENS'
+        cli::args::parse::inline 'TOKENS'
     local ARGS=${REPLY}
 
-    ::cli::core::variable::write::inline ${ARGS}
+    cli::core::variable::write::inline ${ARGS}
 }
 
-::cli::args::parse::inline() {
+cli::args::parse::inline() {
     : ${ARG_SCOPE?'Missing scope.'}
     local TOKENS=${1?'Missing tokens.'}
     
@@ -75,9 +75,9 @@ cli::args::parse::main() {
     local -n IDENTIFIER_REF="${TOKENS}_IDENTIFIER"
     
     local ARGS='REPLY_CLI_PARSE_ARGS'
-    ::cli::core::variable::unset::inline ${ARGS}
+    cli::core::variable::unset::inline ${ARGS}
     ARG_TYPE='cli_args' \
-        ::cli::core::variable::declare::inline ${ARGS}
+        cli::core::variable::declare::inline ${ARGS}
 
     local -i named_count=0
     local -i current=0
@@ -121,7 +121,7 @@ cli::args::parse::main() {
 
         while (( token != CLI_ARG_TOKEN_EOF )); do
             # assert_token_is TOKEN_VALUE
-            ::cli::core::variable::put::inline ${ARGS} positional "${identifier}"
+            cli::core::variable::put::inline ${ARGS} positional "${identifier}"
             read_token
         done
     }
@@ -154,19 +154,19 @@ cli::args::parse::main() {
         read_token
 
         if (( named_count == 0 )); then
-            ::cli::core::variable::put::inline ${ARGS} first_named "${option}"
+            cli::core::variable::put::inline ${ARGS} first_named "${option}"
         fi
         named_count=$(( named_count + 1 ))
         
         # flags
         if (( token != CLI_ARG_TOKEN_VALUE )); then
-            ::cli::core::variable::put::inline ${ARGS} named "${option}" ''
+            cli::core::variable::put::inline ${ARGS} named "${option}" ''
             return
         fi
 
         # list of values (typically only one but could be array or properties)
         while (( token == CLI_ARG_TOKEN_VALUE )); do
-            ::cli::core::variable::put::inline ${ARGS} named "${option}" "${identifier}"
+            cli::core::variable::put::inline ${ARGS} named "${option}" "${identifier}"
             read_token 
         done
     }

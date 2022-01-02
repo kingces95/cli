@@ -20,25 +20,25 @@ Description
 EOF
 }
 
-::cli::core::variable::name::fields::inline() {
+cli::core::variable::name::fields::inline() {
     [[ ${ARG_TYPE} ]] || cli::assert 'Missing type.'
 
     local NAME="${1-}"
     [[ ${NAME} ]] || cli::assert 'Missing name.'
 
-    ::cli::core::type::get_info::inline ${ARG_TYPE}
+    cli::core::type::get_info::inline ${ARG_TYPE}
 
     ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} \
         || cli::assert "Type '${ARG_TYPE}' is not user defined."
 
-    ::cli::core::type::get::inline ${ARG_TYPE}
+    cli::core::type::get::inline ${ARG_TYPE}
     local -n TYPE_REF=${REPLY}
 
     local RESULT=()
     local FIELD
     for FIELD in "${!TYPE_REF[@]}"; do
         ARG_TYPE=${ARG_TYPE} \
-            ::cli::core::variable::name::resolve::inline "${NAME}" "${FIELD}"
+            cli::core::variable::name::resolve::inline "${NAME}" "${FIELD}"
         RESULT+=( "${REPLY}" )
     done
 

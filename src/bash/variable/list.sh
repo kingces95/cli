@@ -20,7 +20,7 @@ Arguments
 EOF
 }
 
-::cli::bash::variable::list::inline() {
+cli::bash::variable::list::inline() {
 
     local NAME
     for NAME in "$@"; do

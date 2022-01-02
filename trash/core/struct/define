@@ -26,7 +26,7 @@ Arguments
 EOF
 }
 
-::cli::core::struct::define::inline() {
+cli::core::struct::define::inline() {
     : ${arg_name?}
     [[ "${arg_name}" =~ "${CLI_REGEX_STRUCT_NAME}" ]] || cli::assert 
 
@@ -52,7 +52,7 @@ main() {
     echo "# ${arg_name}"
 
     # emit
-    ::cli::bash::emit::inline 'CLI_TYPE_*'
+    cli::bash::emit::inline 'CLI_TYPE_*'
 }
 
 self_test() {

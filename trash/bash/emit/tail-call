@@ -20,7 +20,7 @@ Description
 EOF
 }
 
-::cli::bash::emit::tail_call::inline() {
+cli::bash::emit::tail_call::inline() {
     local NAME=${1?'Missing name.'}
     local TAIL=${2?'Missing tail.'}
 
@@ -29,7 +29,7 @@ EOF
         echo
         echo ${TAIL} '"$@"'
 
-    } | ::cli::bash::emit::function::inline "${NAME}"
+    } | cli::bash::emit::function::inline "${NAME}"
 }
 
 self_test() {

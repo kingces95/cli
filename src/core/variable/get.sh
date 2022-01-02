@@ -22,15 +22,15 @@ EOF
 }
 
 cli::core::variable::get::main() {
-    ::cli::core::variable::get::inline "$@"
+    cli::core::variable::get::inline "$@"
     echo "${REPLY}"
 }
 
-::cli::core::variable::get::inline() {
-    ::cli::core::variable::resolve::inline "$@"
+cli::core::variable::get::inline() {
+    cli::core::variable::resolve::inline "$@"
     local NAME="${REPLY}"
 
-    ::cli::core::variable::get_info::inline "${NAME}"
+    cli::core::variable::get_info::inline "${NAME}"
     local TYPE="${REPLY}"
 
     ${REPLY_CLI_CORE_TYPE_IS_BUILTIN} \

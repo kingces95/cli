@@ -19,20 +19,20 @@ EOF
 }
 
 cli::core::variable::resolve::main() {
-    ::cli::core::variable::resolve::inline "$@"
+    cli::core::variable::resolve::inline "$@"
     echo "${MAPFILE[*]} ${REPLY}"
 }
 
-::cli::core::variable::resolve::inline() {
+cli::core::variable::resolve::inline() {
     local NAME="${1-}"
     [[ "${NAME}" ]] || cli::assert 'Missing name.'
 
-    ::cli::core::variable::get_info::inline "${NAME}" \
+    cli::core::variable::get_info::inline "${NAME}" \
         || cli::assert "Variable '${NAME}' not found."
     local TYPE="${MAPFILE[*]}"
 
     ARG_TYPE="${TYPE}" \
-        ::cli::core::variable::name::resolve::inline "$@"
+        cli::core::variable::name::resolve::inline "$@"
 }
 
 cli::core::variable::resolve::self_test() {

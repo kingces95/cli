@@ -44,12 +44,12 @@ Examples
 EOF
 }
 
-::cli::core::variable::write::inline() {
+cli::core::variable::write::inline() {
     local ARG_SCOPE=${ARG_SCOPE-'CLI_SCOPE'}
     local NAME="${1-}"
 
     # check NAME in ARG_SCOPE
-    ::cli::core::variable::get_info::inline "${NAME}" \
+    cli::core::variable::get_info::inline "${NAME}" \
         || cli::assert "Variable '${NAME}' not found in scope."
     local TYPE="${MAPFILE[*]}"
 
@@ -65,24 +65,24 @@ EOF
         if ${REPLY_CLI_CORE_VARIABLE_IS_BOOLEAN}; then
 
             if ${REF}; then
-                ::cli::bash::write::inline "${PREFIX[@]}"
+                cli::bash::write::inline "${PREFIX[@]}"
             fi
 
         # scaler
         elif ${REPLY_CLI_CORE_VARIABLE_IS_SCALER}; then
-            ::cli::bash::write::inline "${PREFIX[@]}" "${REF}"
+            cli::bash::write::inline "${PREFIX[@]}" "${REF}"
 
         # array
         elif ${REPLY_CLI_CORE_VARIABLE_IS_ARRAY}; then
             for VALUE in "${REF[@]}"; do
-                ::cli::bash::write::inline "${PREFIX[@]}" "${VALUE}"
+                cli::bash::write::inline "${PREFIX[@]}" "${VALUE}"
             done
 
         # map
         else
             ${REPLY_CLI_CORE_VARIABLE_IS_MAP} || cli::assert
             for KEY in ${!REF[@]}; do
-                ::cli::bash::write::inline "${PREFIX[@]}" "${KEY}" "${REF[$KEY]}"
+                cli::bash::write::inline "${PREFIX[@]}" "${KEY}" "${REF[$KEY]}"
             done
         fi
 
@@ -99,7 +99,7 @@ EOF
             ${REPLY_CLI_CORE_VARIABLE_IS_USER_DEFINED} || cli::assert
             local USER_DEFINED_TYPE="${REPLY}"
 
-            ::cli::core::type::get::inline "${USER_DEFINED_TYPE}"
+            cli::core::type::get::inline "${USER_DEFINED_TYPE}"
 
             local -n TYPE_REF="${REPLY}"
             SEGMENTS=( "${!TYPE_REF[@]}" )
@@ -110,8 +110,8 @@ EOF
         local SEGMENT
         for SEGMENT in "${SEGMENTS[@]}"; do
             local -a CLI_CORE_VARIABLE_WRITE_PREFIX=( "${PREFIX_COPY[@]}" "${SEGMENT}" )
-            ::cli::core::variable::resolve::inline "${NAME}" "${SEGMENT}"
-            ::cli::core::variable::write::inline "${REPLY}"
+            cli::core::variable::resolve::inline "${NAME}" "${SEGMENT}"
+            cli::core::variable::write::inline "${REPLY}"
         done
     fi
 }

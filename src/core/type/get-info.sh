@@ -34,7 +34,7 @@ Description
 EOF
 }
 
-::cli::core::type::get_info::inline() {
+cli::core::type::get_info::inline() {
     MAPFILE=( "$@" )
     REPLY="${MAPFILE[@]}"
 

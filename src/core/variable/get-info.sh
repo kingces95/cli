@@ -30,7 +30,7 @@ Description
 EOF
 }
 
-::cli::core::variable::get_info::inline() {
+cli::core::variable::get_info::inline() {
     local NAME="${1-}"
     [[ "${NAME}" ]] || cli::assert 'Missing variable name.'
     [[ "${NAME}" =~ ${CLI_REGEX_GLOBAL_NAME} ]] \
@@ -47,7 +47,7 @@ EOF
     local TYPE="${SCOPE_REF["${NAME}"]}"
     [[ ${TYPE} ]] || cli::assert
 
-    ::cli::core::type::get_info::inline ${TYPE}
+    cli::core::type::get_info::inline ${TYPE}
     REPLY_CLI_CORE_VARIABLE_IS_INTEGER=${REPLY_CLI_CORE_TYPE_IS_INTEGER}
     REPLY_CLI_CORE_VARIABLE_IS_BOOLEAN=${REPLY_CLI_CORE_TYPE_IS_BOOLEAN}
     REPLY_CLI_CORE_VARIABLE_IS_STRING=${REPLY_CLI_CORE_TYPE_IS_STRING}

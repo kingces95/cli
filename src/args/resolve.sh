@@ -37,14 +37,14 @@ EOF
 
 cli::args::resolve::main() {
     ARG_TYPE='cli_args' \
-        ::cli::core::variable::declare::inline MY_ARGS
-    ::cli::core::variable::read::inline MY_ARGS
+        cli::core::variable::declare::inline MY_ARGS
+    cli::core::variable::read::inline MY_ARGS
 
     ARG_META_GROUPS=${ARG_META}_GROUP \
-        ::cli::args::resolve::inline MY_ARGS
+        cli::args::resolve::inline MY_ARGS
 }
 
-::cli::args::resolve::inline() {
+cli::args::resolve::inline() {
     [[ ${ARG_SCOPE:-} ]] || cli::assert 'Missing scope.'
     [[ ${ARG_META_GROUPS:-} ]] || cli::assert 'Missing metadata.'
 
@@ -55,7 +55,7 @@ cli::args::resolve::main() {
 
     local GROUP_ID='*'
     if (( ${#GROUP_REF[@]} > 1 )); then
-        ::cli::set::intersect::inline ${ARG_META_GROUPS} ${ARGS}_NAMED
+        cli::set::intersect::inline ${ARG_META_GROUPS} ${ARGS}_NAMED
         
         (( ${#REPLY_MAP[@]} == 1 )) \
             || cli::assert \
@@ -66,7 +66,7 @@ cli::args::resolve::main() {
         GROUP_ID="${!REPLY_MAP[@]}" 
     fi
 
-    ::cli::core::variable::resolve::inline ${ARG_META_GROUPS} "${GROUP_ID}"
+    cli::core::variable::resolve::inline ${ARG_META_GROUPS} "${GROUP_ID}"
 }
 
 cli::args::resolve::self_test() (
@@ -79,10 +79,10 @@ cli::args::resolve::self_test() (
         # declare metadata
         local ARG_META='MY_META'
         ARG_TYPE='cli_meta' \
-            ::cli::core::variable::declare::inline ${ARG_META}
+            cli::core::variable::declare::inline ${ARG_META}
 
         # load metadata
-        ::cli::core::variable::read::inline ${ARG_META} < <( 
+        cli::core::variable::read::inline ${ARG_META} < <( 
             cli dsl sample ---load 
         )
 
@@ -91,7 +91,7 @@ cli::args::resolve::self_test() (
             local COMMAND_LINE='--id 42 -f banana -h --header Foo -- a0 a1'
             cli args tokenize -- ${COMMAND_LINE} \
                 | cli args parse -- \
-                    <( ::cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
+                    <( cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
                 | ${CLI_COMMAND[@]} ---reply
         ) - <<< 'MY_META_GROUP_0'
 
@@ -100,7 +100,7 @@ cli::args::resolve::self_test() (
             local COMMAND_LINE='--name foo -f banana -h --header Foo -- a0 a1'
             cli args tokenize -- ${COMMAND_LINE} \
                 | cli args parse -- \
-                    <( ::cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
+                    <( cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
                 | ${CLI_COMMAND[@]} ---reply
         ) - <<< 'MY_META_GROUP_1'
     )
@@ -113,10 +113,10 @@ cli::args::resolve::self_test() (
         # declare metadata
         local ARG_META='MY_META'
         ARG_TYPE='cli_meta' \
-            ::cli::core::variable::declare::inline ${ARG_META}
+            cli::core::variable::declare::inline ${ARG_META}
 
         # load metadata
-        ::cli::core::variable::read::inline ${ARG_META} < <( 
+        cli::core::variable::read::inline ${ARG_META} < <( 
             cli dsl simple ---load 
         )
 
@@ -125,7 +125,7 @@ cli::args::resolve::self_test() (
             local COMMAND_LINE='-f banana -h --header Foo -- a0 a1'
             cli args tokenize -- ${COMMAND_LINE} \
                 | cli args parse -- \
-                    <( ::cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
+                    <( cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
                 | ${CLI_COMMAND[@]} ---reply
         ) - <<< 'MY_META_GROUP_0'
     )

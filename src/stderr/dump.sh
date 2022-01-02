@@ -18,13 +18,13 @@ Description
 EOF
 }
 
-::cli::stderr::dump::inline() {
+cli::stderr::dump::inline() {
 
     # copy stdin to stderr
-    ::cli::stderr::cat::inline
+    cli::stderr::cat::inline
 
     # issue control-c
-    ::cli::subshell::signal_group::inline
+    cli::subshell::signal_group::inline
 }
 
 cli::stderr::dump::self_test() {
@@ -38,7 +38,7 @@ cli::stderr::dump::self_test() {
             if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1 1> /dev/null; then exit 1; fi 
         }
 
-        diff <(test "echo 'LOG AND CTRL-C' | ::cli::stderr::dump::inline") \
+        diff <(test "echo 'LOG AND CTRL-C' | cli::stderr::dump::inline") \
             <(echo "LOG AND CTRL-C") || cli::assert
     fi
 }

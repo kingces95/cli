@@ -20,13 +20,13 @@ Description
 EOF
 }
 
-::cli::bash::emit::variable::inline() {
+cli::bash::emit::variable::inline() {
     local NAME="${1-}"
     [[ ${NAME} ]] || cli::assert 'Missing name.'
     
     local -n REF="${NAME}"
 
-    ::cli::bash::variable::get_info::inline "${NAME}" \
+    cli::bash::variable::get_info::inline "${NAME}" \
         || cli::assert "Variable '${NAME}' not in scope."
 
     # declare flags
@@ -43,7 +43,7 @@ EOF
     fi
 
     # declare
-    ::cli::bash::emit::expression::declare::inline \
+    cli::bash::emit::expression::declare::inline \
         ${NAME} "${CLI_CORE_VARIABLE_EMIT_FLAG}"
     
     # assignment
@@ -51,14 +51,14 @@ EOF
 
     # value
     if ${REPLY_CLI_CORE_VARIABLE_IS_SCALER}; then
-        ::cli::bash::emit::literal::string::inline ${NAME}
+        cli::bash::emit::literal::string::inline ${NAME}
 
     elif ${REPLY_CLI_CORE_VARIABLE_IS_MAP} || \
         ${REPLY_CLI_CORE_VARIABLE_IS_MODIFIED}; then
-        ::cli::bash::emit::literal::map::inline ${NAME}
+        cli::bash::emit::literal::map::inline ${NAME}
 
     elif ${REPLY_CLI_CORE_VARIABLE_IS_ARRAY}; then
-        ::cli::bash::emit::literal::array::inline ${NAME}
+        cli::bash::emit::literal::array::inline ${NAME}
     fi
 
     echo

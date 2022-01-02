@@ -20,10 +20,10 @@ Description
 EOF
 }
 
-::cli::core::type::unmodify::inline() {
+cli::core::type::unmodify::inline() {
     MAPFILE=()
 
-    if ::cli::core::type::is_modified::inline "$@"; then
+    if cli::core::type::is_modified::inline "$@"; then
         shift
     fi
 

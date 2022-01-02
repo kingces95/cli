@@ -14,11 +14,11 @@ EOF
 }
 
 main() {
-    ::cli::proc::parent::inline "$@"
+    cli::proc::parent::inline "$@"
     declare -p REPLY
 }
 
-::cli::process::parent::inline() {
+cli::process::parent::inline() {
     local PID=${1-${BASHPID}}
     read < <(ps -p $$ -o pgid=)
 }

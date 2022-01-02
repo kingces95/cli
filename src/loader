@@ -2,7 +2,7 @@
 
 # loader sourcing itself
 if [[ -v CLI_IFS ]]; then
-    ::cli::bash::function::is_declared::inline loader_source || cli::assert
+    cli::bash::function::is_declared::inline loader_source || cli::assert
     loader_source
     return
 fi
@@ -163,9 +163,9 @@ readonly CLI_ARG_PRODUCTION_POSITIONAL="2"
 
 # attributes
 declare -A CLI_META_ATTRIBUTES_METHOD=(
-    # ['::cli::bash::stack::call::inline']=0
-    # ['::cli::bash::stack::trace::inline']=0
-    # ['::cli::stderr::assert::inline']=0
+    # ['cli::bash::stack::call::inline']=0
+    # ['cli::bash::stack::trace::inline']=0
+    # ['cli::stderr::assert::inline']=0
     # ['cli::assert']=0
     
     # ['cli::main']=0
@@ -205,7 +205,7 @@ declare -n CLI_IMPORT='CLI_LOADER_CLI_LOADER_IMPORT'
 
 inline() {
 
-    ::cli::set::test::inline() {
+    cli::set::test::inline() {
         local -n SET_REF=${1:?'Missing set'}
         shift 
 
@@ -215,18 +215,18 @@ inline() {
         [[ ${SET_REF[${KEY}]+hit} == 'hit' ]]
     }
 
-    ::cli::set::deflower::inline() {
+    cli::set::deflower::inline() {
         local -n SET_REF=${1?'Missing set'}
         local KEY=${2?'Missing element value'}
 
-        if ::cli::set::test::inline "$@"; then
+        if cli::set::test::inline "$@"; then
             return 1
         fi
 
         SET_REF[${KEY}]=true
     }
 
-    ::cli::name::to_bash::inline() {
+    cli::name::to_bash::inline() {
         MAPFILE=()
         while (( $# > 0 )); do
             [[ "$1" =~ ${CLI_REGEX_NAME} ]] || cli::assert \
@@ -238,22 +238,22 @@ inline() {
         REPLY=${MAPFILE[0]}
     }
 
-    ::cli::name::to_inline::inline() {
-        ::cli::name::to_bash::inline "$@"
-        ::cli::bash::join::inline '::' '' "${MAPFILE[@]}" 'inline'
+    cli::name::to_inline::inline() {
+        cli::name::to_bash::inline "$@"
+        cli::bash::join::inline '::' "${MAPFILE[@]}" 'inline'
     }
 
-    ::cli::name::to_function::inline() {
-        ::cli::name::to_bash::inline "$@"
-        ::cli::bash::join::inline "::" "${MAPFILE[@]}"
+    cli::name::to_function::inline() {
+        cli::name::to_bash::inline "$@"
+        cli::bash::join::inline "::" "${MAPFILE[@]}"
     }
 
-    ::cli::name::to_symbol::inline() {
-        ::cli::name::to_bash::inline "$@"
-        ::cli::bash::join::inline '_' "${MAPFILE[@]^^}"
+    cli::name::to_symbol::inline() {
+        cli::name::to_bash::inline "$@"
+        cli::bash::join::inline '_' "${MAPFILE[@]^^}"
     }
         
-    ::cli::name::parse::inline() {
+    cli::name::parse::inline() {
         MAPFILE=()
         while [[ "${1-}" =~ ${CLI_REGEX_NAME} ]]; do
             MAPFILE+=( "$1" )
@@ -261,7 +261,7 @@ inline() {
         done
     }
 
-    ::cli::attribute::is_defined::inline() {
+    cli::attribute::is_defined::inline() {
         local target_type=${1-}; shift
         local target=${1-}; shift
         local type=${1-}; shift
@@ -287,7 +287,7 @@ inline() {
         return 1
     }
 
-    ::cli::path::get_info::inline() {
+    cli::path::get_info::inline() {
         REPLY_CLI_PATH_EXISTS=false
         REPLY_CLI_PATH_IS_FILE=false
         REPLY_CLI_PATH_IS_DIRECTORY=false
@@ -320,15 +320,15 @@ inline() {
         fi
     }
 
-    ::cli::path::dir::inline() { 
+    cli::path::dir::inline() { 
         REPLY="$(dirname $1)"
     }
 
-    ::cli::path::name::inline() { 
+    cli::path::name::inline() { 
         REPLY="${1##*/}"; 
     }
 
-    ::cli::path::make_absolute::inline() {
+    cli::path::make_absolute::inline() {
 
         if [[ ! "${1-}" ]]; then
             REPLY="${PWD}"
@@ -341,25 +341,25 @@ inline() {
         fi
     }
 
-    ::cli::cache::path::inline() {
-        ::cli::path::name::inline "$1"
+    cli::cache::path::inline() {
+        cli::path::name::inline "$1"
         local NAME="${REPLY}"
 
-        ::cli::path::dir::inline "$1"
+        cli::path::dir::inline "$1"
         local DIR="${REPLY}"
 
         REPLY="${DIR}/.cli/${NAME}"
     }
 
-    ::cli::cache::put::inline() {
+    cli::cache::put::inline() {
         local CACHE="$1"
 
-        ::cli::path::dir::inline "${CACHE}"
+        cli::path::dir::inline "${CACHE}"
         local DIR="${REPLY}"
 
         mkdir -p "${DIR}"
 
-        ::cli::temp::file::inline
+        cli::temp::file::inline
         local TEMP="${REPLY}"
 
         cat > "${TEMP}"
@@ -369,7 +369,7 @@ inline() {
         REPLY="${CACHE}"
     }
 
-    ::cli::cache::test::inline() {
+    cli::cache::test::inline() {
         local CACHE="$1"
         shift
 
@@ -389,17 +389,17 @@ inline() {
         done
     }
 
-    ::cli::stderr::lock::inline() {
+    cli::stderr::lock::inline() {
         flock -x "${CLI_LOADER_LOCK}" cat
     }
 
-    ::cli::bash::function::list::inline() {
+    cli::bash::function::list::inline() {
         declare -F \
             | awk '{ print $3 }' \
-            | ::cli::bash::filter::glob::inline "$@"
+            | cli::bash::filter::glob::inline "$@"
     }
         
-    ::cli::bash::filter::glob::inline() {
+    cli::bash::filter::glob::inline() {
         while read -r; do
             local FILTER
             for FILTER in "$@"; do
@@ -411,7 +411,7 @@ inline() {
         done
     }
         
-    ::cli::bash::printf::inline() {
+    cli::bash::printf::inline() {
         local FORMAT=${1-}
         [[ $"{FORMAT}" ]] || cli::assert 'Missing format.'
         shift
@@ -423,11 +423,11 @@ inline() {
         printf "${FORMAT}" "$@"
     }
 
-    ::cli::bash::log::inline() {
+    cli::bash::log::inline() {
         echo "$@" >&2
     }
 
-    ::cli::bash::which::inline() {
+    cli::bash::which::inline() {
         MAPFILE=()
 
         local NAME="$1"
@@ -439,7 +439,7 @@ inline() {
         for dir in "${DIRS[@]}"; do
             local PROBE="${dir}/${NAME}"
             MAPFILE+=( "${PROBE}" )
-            ::cli::path::get_info::inline "${PROBE}"
+            cli::path::get_info::inline "${PROBE}"
 
             if ${REPLY_CLI_PATH_IS_EXECUTABLE}; then
                 REPLY="${PROBE}"
@@ -450,11 +450,11 @@ inline() {
         return 1
     }
 
-    ::cli::bash::return::inline() {
+    cli::bash::return::inline() {
         return ${1-0}
     }
 
-    ::cli::bash::join::inline() {
+    cli::bash::join::inline() {
         local DELIMITER=${1?'Missing delimiter'}
         shift
 
@@ -469,7 +469,7 @@ inline() {
         done
     }
 
-    ::cli::bash::stack::call::inline() {
+    cli::bash::stack::call::inline() {
         
         # argument counts by frame
         set -- ${BASH_ARGV[@]}
@@ -485,14 +485,14 @@ inline() {
 
             # reverse argv for i-th frame
             for (( j=${BASH_ARGC[$i]}-1; j>=0; j-- )); do
-                args+=( "$(::cli::bash::literal::inline "${BASH_ARGV[${j}+${argc}]}")" )
+                args+=( "$(cli::bash::literal::inline "${BASH_ARGV[${j}+${argc}]}")" )
             done
 
             # pop argc stack for i-th frame
             argc+=${BASH_ARGC[$i]}
 
             if [[ ! "${CLI_STACK_SHOW_HIDDEN-}" ]] \
-                && ::cli::attribute::is_defined::inline \
+                && cli::attribute::is_defined::inline \
                     'METHOD' "${funcname}" 'cli_bash_stack_hidden_attribute'; then
                 continue
             fi
@@ -514,7 +514,7 @@ inline() {
         done
     }
 
-    ::cli::bash::stack::process::inline() {
+    cli::bash::stack::process::inline() {
         local ARG_START_PID=${1-$$}
         local ARG_END_PID=${2-${CLI_PID-}}
 
@@ -552,18 +552,18 @@ inline() {
         done
     }
 
-    ::cli::bash::stack::trace::inline() {
-        ::cli::bash::stack::call::inline
+    cli::bash::stack::trace::inline() {
+        cli::bash::stack::call::inline
         if [[ -n "${CLI_STACK_SHOW_PROCESS-}" ]]; then
-            ::cli::bash::stack::process::inline
+            cli::bash::stack::process::inline
         fi
     }
 
-    ::cli::bash::function::is_declared::inline() {
+    cli::bash::function::is_declared::inline() {
         declare -F "${1-}" > /dev/null
     }
 
-    ::cli::bash::literal::inline() {
+    cli::bash::literal::inline() {
         local literal="$*"
         
         #echo "if [[ ! \"${literal}\" =~ ^[a-zA-Z_-]* ]]; then"
@@ -583,27 +583,7 @@ inline() {
         echo "${literal}"
     }
 
-    ::cli::bash::emit::inline() {
-        for name in "$@"; do
-            if [[ "${name}" =~ ^.*[*]$ ]]; then
-                for match in $(eval "echo \${!${name}}"); do
-                    # do not recurse! test -v arr=() is false
-                    declare -p ${match}
-                done
-            elif [[ -v "${name}" ]]; then
-                declare -p "${name}"
-            else
-                # declare -a arr=()
-                for match in $(eval "echo \${!${name}*}"); do
-                    if [[ "${match}" == "${name}" ]]; then
-                        declare -p "${name}"
-                    fi
-                done
-            fi
-        done
-    }
-
-    ::cli::bash::variable::list::inline() {
+    cli::bash::variable::list::inline() {
 
         local NAME
         for NAME in "$@"; do
@@ -634,17 +614,17 @@ inline() {
         done | sort
     }
         
-    ::cli::bash::variable::emit::inline() {
-        ::cli::bash::variable::list::inline "$@" \
+    cli::bash::variable::emit::inline() {
+        cli::bash::variable::list::inline "$@" \
             | while read; do declare -p ${REPLY}; done
     }
 
-    ::cli::bash::array::pop::inline() {
+    cli::bash::array::pop::inline() {
         (( $# > 0 )) || cli::assert 'Stack empty.'
         MAPFILE=( ${@:1:$((${#@}-1))} )
     }
 
-    ::cli::bash::map::copy::inline() {
+    cli::bash::map::copy::inline() {
         local SOURCE_MAP=${1-}
         [[ "${SOURCE_MAP}" ]] || cli::assert 'Missing source map.'
         shift
@@ -660,7 +640,7 @@ inline() {
             local KEY=$1
             shift
 
-            if ! ::cli::set::test::inline ${SOURCE_MAP} ${KEY}; then
+            if ! cli::set::test::inline ${SOURCE_MAP} ${KEY}; then
                 continue
             fi
 
@@ -668,7 +648,7 @@ inline() {
         done
     }
 
-    ::cli::subshell::on_exit::inline() {
+    cli::subshell::on_exit::inline() {
         local -ga "CLI_SUBSHELL_ON_EXIT_${BASHPID}+=()"
         local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
 
@@ -685,7 +665,7 @@ inline() {
         CLI_SUBSHELL_ON_EXIT+=( "$@" )
     }
         
-    ::cli::temp::remove::inline() {
+    cli::temp::remove::inline() {
 
         local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
 
@@ -708,7 +688,7 @@ inline() {
         done
     }
 
-    ::cli::temp::file::inline() {
+    cli::temp::file::inline() {
 
         # create and return a temporary file
         local TEMP_FILE=$(mktemp "${1-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
@@ -719,82 +699,82 @@ inline() {
 
         # cleanup
         if (( ${#CLI_SUBSHELL_TEMP_FILE_BASHPID[@]} == 0 )); then
-            ::cli::temp::file::on_exit() {
+            cli::temp::file::on_exit() {
 
                 # unlink files/directories
                 local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-                ::cli::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
+                cli::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
             }
 
-            ::cli::subshell::on_exit::inline \
-                ::cli::temp::file::on_exit
+            cli::subshell::on_exit::inline \
+                cli::temp::file::on_exit
         fi
 
         CLI_SUBSHELL_TEMP_FILE_BASHPID+=( ["${TEMP_FILE}"]='true' )
         REPLY="${TEMP_FILE}"
     }
 
-    ::cli::temp::dir::inline() {
-        ::cli::temp::file::inline "$@"
+    cli::temp::dir::inline() {
+        cli::temp::file::inline "$@"
         rm -f "${REPLY}"
         mkdir "${REPLY}"
     }
 
-    ::cli::temp::fifo::inline() {
-        ::cli::temp::file::inline "$@"
+    cli::temp::fifo::inline() {
+        cli::temp::file::inline "$@"
         rm -f "${REPLY}"
         mkfifo "${REPLY}"
     }
 
-    ::cli::subshell::signal_group::inline() {
+    cli::subshell::signal_group::inline() {
         local SIGNAL=${1-'SIGINT'}
         read PID < <(ps -p ${BASHPID} -o pgid=)
         kill -${SIGNAL} -${PID}
     }
 
-    ::cli::stderr::cat::inline() {
+    cli::stderr::cat::inline() {
 
         # create a temporary file
-        ::cli::temp::file::inline
+        cli::temp::file::inline
 
         # write to file instead of stderr so generator can take lock
         cat > "${REPLY}"
 
         # lock and copy file to stderr
         cat "${REPLY}" \
-            | ::cli::stderr::lock::inline >&2 
+            | cli::stderr::lock::inline >&2 
 
         # cleanup
         rm "${REPLY}"
     }
 
-    ::cli::stderr::dump::inline() {
+    cli::stderr::dump::inline() {
 
         # copy stdin to stderr
-        ::cli::stderr::cat::inline
+        cli::stderr::cat::inline
 
         # issue control-c
-        ::cli::subshell::signal_group::inline
+        cli::subshell::signal_group::inline
     }
 
-    ::cli::stderr::assert::inline() {
+    cli::stderr::assert::inline() {
         if (( $# == 0 )); then 
             set 'Condition failed'
         fi
 
         {
             echo "ASSERT FAILED:" "$*"
-            ::cli::bash::stack::trace::inline \
+            cli::bash::stack::trace::inline \
                 | sed 's/^/  /'
-        } | ::cli::stderr::dump::inline
+        } | cli::stderr::dump::inline
     }
 
-    ::cli::stderr::fail::inline() {
+    cli::stderr::fail::inline() {
         echo "$*" \
-            | ::cli::stderr::dump::inline
+            | cli::stderr::dump::inline
     }
 
-    ::cli::stderr::on_err::inline() {
+    cli::stderr::on_err::inline() {
         local -a CLI_PIPESTATUS=( "${PIPESTATUS[@]}" )
         local CLI_TRAP_EXIT_CODE=${1-'?'}
         local BPID="${BASHPID}"
@@ -813,11 +793,11 @@ inline() {
             echo ", bpid=${BPID}, pid=$$"
             echo "BASH_COMMAND ERR: ${BASH_COMMAND}"
 
-            ::cli::bash::stack::trace::inline | sed 's/^/  /'
-        } | ::cli::stderr::dump::inline
+            cli::bash::stack::trace::inline | sed 's/^/  /'
+        } | cli::stderr::dump::inline
     }
 
-    ::cli::shim::source::inline() {
+    cli::shim::source::inline() {
         local NAME="${1-}"
         [[ ${NAME} ]] || cli::assert 'Missing shim name.'
 
@@ -827,7 +807,7 @@ inline() {
         fi
 
         # resolve the path to the shim by searching PATH
-        ::cli::bash::which::inline "$1" || return 1
+        cli::bash::which::inline "$1" || return 1
         
         # source the shim
         source "${REPLY}"
@@ -837,12 +817,12 @@ inline() {
             || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
 
         # verify the shim published a function of the same name.
-        ::cli::bash::function::is_declared::inline "${NAME}" \
+        cli::bash::function::is_declared::inline "${NAME}" \
             || cli::assert "Shim '$1' failed to define function ${NAME}."
     }
 
-    ::cli::shim::probe::inline() {
-        ::cli::shim::which::inline "${1-}"
+    cli::shim::probe::inline() {
+        cli::shim::which::inline "${1-}"
         shift
 
         MAPFILE=()
@@ -861,11 +841,11 @@ inline() {
     }
 
 
-    ::cli::shim::which::inline() {
+    cli::shim::which::inline() {
         local NAME="$1"
         shift
 
-        ::cli::shim::source::inline "${NAME}" || return 1
+        cli::shim::source::inline "${NAME}" || return 1
 
         local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${NAME^^}"
         [[ "${SHIM_ROOT_DIR_REF-}" ]] || cli::assert
@@ -873,19 +853,19 @@ inline() {
         REPLY="${SHIM_ROOT_DIR_REF}"
     }
 
-    ::cli::shim::shebang::inline() {
+    cli::shim::shebang::inline() {
 
         # CLI_NAME
         [[ "${CLI_NAME}" ]] \
             || cli::assert "Shebang failed to declare 'CLI_NAME'." 
 
         # SHIM_ROOT_DIR_REF
-        ::cli::shim::source::inline "${CLI_NAME}" \
+        cli::shim::source::inline "${CLI_NAME}" \
             || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
         local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
 
         # SOURCE_PATH
-        ::cli::path::make_absolute::inline "$1"
+        cli::path::make_absolute::inline "$1"
         local SOURCE_PATH="${REPLY}"
         shift
 
@@ -952,7 +932,7 @@ cli::loader::emit::variables() {
 }
 
 cli::loader::emit::imports() {
-    ::cli::bash::printf::inline 'cli::source %s\n' "$@"
+    cli::bash::printf::inline 'cli::source %s\n' "$@"
 }
 
 cli::loader::function::list() {
@@ -963,7 +943,7 @@ cli::loader::function::list() {
     done
     GLOB+='*'
 
-    ::cli::bash::function::list::inline "${GLOB}"
+    cli::bash::function::list::inline "${GLOB}"
 }
 
 cli::loader::variable::list() {
@@ -982,7 +962,7 @@ cli::loader::cache::path() {
 
 cli::loader::cache::test() {
     cli::loader::cache::path "$@"
-    ::cli::cache::test::inline "${REPLY}" "${CLI_SOURCE}" "${CLI_LOADER_CLI_LOADER_SOURCE}"
+    cli::cache::test::inline "${REPLY}" "${CLI_SOURCE}" "${CLI_LOADER_CLI_LOADER_SOURCE}"
 }
 
 # loader core
@@ -1009,12 +989,12 @@ cli::loader::import_parent() {
     # slice off last command and append '.group'
     COMMAND=( "${COMMAND[@]:0:$(( ${#COMMAND[@]}-1 ))}" '.group' )
 
-    if ::cli::set::test::inline CLI_LOADER_IMPORTED "${COMMAND[*]}"; then
+    if cli::set::test::inline CLI_LOADER_IMPORTED "${COMMAND[*]}"; then
         return
     fi
 
     # check no variables exist that should be imported with this group
-    ::cli::bash::array::pop::inline "${COMMAND[@]}"
+    cli::bash::array::pop::inline "${COMMAND[@]}"
 
     # TODO: expect only the group main function; e.g. cli::args::group::main
     if ! diff <( cli::loader::emit::variables "${MAPFILE[@]}" ) - < /dev/null > /dev/null; then
@@ -1030,10 +1010,10 @@ cli::loader::import_parent() {
 
 cli::loader::backpatch() {
 
-    ::cli::name::to_inline::inline "${CLI_COMMAND[@]}"
+    cli::name::to_inline::inline "${CLI_COMMAND[@]}"
     set "${REPLY}"
 
-    ::cli::bash::function::is_declared::inline "$1" \
+    cli::bash::function::is_declared::inline "$1" \
         || cli::assert "No stub '$1' found to backpatch."
 
     # unset stub
@@ -1042,14 +1022,14 @@ cli::loader::backpatch() {
     # backpatch stub
     cli::loader::source::exports
 
-    ::cli::bash::function::is_declared::inline "$1" \
+    cli::bash::function::is_declared::inline "$1" \
         || cli::assert "Failed to backpatch stub '$1'."
 
     cli::loader::main::cover
 }
 
 cli::loader::import() {
-    if ! ::cli::set::deflower::inline CLI_LOADER_IMPORTED "${CLI_COMMAND[*]}"; then
+    if ! cli::set::deflower::inline CLI_LOADER_IMPORTED "${CLI_COMMAND[*]}"; then
         return
     fi
 
@@ -1059,11 +1039,11 @@ cli::loader::import() {
 
     cli::loader::import_parent
 
-    ::cli::name::to_inline::inline "${CLI_COMMAND[@]}"
+    cli::name::to_inline::inline "${CLI_COMMAND[@]}"
     local FUNCTION=${REPLY}
 
     # skip if inline function already imported
-    if ::cli::bash::function::is_declared::inline "${FUNCTION}"; then
+    if cli::bash::function::is_declared::inline "${FUNCTION}"; then
 
         # this happens when:
         #   1. the loader declares functions it is also importing which it does 
@@ -1077,7 +1057,7 @@ cli::loader::import() {
     # emit inline stub
     if [[ ${CLI_TYPE} == inline ]]; then
         eval "${FUNCTION}() { ${CLI_COMMAND[@]} ---backpatch; ${FUNCTION} \"\$@\"; }"
-        ::cli::bash::function::is_declared::inline "${FUNCTION}" || cli::assert
+        cli::bash::function::is_declared::inline "${FUNCTION}" || cli::assert
         return
     fi
 
@@ -1106,10 +1086,10 @@ cli::loader::source::exports() {
 }
 
 cli::loader::source() {
-    ::cli::path::make_absolute::inline "$1"
+    cli::path::make_absolute::inline "$1"
     set "${REPLY}"
 
-    if ! ::cli::set::deflower::inline CLI_LOADER_SOURCED_PATHS "$1"; then
+    if ! cli::set::deflower::inline CLI_LOADER_SOURCED_PATHS "$1"; then
         return
     fi
 
@@ -1144,12 +1124,12 @@ cli::loader::shim() {
     [[ "${CLI_NAME}" =~ ${CLI_REGEX_NAME} ]] || cli::assert "Bad shim name."
 
     # CLI_COMMAND
-    ::cli::name::parse::inline "$@"
+    cli::name::parse::inline "$@"
     local -a CLI_COMMAND=( "${CLI_NAME}" "${MAPFILE[@]}" )
     shift ${#MAPFILE[@]}
 
     # CLI_SYMBOL
-    ::cli::name::to_symbol::inline "${CLI_COMMAND[@]}"
+    cli::name::to_symbol::inline "${CLI_COMMAND[@]}"
     local CLI_SYMBOL="CLI_LOADER_${REPLY}"
 
     # CLI_GROUP
@@ -1180,7 +1160,7 @@ cli::loader::shim() {
     # CLI_SOURCE
     local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
     if [[ ! -v CLI_SOURCE ]]; then
-        ::cli::shim::probe::inline "${CLI_COMMAND[@]}" \
+        cli::shim::probe::inline "${CLI_COMMAND[@]}" \
             || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
         CLI_SOURCE="${REPLY}"
 
@@ -1200,7 +1180,7 @@ cli::loader::shim() {
     # CLI_CACHE
     local -n CLI_CACHE="${CLI_SYMBOL}_CACHE"
     if [[ ! -v CLI_CACHE ]]; then
-        ::cli::cache::path::inline "${CLI_SOURCE}"
+        cli::cache::path::inline "${CLI_SOURCE}"
         CLI_CACHE="${REPLY}"
     fi
 
@@ -1213,12 +1193,12 @@ cli::loader::shim() {
     if [[ ! -v CLI_FUNCTION_MAIN ]]; then
 
         if [[ ${CLI_TYPE} == group ]]; then
-            ::cli::name::to_function::inline ${CLI_GROUP}
+            cli::name::to_function::inline ${CLI_GROUP}
         else
-            ::cli::name::to_function::inline "${CLI_COMMAND[@]}"
+            cli::name::to_function::inline "${CLI_COMMAND[@]}"
         fi
 
-        CLI_FUNCTION_INLINE="::${REPLY}::inline"
+        CLI_FUNCTION_INLINE="${REPLY}::inline"
         CLI_FUNCTION_MAIN="${REPLY}::main"
         CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
         CLI_FUNCTION_HELP="${REPLY}::help"
@@ -1259,10 +1239,6 @@ cli::loader::shim() {
         done
     fi
 
-    cli::loader::main::thunk "$@"
-}
-
-cli::loader::main::thunk() {
     cli::loader::main::prolog "$@"
 }
 
@@ -1293,7 +1269,7 @@ cli::loader::main::prolog() {
     cli::loader::source "${CLI_SOURCE}"
 
     [[ ${CLI_TYPE} == inline ]] \
-        || ! ::cli::bash::function::is_declared::inline ${CLI_FUNCTION_INLINE} \
+        || ! cli::bash::function::is_declared::inline ${CLI_FUNCTION_INLINE} \
         || cli::assert "Command '${CLI_COMMAND[*]}' source '${CLI_SOURCE}'" \
             "declares '${CLI_FUNCTION_INLINE}' but is missing .sh".
 
@@ -1304,7 +1280,7 @@ cli::loader::main::prolog() {
                 '---exports')
                     ! cli::loader::cache::test 'exports.sh' || cli::assert
                     cli::loader::main::dispatch \
-                        | ::cli::cache::put::inline "${REPLY}"
+                        | cli::cache::put::inline "${REPLY}"
                     echo "${REPLY}" ;;
                 '---dependencies')
                     cli imports -c "${CLI_COMMAND[@]}" ;;
@@ -1384,7 +1360,7 @@ cli::loader::main::group() {
     [[ "${CLI_COMMAND[@]: -1}" == '.group' ]] || cli::assert
 
     if [[ "${1-}" == '-l' ]]; then
-        ::cli::path::dir::inline "${CLI_SOURCE}"
+        cli::path::dir::inline "${CLI_SOURCE}"
         cli list --dir "${REPLY}"
         return
     fi
@@ -1435,7 +1411,7 @@ cli::loader::main::inline() {
             shift
         fi
 
-        if ::cli::bash::function::is_declared::inline ${CLI_FUNCTION_MAIN}; then
+        if cli::bash::function::is_declared::inline ${CLI_FUNCTION_MAIN}; then
             cli::loader::main::invoke ${CLI_FUNCTION_MAIN} "$@"
             return
         fi
@@ -1478,7 +1454,7 @@ cli::loader::main::command::load() {
         ARG_CLI_DSL_DECLARE_META="${META}" \
         ARG_CLI_DSL_DECLARE_LOAD="${LOAD}" \
             cli dsl build -- "${CLI_META}" \
-                | ::cli::cache::put::inline "${META_SH}"
+                | cli::cache::put::inline "${META_SH}"
 
     cli::loader::source "${META_SH}"
 }
@@ -1506,7 +1482,7 @@ cli::loader::main::command() {
         done
     fi
 
-    if ::cli::set::test::inline CLI_KNOWN_COMMANDS "${CLI_COMMAND[*]}"; then
+    if cli::set::test::inline CLI_KNOWN_COMMANDS "${CLI_COMMAND[*]}"; then
         cli::loader::main::command::known "$@"
         return
     fi
@@ -1514,7 +1490,7 @@ cli::loader::main::command() {
     cli::loader::main::command::load
 
     ARG_SCOPE=CLI_SCOPE \
-        ::cli::dispatch::parse::inline "$@"
+        cli::dispatch::parse::inline "$@"
     local CLI_META_GROUP=${REPLY}
 
     # declare locals for group
@@ -1524,12 +1500,12 @@ cli::loader::main::command() {
 
         # variable name
         local NAME=${REPLY}
-        ::cli::name::to_symbol::inline ${NAME}
+        cli::name::to_symbol::inline ${NAME}
         local VARIABLE="ARG_${REPLY}"
 
         # variable flags
         local TYPE="${CLI_META_GROUP_TYPE[${NAME}]}"
-        ::cli::core::type::to_bash::inline ${TYPE}
+        cli::core::type::to_bash::inline ${TYPE}
         local FLAGS="${REPLY}"
 
         # declare variable
@@ -1540,7 +1516,7 @@ cli::loader::main::command() {
         CLI_SCOPE[${VARIABLE}]="${TYPE}"
 
         # initialize variable
-        if ::cli::set::test::inline REPLY_CLI_PARSE_ARGS_NAMED ${NAME}; then
+        if cli::set::test::inline REPLY_CLI_PARSE_ARGS_NAMED ${NAME}; then
             local -n VARIABLE_REF=${VARIABLE}
             local -n VALUE_REF="REPLY_CLI_PARSE_ARGS_NAMED_${REPLY_CLI_PARSE_ARGS_NAMED[${NAME}]}"
             case ${TYPE} in
@@ -1556,7 +1532,7 @@ cli::loader::main::command() {
         else
             # default value
             ARG_SCOPE=CLI_SCOPE \
-                ::cli::core::variable::initialize::inline ${VARIABLE}
+                cli::core::variable::initialize::inline ${VARIABLE}
         fi
 
         # declare -p ${VARIABLE} >&2
@@ -1612,7 +1588,7 @@ cli::loader::main::command::dispatch() {
         && [[ ! "${ARG_RUN_AS}" == "$(whoami)" ]]; then
         arg_user="${ARG_RUN_AS}" \
         arg_command="$0" \
-            ::cli::run_as::inline "$@"
+            cli::run_as::inline "$@"
         return
     fi
 
@@ -1620,14 +1596,14 @@ cli::loader::main::command::dispatch() {
 }
 
 cli::loader::main::cover() {
-    if ! ::cli::set::deflower::inline CLI_LOADER_COVERED "${CLI_COMMAND[*]}"; then
+    if ! cli::set::deflower::inline CLI_LOADER_COVERED "${CLI_COMMAND[*]}"; then
         return
     fi
 
     for REPLY in "${CLI_IMPORT[@]}"; do
         set ${REPLY}
 
-        ::cli::shim::source::inline "$1" \
+        cli::shim::source::inline "$1" \
             || cli::assert "Failed to find shim '$1' for import of '$*'."
 
         # echo "cover ${CLI_COMMAND[*]}: $@ ---source" >&2
@@ -1639,7 +1615,7 @@ cli::loader::main::invoke() {
     local CLI_FUNCTION="$1"
     shift
 
-    ::cli::bash::function::is_declared::inline ${CLI_FUNCTION} \
+    cli::bash::function::is_declared::inline ${CLI_FUNCTION} \
         || cli::assert "Command '${CLI_COMMAND[@]}' missing entrypoint '${CLI_FUNCTION}'."
 
     cli::loader::main::cover
@@ -1648,7 +1624,7 @@ cli::loader::main::invoke() {
 }
 
 cli::dump() {
-    ::cli::bash::variable::emit::inline "$@"
+    cli::bash::variable::emit::inline "$@"
 }
 
 loader_source() {
@@ -1658,12 +1634,12 @@ loader_source() {
         local ALIAS="${2-}"
 
         if [[ ! "${ALIAS}" ]]; then
-            ::cli::name::to_bash::inline ${COMMAND}
-            ::cli::bash::join::inline '::' "${MAPFILE[@]}"
+            cli::name::to_bash::inline ${COMMAND}
+            cli::bash::join::inline '::' "${MAPFILE[@]}"
             ALIAS="${REPLY}" 
         fi
 
-        ::cli::name::to_inline::inline ${COMMAND}
+        cli::name::to_inline::inline ${COMMAND}
         eval "${ALIAS}() { ${REPLY} \"\$@\"; }"
     }
 
@@ -1701,10 +1677,10 @@ loader_source() {
         CLI_LOADER_COVERED["${COMMAND}"]=true
 
         # capture existing function
-        ::cli::name::to_inline::inline ${COMMAND}
+        cli::name::to_inline::inline ${COMMAND}
         FQN="${REPLY}"
 
-        ::cli::bash::function::is_declared::inline ${FQN} \
+        cli::bash::function::is_declared::inline ${FQN} \
             || cli::assert "Expected ${FQN} to be inlined into loader."
         local EXISTING_FUNCTION=$(
             cli::loader::emit::imports "$@"
@@ -1716,7 +1692,7 @@ loader_source() {
 
         if [[ -n "${DIFF}" ]]; then
 
-            ::cli::shim::probe::inline ${COMMAND}
+            cli::shim::probe::inline ${COMMAND}
             echo "EXISTING_FUNCTION != INLINE_FUNCTION, FQN=${FQN}, ${REPLY}"
             echo "to disable check declare -x CLI_LOADER_IMPORT_DISABLE=1"
             
@@ -1896,7 +1872,7 @@ loader_source() {
         (( ${#CLI_LOADER_COVERED[@]} > 0 )) || cli::assert
         unset "CLI_LOADER_COVERED['cli loader']"
 
-        declare -f ::cli::dispatch::parse::inline
+        declare -f cli::dispatch::parse::inline
 
         printf '%s\n' "${!CLI_LOADER_COVERED[@]}" \
             | sort -u \
@@ -1905,7 +1881,7 @@ loader_source() {
         echo
 
         for import in "${MAPFILE[@]}"; do
-            ::cli::name::to_inline::inline ${import}
+            cli::name::to_inline::inline ${import}
             echo "${REPLY}" 
         done | mapfile -t
         printf '# %s\n' "${MAPFILE[@]}"
@@ -1928,24 +1904,24 @@ cli::initialize() {
     # ${bash_source[1]} '.cli/loader/exports.sh'
     # ${bash_source[2]} the command itself
     declare -g CLI_LOADER_COMMAND_PATH="${BASH_SOURCE[1]}"
-    ::cli::cache::path::inline "${CLI_LOADER_COMMAND_PATH}"
+    cli::cache::path::inline "${CLI_LOADER_COMMAND_PATH}"
     declare -g CLI_LOADER_CACHE_DIR="${REPLY}"
 
     declare -g CLI_LOADER_BGEN_PATH="${CLI_LOADER_CACHE_DIR}/bgen.sh"
     declare -g CLI_LOADER_EXPORTS_PATH="${CLI_LOADER_CACHE_DIR}/exports.sh"
 }
 
-trap '::cli::stderr::on_err::inline $?' ERR
+trap 'cli::stderr::on_err::inline $?' ERR
 
 cli::assert() {
-    ::cli::stderr::assert::inline "$@"
+    cli::stderr::assert::inline "$@"
 }
 
 cli::initialize
 
 # shim
 source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
-::cli::bash::function::is_declared::inline 'cli' || cli::assert
+cli::bash::function::is_declared::inline 'cli' || cli::assert
 [[ -v CLI_SHIM_ROOT_DIR_CLI ]] || cli::assert
 
 cli loader "$@"

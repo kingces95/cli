@@ -45,7 +45,7 @@ Arguments
 EOF
 }
 
-::cli::core::struct::define_field::inline() {
+cli::core::struct::define_field::inline() {
     : ${arg_struct?}
     : ${arg_name?}
     : ${arg_type?}
@@ -73,7 +73,7 @@ main() {
     echo ${pound} ${struct}
 
     # emit struct with the new field
-    ::cli::bash::emit::inline 'CLI_TYPE_*'
+    cli::bash::emit::inline 'CLI_TYPE_*'
 }
 
 self_test() {

@@ -19,12 +19,12 @@ Description
 EOF
 }
 
-::cli::name::to_inline::inline() {
-    ::cli::name::to_bash::inline "$@"
-    ::cli::bash::join::inline '::' '' "${MAPFILE[@]}" 'inline'
+cli::name::to_inline::inline() {
+    cli::name::to_bash::inline "$@"
+    cli::bash::join::inline '::' "${MAPFILE[@]}" 'inline'
 }
 
 cli::name::to_inline::self_test() {
     diff <(${CLI_COMMAND[@]} ---reply foo foo-bar .foo) - \
-        <<< '::foo::foo_bar::_foo::inline' || cli::assert
+        <<< 'foo::foo_bar::_foo::inline' || cli::assert
 }

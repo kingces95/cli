@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-::cli::attribute::is_defined::inline() {
+cli::attribute::is_defined::inline() {
     local target_type=${1-}; shift
     local target=${1-}; shift
     local type=${1-}; shift

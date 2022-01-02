@@ -19,7 +19,7 @@ main() {
     local -A names=()
 
     while read -a REPLY; do
-        ::cli::bash::wire::read::inline "${REPLY[@]}"
+        cli::bash::wire::read::inline "${REPLY[@]}"
         names[${REPLY}]=${REPLY}
     done
 
@@ -28,14 +28,14 @@ main() {
     done | sort -k 3
 }
 
-::cli::bash::wire::read::inline() {
-    ::cli::bash::wire::verify::inline "$@"
+cli::bash::wire::read::inline() {
+    cli::bash::wire::verify::inline "$@"
 
     local ARG_NAME=$1; shift
     local ARG_TYPE=$1; shift
 
     # declare bash variable
-    ::cli::bash::variable::declare::inline ${ARG_NAME} ${ARG_TYPE}
+    cli::bash::variable::declare::inline ${ARG_NAME} ${ARG_TYPE}
 
     # reference variable
     local -n REF=${ARG_NAME}

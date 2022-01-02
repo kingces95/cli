@@ -8,9 +8,9 @@ Command
 EOF
 }
 
-::cli::bash::emit::block::paren::inline() {
+cli::bash::emit::block::paren::inline() {
     echo -n "("
-    ::cli::bash::emit::indent::inline $'\n'
+    cli::bash::emit::indent::inline $'\n'
     echo -n ")"
 }
 

@@ -43,7 +43,7 @@ cli::list::main() (
             continue
         fi
 
-        ::cli::path::get_info::inline "${ENTRY}"
+        cli::path::get_info::inline "${ENTRY}"
 
         if ! ${REPLY_CLI_PATH_IS_FILE} && ! ${REPLY_CLI_PATH_IS_DIRECTORY}; then 
             continue

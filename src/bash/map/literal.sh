@@ -17,13 +17,13 @@ Details
 EOF
 }
 
-::cli::bash::map::literal::inline() {
+cli::bash::map::literal::inline() {
     local -n MAP_REF=${ARG_MAP}
 
     local LITERAL=( '(' )
 
     while (( $# > 0 )); do
-        ::cli::bash::key::literal::inline "$1"
+        cli::bash::key::literal::inline "$1"
         echo "${REPLY}"
         shift
     done \
@@ -32,7 +32,7 @@ EOF
         LITERAL+=( "[" )
         LITERAL+=( "${REPLY}" )
         LITERAL+=( "]=" )
-        ::cli::bash::string::literal::inline "${MAP_REF["$1"]}"
+        cli::bash::string::literal::inline "${MAP_REF["$1"]}"
         LITERAL+=( "${REPLY}" )
         LITERAL+=( ' ' )
     done

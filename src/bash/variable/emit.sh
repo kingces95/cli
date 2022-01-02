@@ -21,13 +21,13 @@ Arguments
 EOF
 }
 
-::cli::bash::variable::emit::inline() {
-    ::cli::bash::variable::list::inline "$@" \
+cli::bash::variable::emit::inline() {
+    cli::bash::variable::list::inline "$@" \
         | while read; do declare -p ${REPLY}; done
 
     # set "${MAPFILE[@]}"
     # while (( $# > 0 )); do
-    #     ::cli::bash::emit::variable::inline "$1"
+    #     cli::bash::emit::variable::inline "$1"
     #     shift
     # done
 }

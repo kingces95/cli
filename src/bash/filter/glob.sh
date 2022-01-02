@@ -13,7 +13,7 @@ Description
 EOF
 }
 
-::cli::bash::filter::glob::inline() {
+cli::bash::filter::glob::inline() {
     while read -r; do
         local FILTER
         for FILTER in "$@"; do

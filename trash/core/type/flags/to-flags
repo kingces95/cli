@@ -25,7 +25,7 @@ Description
 EOF
 }
 
-::cli::core::type::to_flags::inline() {
+cli::core::type::to_flags::inline() {
     MAPFILE=()
     local ARGS=( "$@" )
     local FLAGS=()

@@ -22,7 +22,7 @@ Description
 EOF
 }
 
-::cli::path::make_absolute::inline() {
+cli::path::make_absolute::inline() {
     if [[ ! "${1-}" ]]; then
         REPLY="${PWD}"
 

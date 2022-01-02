@@ -23,12 +23,12 @@ main() {
     local -A names=()
 
     while read -a REPLY; do
-        ::cli::bash::wire::verify::inline "${REPLY[@]}"
-        ::cli::bash::write::inline "${REPLY[@]}"
+        cli::bash::wire::verify::inline "${REPLY[@]}"
+        cli::bash::write::inline "${REPLY[@]}"
     done
 }
 
-::cli::bash::wire::verify::inline() {
+cli::bash::wire::verify::inline() {
     : ${1?'Missing required variable name.'}
     local ARG_NAME=$1
     shift

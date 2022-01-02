@@ -13,7 +13,7 @@ Description
 EOF
 }
 
-::cli::bash::string::literal::inline() {
+cli::bash::string::literal::inline() {
     local LITERAL="$*"
     
     if [[ "${LITERAL}" =~ ^[a-zA-Z0-9_-]*$ ]]; then

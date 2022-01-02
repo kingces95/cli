@@ -62,7 +62,7 @@ cli::util::readset::self_test() {
 
     declare -A RESULT
     ${CLI_COMMAND[@]} ---emit | source /dev/stdin
-    ::cli::util::readset::inline <<< $'a'
+    cli::util::readset::inline <<< $'a'
     assert::pipe_eq < <(declare -p RESULT) \
         'declare -A RESULT=([a]="true" )'
 }

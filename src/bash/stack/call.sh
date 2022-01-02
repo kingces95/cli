@@ -18,7 +18,7 @@ EOF
 }
 
 # see https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
-::cli::bash::stack::call::inline() {
+cli::bash::stack::call::inline() {
     
     # argument counts by frame
     set -- ${BASH_ARGV[@]}
@@ -34,14 +34,14 @@ EOF
 
         # reverse argv for i-th frame
         for (( j=${BASH_ARGC[$i]}-1; j>=0; j-- )); do
-            args+=( "$(::cli::bash::literal::inline "${BASH_ARGV[${j}+${argc}]}")" )
+            args+=( "$(cli::bash::literal::inline "${BASH_ARGV[${j}+${argc}]}")" )
         done
 
         # pop argc stack for i-th frame
         argc+=${BASH_ARGC[$i]}
 
         if [[ ! "${CLI_STACK_SHOW_HIDDEN-}" ]] \
-            && ::cli::attribute::is_defined::inline \
+            && cli::attribute::is_defined::inline \
             'METHOD' "${funcname}" 'cli_bash_stack_hidden_attribute'; then
             continue
         fi
@@ -68,7 +68,7 @@ cli::bash::stack::call::self_test() {
 
     my_trap() {
         echo
-        ::cli::bash::stack::call::inline 1
+        cli::bash::stack::call::inline 1
     }
 
     trap 'my_trap' ERR

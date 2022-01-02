@@ -54,10 +54,10 @@ cli::args::emit::main() {
     _ARG_TYPE='GROUP' \
     _ARG_BASH_NAME='BASH_NAMES' \
     _ARG_PREFIX='ARG'
-        ::cli::args::emit::inline
+        cli::args::emit::inline
 }
 
-::cli::args::emit::inline() {
+cli::args::emit::inline() {
     # use_ARG_* instead of ARG_* to avoid conflicts (e.g. _ARG_TYPE)
     : ${_ARG_ARGS?} # e.g. CLI_ARGS
     : ${_ARG_META?} # e.g. CLI_META_GROUP_0_TYPE (map: field -> type)

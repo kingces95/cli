@@ -47,20 +47,20 @@ cli::args::verify::main() {
     cli::source cli args resolve
 
     ARG_TYPE='cli_args' \
-        ::cli::core::variable::declare::inline MY_ARGS
-    ::cli::core::variable::read::inline MY_ARGS
+        cli::core::variable::declare::inline MY_ARGS
+    cli::core::variable::read::inline MY_ARGS
 
     ARG_META_GROUPS=${ARG_META}_GROUP \
-        ::cli::args::resolve::inline MY_ARGS
+        cli::args::resolve::inline MY_ARGS
     local META_GROUP=${REPLY}
 
     ARG_META_GROUP=${META_GROUP} \
-        ::cli::args::verify::inline MY_ARGS
+        cli::args::verify::inline MY_ARGS
 
-    ::cli::core::variable::write::inline MY_ARGS
+    cli::core::variable::write::inline MY_ARGS
 }
 
-::cli::args::verify::inline() {
+cli::args::verify::inline() {
     : ${ARG_SCOPE?'Missing scope.'}
 
     : ${ARG_META_GROUP?'Missing metadata.'}
@@ -109,7 +109,7 @@ cli::args::verify::main() {
             fi
 
             # assign default if missing
-            ::cli::core::variable::put::inline ${ARGS} named "${OPTION}" "${DEFAULT}"
+            cli::core::variable::put::inline ${ARGS} named "${OPTION}" "${DEFAULT}"
         fi
 
         local -n ARGS_NAMED_N_REF="${ARGS}_NAMED_${NAMED_ARGS_REF[$OPTION]}"
@@ -155,7 +155,7 @@ cli::args::verify::main() {
 
         # check values
         for VALUE in "${VALUES[@]}"; do
-            ::cli::args::check::inline \
+            cli::args::check::inline \
                 "${OPTION}" \
                 "${VALUE}" \
                 "${ELEMENT_TYPE}" \
@@ -178,10 +178,10 @@ cli::args::verify::self_test() (
     # declare metadata
     local ARG_META='MY_META'
     ARG_TYPE='cli_meta' \
-        ::cli::core::variable::declare::inline ${ARG_META}
+        cli::core::variable::declare::inline ${ARG_META}
 
     # load metadata
-    ::cli::core::variable::read::inline ${ARG_META} < <( 
+    cli::core::variable::read::inline ${ARG_META} < <( 
         cli dsl sample ---load 
     )
 
@@ -191,7 +191,7 @@ cli::args::verify::self_test() (
         local COMMAND_LINE='--id 42 -f banana -h --header Foo -- a0 a1'
         cli args tokenize -- ${COMMAND_LINE} \
             | cli args parse -- \
-                <( ::cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
+                <( cli::core::variable::write::inline ${ARG_META}_ALIAS ) \
             | ${CLI_COMMAND[@]} --
     ) - <<-EOF || cli::assert
 			first_named id

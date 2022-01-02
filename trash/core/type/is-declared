@@ -14,8 +14,8 @@ Description
 EOF
 }
 
-::cli::core::type::is_declared::inline() {
-    ::cli::bash::variable::is_declared::inline "CLI_TYPE_${1^^}"
+cli::core::type::is_declared::inline() {
+    cli::bash::variable::is_declared::inline "CLI_TYPE_${1^^}"
 }
 
 self_test() {

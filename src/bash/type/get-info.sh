@@ -31,7 +31,7 @@ Description
 EOF
 }
 
-::cli::bash::type::get_info::inline() {
+cli::bash::type::get_info::inline() {
     local TYPE="${1-}"
 
     REPLY_CLI_BASH_TYPE_IS_INTEGER=false

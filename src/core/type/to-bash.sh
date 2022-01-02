@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-::cli::core::type::to_bash::inline() {
+cli::core::type::to_bash::inline() {
     local TYPE="${1-}"
 
     case "${TYPE}" in

@@ -76,7 +76,7 @@ cli::main() {
     cli::export::functions "$@"
 }
 
-cli::export::cli::meta::declare() {
+cli::exportcli::meta::declare() {
     echo "cli::source $@"
 }
 

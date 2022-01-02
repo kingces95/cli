@@ -25,17 +25,17 @@ EOF
 cli::core::variable::name::resolve::main() {
     cli core variable parse ---source
 
-    ::cli::core::variable::parse::inline "$@"
+    cli::core::variable::parse::inline "$@"
     shift $(( ${#MAPFILE[@]} ))
     shift
 
     ARG_TYPE="${MAPFILE[@]}" \
-        ::cli::core::variable::name::resolve::inline "${REPLY}" "$@"
+        cli::core::variable::name::resolve::inline "${REPLY}" "$@"
 
     echo "${MAPFILE[*]} ${REPLY}"
 }
 
-::cli::core::variable::name::resolve::inline() {
+cli::core::variable::name::resolve::inline() {
     local TYPE=( ${ARG_TYPE-} )
     [[ "${TYPE[@]}" ]] || cli::assert 'Missing type.'
    
@@ -46,7 +46,7 @@ cli::core::variable::name::resolve::main() {
 
     for i in "$@"; do
 
-        ::cli::core::type::get_info::inline "${TYPE[@]}"
+        cli::core::type::get_info::inline "${TYPE[@]}"
 
         # builtin
         if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
@@ -71,7 +71,7 @@ cli::core::variable::name::resolve::main() {
                 || cli::assert "Failed to resolve key '$i' in '${NAME}'."
             NAME=${NAME}_${ORDINAL_MAP["$i"]}
 
-            ::cli::core::type::unmodify::inline "${MAPFILE[@]}"
+            cli::core::type::unmodify::inline "${MAPFILE[@]}"
             TYPE=( ${MAPFILE[@]} )
 
         # udt
@@ -79,7 +79,7 @@ cli::core::variable::name::resolve::main() {
             ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} \
                 || cli::assert "Expected user defined type but got '${TYPE[@]}'."
 
-            ::cli::core::type::get::inline "${REPLY}"
+            cli::core::type::get::inline "${REPLY}"
             local -n TYPE_REF="${REPLY}"
 
             if [[ ! "${TYPE_REF[$i]+set}" == 'set' ]]; then

@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-::cli::subshell::signal_group::inline() {
+cli::subshell::signal_group::inline() {
     local SIGNAL=${1-'SIGINT'}
     read PID < <(ps -p ${BASHPID} -o pgid=)
     kill -${SIGNAL} -${PID}
@@ -28,7 +28,7 @@ cli::subshell::signal_group::self_test() {
         assert() {
             echo "ASSERT_FAILED ${BASHPID}" >&2
             if [[ "$1" != 'run' ]]; then ps -j >&2; fi
-            ::cli::subshell::signal_group::inline
+            cli::subshell::signal_group::inline
             exit 1
         }
 

@@ -44,16 +44,16 @@ main() {
         ARG_TEMP_MAP=TEMP_MAP \
         ARG_NAME=${ARG_PREFIX} \
         ARG_TYPE=${ARG_TYPE} \
-            ::cli::core::wire::load::inline "${ARRAY[@]}"
+            cli::core::wire::load::inline "${ARRAY[@]}"
     done
 
     for (( i=0; i<${#REPLY[@]}; i++ )); do
         echo -n "${REPLY[$i]-} "
-        ::cli::bash::write::inline "${REPLY_VALUE[$i]-}"
+        cli::bash::write::inline "${REPLY_VALUE[$i]-}"
     done
 }
 
-::cli::core::wire::load::inline() {
+cli::core::wire::load::inline() {
     # : ${ARG_REPLY_NAME?}
     # : ${ARG_REPLY_TYPE?}
     # : ${ARG_REPLY_KEY?}
@@ -68,7 +68,7 @@ main() {
     local -n ARG_REPLY_VALUE_REF=${ARG_REPLY_VALUE}
 
     # builtin
-    if arg_type=${ARG_TYPE} ::cli::core::type::is_builtin::inline; then
+    if arg_type=${ARG_TYPE} cli::core::type::is_builtin::inline; then
         local location=( ${ARG_TYPE} )
 
         if [[ ${ARG_TYPE} == 'map' ]]; then
@@ -85,7 +85,7 @@ main() {
         local next_name
 
         # anonymous
-        if arg_type=${ARG_TYPE} ::cli::core::type::is_modified::inline; then
+        if arg_type=${ARG_TYPE} cli::core::type::is_modified::inline; then
             local -n ordinal=${ARG_TEMP_MAP}
             local anonymous_type=${ARG_NAME}
             local anonymous_field=${ARG_NAME}__$1
@@ -125,7 +125,7 @@ main() {
         ARG_NAME=${next_name} \
         ARG_TYPE=${next_type} \
         ARG_TEMP_MAP=${ARG_TEMP_MAP} \
-            ::cli::core::wire::load::inline "${@:2}"
+            cli::core::wire::load::inline "${@:2}"
     fi
 }
 

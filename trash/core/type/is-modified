@@ -22,7 +22,7 @@ Description
 EOF
 }
 
-::cli::core::type::is_modified::inline() {
+cli::core::type::is_modified::inline() {
     [[ "${1-}" =~ m ]]
 }
 

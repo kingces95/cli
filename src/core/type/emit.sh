@@ -19,14 +19,14 @@ Description
 EOF
 }
 
-::cli::core::type::emit::inline() {
+cli::core::type::emit::inline() {
 
     # strip modifiers 
-    ::cli::core::type::unmodified::inline "$@"
+    cli::core::type::unmodified::inline "$@"
     [[ "${REPLY}" ]] || cli::assert "Failed to unmodify '$@'.".
 
     # skip builtin types
-    ::cli::core::type::get_info::inline "${REPLY}"
+    cli::core::type::get_info::inline "${REPLY}"
     if ${REPLY_CLI_CORE_TYPE_IS_BUILTIN}; then
         return
     fi
@@ -35,10 +35,10 @@ EOF
     echo "${REPLY}"
 
     # recurse using the type of each of the user defined type's fields
-    ::cli::core::type::get::inline ${REPLY}
+    cli::core::type::get::inline ${REPLY}
     local -n CLI_TYPE_REF="${REPLY}"
     for FIELD_TYPE in "${CLI_TYPE_REF[@]}"; do
-        ::cli::core::type::emit::inline ${FIELD_TYPE}
+        cli::core::type::emit::inline ${FIELD_TYPE}
     done
 }
 

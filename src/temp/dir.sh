@@ -19,8 +19,8 @@ Description
 EOF
 }
 
-::cli::temp::dir::inline() {
-    ::cli::temp::file::inline "$@"
+cli::temp::dir::inline() {
+    cli::temp::file::inline "$@"
     rm -f "${REPLY}"
     mkdir "${REPLY}"
 }
@@ -29,17 +29,17 @@ cli::temp::dir::self_test() (
 
     mapfile -t < <(
         # create a temp dir
-        ::cli::temp::dir::inline
+        cli::temp::dir::inline
         [[ -d "${REPLY}" ]] || cli::assert
         echo "${REPLY}"
 
         # create a temp dir to explicitly delete
-        ::cli::temp::dir::inline
+        cli::temp::dir::inline
         [[ -d "${REPLY}" ]] || cli::assert
         rm -r "${REPLY}"
 
         # create a temp dir returned via a custom name
-        ::cli::temp::dir::inline
+        cli::temp::dir::inline
         local MY_REPLY="${REPLY}"
         [[ -d "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"

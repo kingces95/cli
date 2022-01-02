@@ -35,7 +35,7 @@ Description
 EOF
 }
 
-::cli::bash::variable::get_info::inline() {
+cli::bash::variable::get_info::inline() {
     # declare cache
     declare -gA CLI_BASH_VARIABLE_INFO_CACHE+=()
     REPLY_CLI_BASH_VARIABLE_IS_CACHE_HIT=false
@@ -61,7 +61,7 @@ EOF
         REPLY_CLI_BASH_VARIABLE_IS_READONLY=true
         REPLY_CLI_BASH_VARIABLE_IS_CACHE_HIT=true
 
-        ::cli::bash::type::get_info::inline "${CLI_BASH_VARIABLE_INFO_CACHE["$1"]}"
+        cli::bash::type::get_info::inline "${CLI_BASH_VARIABLE_INFO_CACHE["$1"]}"
 
         REPLY=${REPLY}
         REPLY_CLI_BASH_VARIABLE_IS_INTEGER=${REPLY_CLI_BASH_TYPE_IS_INTEGER}
@@ -85,7 +85,7 @@ EOF
         local _ FLAGS VALUE
         read _ FLAGS VALUE <<< "${DECLARE}"
 
-        ::cli::bash::variable::declaration::get_info::inline "${FLAGS//-/}"
+        cli::bash::variable::declaration::get_info::inline "${FLAGS//-/}"
         
         # dereference name
         if ${REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_NAMED}; then

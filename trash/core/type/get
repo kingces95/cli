@@ -14,13 +14,13 @@ Description
 EOF
 }
 
-::cli::core::type::get::inline() {    
+cli::core::type::get::inline() {    
     local NAME=${1-}
     [[ "${NAME}" =~ $CLI_CORE_REGEX_TYPE_NAME ]] \
         || cli::assert "Expected type name to match '${CLI_CORE_REGEX_TYPE_NAME}', but got '${NAME}'."
 
     local TYPE="CLI_TYPE_${NAME^^}"
-    ::cli::bash::variable::is_declared::inline "${TYPE}" \
+    cli::bash::variable::is_declared::inline "${TYPE}" \
         || cli::assert "Expected type '${NAME}' to be declared as '${TYPE}', but it's not."
 
     REPLY="${TYPE}"

@@ -19,19 +19,19 @@ Description
 EOF
 }
 
-::cli::core::emit::global::inline() {
+cli::core::emit::global::inline() {
     : "${ARG_SCOPE?'Missing scope.'}"
 
     local NAME=${1-}
     [[ "${NAME}" ]] || cli::assert 'Missing variable name.'
 
-    ::cli::core::variable::find::inline ${NAME} \
-        | while read; do ::cli::core::emit::variable::inline ${REPLY} g; done
+    cli::core::variable::find::inline ${NAME} \
+        | while read; do cli::core::emit::variable::inline ${REPLY} g; done
 
     echo
 
-    ::cli::core::variable::find::inline ${NAME} \
-        | ::cli::core::emit::scope::inline
+    cli::core::variable::find::inline ${NAME} \
+        | cli::core::emit::scope::inline
 }
 
 cli::core::emit::global::self_test() {

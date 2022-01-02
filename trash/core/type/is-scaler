@@ -14,7 +14,7 @@ Description
 EOF
 }
 
-::cli::core::type::is_scaler::inline() {
+cli::core::type::is_scaler::inline() {
     # not array, map, modified, or user defined
     [[ ! "${1-}" =~ a|A|m|u ]] && (( $# <= 1 ))
 }

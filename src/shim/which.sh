@@ -20,11 +20,11 @@ Arguments
 EOF
 }
 
-::cli::shim::which::inline() {
+cli::shim::which::inline() {
     local NAME="$1"
     shift
 
-    ::cli::shim::source::inline "${NAME}" || return 1
+    cli::shim::source::inline "${NAME}" || return 1
 
     local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${NAME^^}"
     [[ "${SHIM_ROOT_DIR_REF-}" ]] || cli::assert

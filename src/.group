@@ -29,7 +29,7 @@ cli::self_test() {
     cli stderr .group --self-test
     cli shim .group --self-test
     
-    # cli bash .group --self-test
+    cli bash .group --self-test
     cli args .group --self-test 
     cli core .group --self-test 
     cli dsl .group --self-test 

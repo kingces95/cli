@@ -26,7 +26,7 @@ Examples
 EOF
 }
 
-::cli::bash::group::inline() {
+cli::bash::group::inline() {
     local ARG_KEYS=${1-1}
 
     local current_key=
@@ -62,7 +62,7 @@ EOF
     for (( i=0; i<${#keys[@]}; i++ )); do
 
         # activate pipe
-        ::cli::temp::fifo::inline
+        cli::temp::fifo::inline
         set -- "${REPLY}"
 
         # publish group
@@ -73,7 +73,7 @@ EOF
         printf '%s\n' "${group_ref[@]}" > "$1"
     
         # delete pipe
-        ::cli::temp::remove::inline "$1"
+        cli::temp::remove::inline "$1"
     done
 }
 

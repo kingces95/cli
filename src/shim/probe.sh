@@ -20,8 +20,8 @@ Arguments
 EOF
 }
 
-::cli::shim::probe::inline() {
-    ::cli::shim::which::inline "${1-}"
+cli::shim::probe::inline() {
+    cli::shim::which::inline "${1-}"
     shift
 
     MAPFILE=()

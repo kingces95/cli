@@ -9,10 +9,10 @@ Command
 EOF
 }
 
-::cli::bash::emit::expression::key_value::inline() {
-    ::cli::bash::emit::expression::key::inline "$1"
+cli::bash::emit::expression::key_value::inline() {
+    cli::bash::emit::expression::key::inline "$1"
     echo -n '='
-    ::cli::bash::emit::initializer::string::inline "$2"
+    cli::bash::emit::initializer::string::inline "$2"
 }
 
 cli::bash::emit::expression::key_value::self_test() {
