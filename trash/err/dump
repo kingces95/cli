@@ -36,10 +36,10 @@ main() {
     local CLI_TRAP_TYPE=${2-'UNKNOWN_TRAP_TYPE'}
     local CLI_TRAP_MESSAGE="${3-'GENERAL FAILURE'}"
 
-    cli::bash::err::dump::inline
+    cli::bash::err::dump
 }
 
-cli::bash::err::dump::inline() {
+cli::bash::err::dump() {
     local CLI_TRAP_EXIT_CODE=${CLI_TRAP_EXIT_CODE-$?}
 
     : ${CLI_TRAP_TYPE?'Did you forget to set CLI_TRAP_TYPE?'}
@@ -49,7 +49,7 @@ cli::bash::err::dump::inline() {
 
     if [[ ! "${CLI_TRAP_NO_STACK-}" == 'true' ]]; then
         echo "--- ${CLI_TRAP_TYPE} TRAP STACKTRACE, exit=${CLI_TRAP_EXIT_CODE} ---"
-        cli::bash::stack::trace::inline | sed 's/^/  /'
+        cli::bash::stack::trace | sed 's/^/  /'
     fi
 }
 
@@ -66,22 +66,22 @@ self_test() {
     #         '  {1} cli::main --self-test                              /Users/Setup/git/cli/src/.cli/loader/exports.sh:108' \
     #         '  {2} main --self-test                                   /Users/Setup/git/cli/src/bash/trap/dump:75'
 
-    # cli::bash::err::dump::inline
+    # cli::bash::err::dump
 
     CLI_TRAP_TYPE=MY_TRAP
-    # cli::bash::err::dump::inline 
+    # cli::bash::err::dump 
     # \
     #     | assert::pipe_eq_exact \
     #         'line 52: CLI_TRAP_TYPE: Did you forget to set CLI_TRAP_TYPE?'
 
     CLI_TRAP_MESSAGE='My trap message'
-    # cli::bash::err::dump::inline
+    # cli::bash::err::dump
 
     # CLI_TRAP_EXIT_CODE=42
-    # cli::bash::err::dump::inline
+    # cli::bash::err::dump
 
     # CLI_TRAP_SKIP_FRAMES=1
-    # cli::bash::err::dump::inline
+    # cli::bash::err::dump
 
     # cli::mktemp::dir
     # cli::mktemp::file
@@ -89,7 +89,7 @@ self_test() {
 
     CLI_TRAP_DUMP_STACK=true
 
-    cli::bash::err::dump::inline
+    cli::bash::err::dump
 }
 
 cli::main "$@"

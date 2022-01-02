@@ -15,11 +15,11 @@ Description
 EOF
 }
 
-cli::set::deflower::inline() {
+cli::set::deflower() {
     local -n SET_REF=${1?'Missing set'}
     local KEY=${2?'Missing element value'}
 
-    if cli::set::test::inline "$@"; then
+    if cli::set::test "$@"; then
         return 1
     fi
 
@@ -30,9 +30,9 @@ cli::set::deflower::self_test() {
     local -A SET=()
     local KEY=(foo bar)
 
-    cli::set::deflower::inline SET "${KEY[*]}" || cli::assert
-    cli::set::test::inline SET "${KEY[*]}" || cli::assert
-    ! cli::set::deflower::inline SET "${KEY[*]}" || cli::assert
+    cli::set::deflower SET "${KEY[*]}" || cli::assert
+    cli::set::test SET "${KEY[*]}" || cli::assert
+    ! cli::set::deflower SET "${KEY[*]}" || cli::assert
 
     diff <(declare -p SET) - <<< 'declare -A SET=(["foo bar"]="true" )' \
         || cli::assert

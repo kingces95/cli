@@ -28,13 +28,13 @@ EOF
 cli::core::variable::declare::main() {
     cli core variable parse ---source
 
-    cli::core::variable::parse::inline "$@"
+    cli::core::variable::parse "$@"
 
     ARG_TYPE="${MAPFILE[@]}" \
-        cli::core::variable::declare::inline "${REPLY}"
+        cli::core::variable::declare "${REPLY}"
 }
 
-cli::core::variable::declare::inline() {
+cli::core::variable::declare() {
     local SCOPE_NAME="${ARG_SCOPE-}"
     [[ "${SCOPE_NAME}" ]] || cli::assert 'Missing scope.'
 
@@ -45,7 +45,7 @@ cli::core::variable::declare::inline() {
     [[ "${NAME}" ]] || cli::assert 'Missing name.'
 
     # redefinition is a noop
-    if cli::core::variable::get_info::inline "${NAME}"; then
+    if cli::core::variable::get_info "${NAME}"; then
         local EXISTING_TYPE="${MAPFILE[*]}"
         [[ "${EXISTING_TYPE}" == "${TYPE}" ]] || \
             cli::assert "Variable '${NAME}' of type '${EXISTING_TYPE}'" \
@@ -54,7 +54,7 @@ cli::core::variable::declare::inline() {
     fi
     
     # assert bash variable does not already exist
-    ! cli::bash::variable::get_info::inline "${NAME}" \
+    ! cli::bash::variable::get_info "${NAME}" \
         || cli::assert "Failed to declare '${NAME}'." \
             "Variable '${NAME}' already declared in bash as:" \
             "$( declare -p "${NAME}" )"
@@ -63,13 +63,13 @@ cli::core::variable::declare::inline() {
     local -n SCOPE_REF="${SCOPE_NAME}"
     SCOPE_REF["${NAME}"]="${TYPE}"
 
-    cli::core::type::get_info::inline ${TYPE} # split
+    cli::core::type::get_info ${TYPE} # split
 
     # base case
     if ! ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
-        cli::core::type::to_bash::inline ${TYPE}
+        cli::core::type::to_bash ${TYPE}
         declare -g${REPLY} ${NAME}
-        cli::core::variable::initialize::inline "${NAME}"
+        cli::core::variable::initialize "${NAME}"
 
     # user defined
     else
@@ -83,7 +83,7 @@ cli::core::variable::declare::inline() {
         # fi
         # echo "--- MISSING BGEN FOR CLI_TYPE_${TYPE^^} ---" > /dev/stderr
 
-        cli::core::type::get::inline ${USER_DEFINED_TYPE}
+        cli::core::type::get ${USER_DEFINED_TYPE}
         local -n TYPE_REF=${REPLY}
 
         # layout fields
@@ -92,12 +92,12 @@ cli::core::variable::declare::inline() {
 
             # resolve bash variable for field
             ARG_TYPE="${USER_DEFINED_TYPE}" \
-                cli::core::variable::name::resolve::inline "${NAME}" "${FIELD_NAME}"
+                cli::core::variable::name::resolve "${NAME}" "${FIELD_NAME}"
             local FIELD_TYPE="${MAPFILE[*]}"
 
             # recursively initialize bash variable for field
             ARG_TYPE="${FIELD_TYPE}" \
-                cli::core::variable::declare::inline "${REPLY}"
+                cli::core::variable::declare "${REPLY}"
         done
     fi
 }
@@ -121,12 +121,12 @@ cli::core::variable::declare::self_test() (
                 "${SCOPE["${NAME}"]}" == "${TYPE}" ]] || \
                 cli::assert "${SCOPE["${NAME}"]+missing} != ${TYPE}"
 
-            cli::core::type::get_info::inline ${TYPE}
+            cli::core::type::get_info ${TYPE}
 
             if ! ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED}; then
 
                 # get info about the underlying bash variable
-                cli::bash::variable::get_info::inline "${NAME}"
+                cli::bash::variable::get_info "${NAME}"
                 local ACUTAL_BASH_TYPE="${REPLY}"
 
                 # the bash variable should be initialized and mutable
@@ -134,7 +134,7 @@ cli::core::variable::declare::self_test() (
                 ! ${REPLY_CLI_BASH_VARIABLE_IS_READONLY} || cli::assert
 
                 # the bash variable type should correspond to the core type
-                cli::core::type::to_bash::inline ${TYPE} 
+                cli::core::type::to_bash ${TYPE} 
                 local EXPECTED_BASH_TYPE="${REPLY}"
 
                 [[ "${ACUTAL_BASH_TYPE}" == "${EXPECTED_BASH_TYPE}" ]] \
@@ -144,16 +144,16 @@ cli::core::variable::declare::self_test() (
             fi
 
             # no bash variable is declared for a UDT
-            ! cli::bash::variable::get_info::inline "${NAME}" || cli::assert
+            ! cli::bash::variable::get_info "${NAME}" || cli::assert
 
-            cli::core::type::get::inline "${TYPE}"
+            cli::core::type::get "${TYPE}"
             local -n TYPE_REF="${REPLY}"
 
             local FIELD
             for FIELD in "${!TYPE_REF[@]}"; do
                 
                 ARG_TYPE="${TYPE}" \
-                    cli::core::variable::name::resolve::inline "${NAME}" "${FIELD}"
+                    cli::core::variable::name::resolve "${NAME}" "${FIELD}"
 
                 # recurse
                 test::verify "${MAPFILE[*]}" "${REPLY}"
@@ -161,7 +161,7 @@ cli::core::variable::declare::self_test() (
         }
 
         # parse the declaration
-        cli::core::variable::parse::inline "$@"
+        cli::core::variable::parse "$@"
         test::verify "${MAPFILE[*]}" "${REPLY}"
     }
 

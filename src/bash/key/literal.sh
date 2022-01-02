@@ -12,7 +12,7 @@ Summary
 EOF
 }
 
-cli::bash::key::literal::inline() {
+cli::bash::key::literal() {
     local LITERAL="$*"
     
     if [[ "${LITERAL}" =~ ^[a-zA-Z0-9_-]*$ ]]; then

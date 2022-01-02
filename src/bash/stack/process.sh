@@ -10,7 +10,7 @@ Summary
 EOF
 }
 
-cli::bash::stack::process::inline() {
+cli::bash::stack::process() {
     local ARG_START_PID=${1-$$}
     local ARG_END_PID=${2-${CLI_PID-}}
 
@@ -50,7 +50,7 @@ cli::bash::stack::process::inline() {
 
 cli::bash::stack::process::self_test() {
 
-    trap cli::bash::stack::process::inline ERR
+    trap cli::bash::stack::process ERR
 
     subpipe() {
         local pid=$BASHPID

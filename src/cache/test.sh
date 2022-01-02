@@ -18,7 +18,7 @@ Description
 EOF
 }
 
-cli::cache::test::inline() {
+cli::cache::test() {
     local CACHE="$1"
     shift
 

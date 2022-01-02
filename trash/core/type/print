@@ -11,7 +11,7 @@ Summary
 EOF
 }
 
-cli::core::type::print::inline() {
+cli::core::type::print() {
     local -a TYPE=()
 
     # modified
@@ -88,11 +88,11 @@ cli::core::type::print::inline() {
 }
 
 self_test() {
-    cli::core::type::get::inline '' foo
+    cli::core::type::get '' foo
     exit
 
     test() {
-        diff <(cli::core::type::get::inline "$@"; ${CLI_COMMAND[@]} ---reply) <( echo "$@" )
+        diff <(cli::core::type::get "$@"; ${CLI_COMMAND[@]} ---reply) <( echo "$@" )
     }
     test
     test i

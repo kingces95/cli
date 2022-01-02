@@ -12,10 +12,10 @@ EOF
 }
 
 main() {
-    cli::emit::global_variable::inline
+    cli::emit::global_variable
 }
 
-cli::emit::global_variable::inline() {
+cli::emit::global_variable() {
     sed 's/^declare/declare -g/'
 }
 

@@ -18,22 +18,22 @@ Examples
 EOF
 }
 
-cli::stderr::assert::inline() {
+cli::stderr::assert() {
     if (( $# == 0 )); then 
         set 'Condition failed'
     fi
 
     {
         echo "ASSERT FAILED:" "$*"
-        cli::bash::stack::trace::inline \
+        cli::bash::stack::trace \
             | sed 's/^/  /'
-    } | cli::stderr::dump::inline
+    } | cli::stderr::dump
 }
 
 cli::stderr::assert::self_test() {
     test() {
         set -m
-        cli::stderr::assert::inline "$@" \
+        cli::stderr::assert "$@" \
             2>&1 1> /dev/stderr
     }
 

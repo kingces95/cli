@@ -20,21 +20,21 @@ EOF
 }
 
 main() {
-    cli::subshell::parent::inline "$@"
+    cli::subshell::parent "$@"
     declare -p BASHPID
 }
 
-cli::subshell::parent::inline() {
+cli::subshell::parent() {
     (( $$ != $BASHPID )) || return 1
-    cli::process::parent::inline
+    cli::process::parent
     declare -gi BASHPPID=${REPLY}
 }
 
 self_test() {
-    ! cli::subshell::parent::inline || cli::assert
+    ! cli::subshell::parent || cli::assert
 
     ( 
-        cli::subshell::parent::inline || cli::assert
+        cli::subshell::parent || cli::assert
         [[ "${BASHPPID}" == "$$" ]] || cli::assert "${BASHPPID}" == "$$"
     )
 }

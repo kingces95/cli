@@ -12,7 +12,7 @@ Summary
 EOF
 }
 
-cli::stderr::on_err::inline() {
+cli::stderr::on_err() {
     local -a CLI_PIPESTATUS=( "${PIPESTATUS[@]}" )
     local CLI_TRAP_EXIT_CODE=${1-'?'}
     local BPID="${BASHPID}"
@@ -31,8 +31,8 @@ cli::stderr::on_err::inline() {
         echo ", bpid=${BPID}, pid=$$"
         echo "BASH_COMMAND ERR: ${BASH_COMMAND}"
 
-        cli::bash::stack::trace::inline | sed 's/^/  /'
-    } | cli::stderr::dump::inline
+        cli::bash::stack::trace | sed 's/^/  /'
+    } | cli::stderr::dump
 }
 
 cli::stderr::on_err::self_test() {

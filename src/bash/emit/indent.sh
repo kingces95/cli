@@ -11,7 +11,7 @@ Summary
 EOF
 }
 
-cli::bash::emit::indent::inline() {
+cli::bash::emit::indent() {
     local PREFIX="${1-}"
     local FIRST=true
     local EMIT_TAB="    "

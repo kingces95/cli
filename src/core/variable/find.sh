@@ -18,13 +18,13 @@ Description
 EOF
 }
 
-cli::core::variable::find::inline() {
+cli::core::variable::find() {
     : "${ARG_SCOPE?'Missing scope.'}"
 
     local -a NAMES=( "$@" )
     mapfile -t < <( printf '%s_*\n' "${NAMES[@]}" )
 
-    cli::core::variable::match::inline "${NAMES[@]}" "${MAPFILE[@]}"
+    cli::core::variable::match "${NAMES[@]}" "${MAPFILE[@]}"
 }
 
 cli::core::variable::find::self_test() {

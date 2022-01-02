@@ -35,7 +35,7 @@ Description
 EOF
 }
 
-cli::bash::variable::declaration::get_info::inline() {
+cli::bash::variable::declaration::get_info() {
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_INTEGER=false
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_STRING=false
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_SCALER=false
@@ -78,7 +78,7 @@ cli::bash::variable::declaration::get_info::inline() {
         REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_LOWER=true
     fi
 
-    cli::bash::type::get_info::inline "${FLAGS}"
+    cli::bash::type::get_info "${FLAGS}"
     
     REPLY=${REPLY}
     REPLY_CLI_BASH_VARIABLE_DECLARATION_IS_INTEGER=${REPLY_CLI_BASH_TYPE_IS_INTEGER}

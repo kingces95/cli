@@ -19,7 +19,7 @@ Description
 EOF
 }
 
-cli::temp::file::inline() {
+cli::temp::file() {
     
     # create and return a temporary file
     local TEMP_FILE=$(mktemp "${1-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
@@ -34,10 +34,10 @@ cli::temp::file::inline() {
 
             # unlink files/directories
             local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
-            cli::temp::remove::inline "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
+            cli::temp::remove "${!CLI_SUBSHELL_TEMP_FILE_BASHPID[@]}"
         }
 
-        cli::subshell::on_exit::inline \
+        cli::subshell::on_exit \
             cli::temp::file::on_exit
     fi
 
@@ -49,18 +49,18 @@ cli::temp::file::self_test() {
 
     mapfile -t < <(
         # create a temp file
-        cli::temp::file::inline
+        cli::temp::file
         [[ -f "${REPLY}" ]] || cli::assert
         echo "${REPLY}"
 
         # create a temp file returned via a custom name
-        cli::temp::file::inline
+        cli::temp::file
         local MY_REPLY="${REPLY}"
         [[ -f "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"
 
         # create a temp file to explicitly delete
-        cli::temp::file::inline
+        cli::temp::file
         [[ -f "${REPLY}" ]] || cli::assert
         rm "${REPLY}"
     )

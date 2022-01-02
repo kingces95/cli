@@ -24,8 +24,8 @@ my_trap() {
 }
 
 # see https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
-#cli::bash::callstack::inline() {
-cli::bash::callstack::inline() {
+#cli::bash::callstack() {
+cli::bash::callstack() {
     local -r EXIT=$1
     local -r ARG_SKIP=${2-0}
     
@@ -46,7 +46,7 @@ cli::bash::callstack::inline() {
 
         # reverse argv for i-th frame
         for (( j=${BASH_ARGC[$i]}-1; j>=0; j-- )); do
-            args+=( "$(cli::bash::literal::inline "${BASH_ARGV[${j}+${argc}]}")" )
+            args+=( "$(cli::bash::literal "${BASH_ARGV[${j}+${argc}]}")" )
         done
 
         # pop argc stack for i-th frame

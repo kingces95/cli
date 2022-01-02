@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-cli::core::type::resolve::inline() {
+cli::core::type::resolve() {
     local TYPE="${1-}"
 
     [[ "${TYPE}" =~ $CLI_CORE_REGEX_TYPE_NAME ]] \

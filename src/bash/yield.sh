@@ -13,7 +13,7 @@ Description
 EOF
 }
 
-cli::bash::yield::inline() {
+cli::bash::yield() {
     while (( $# > 0 )); do
         echo "$1"
         shift

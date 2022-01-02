@@ -7,7 +7,7 @@ Command
 EOF
 }
 
-cli::bash::emit::expression::declare::inline() {
+cli::bash::emit::expression::declare() {
     echo -n "declare -${2:--} $1"
 }
 

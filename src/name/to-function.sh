@@ -19,9 +19,9 @@ Description
 EOF
 }
 
-cli::name::to_function::inline() {
-    cli::name::to_bash::inline "$@"
-    cli::bash::join::inline "::" "${MAPFILE[@]}"
+cli::name::to_function() {
+    cli::name::to_bash "$@"
+    cli::bash::join "::" "${MAPFILE[@]}"
 }
 
 cli::name::to_function::self_test() {

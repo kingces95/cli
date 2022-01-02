@@ -21,24 +21,24 @@ EOF
 cli::core::variable::read::main() {
     cli core variable parse ---source
 
-    cli::core::variable::parse::inline "$@"
+    cli::core::variable::parse "$@"
     local NAME=${REPLY}
     local TYPE="${MAPFILE[*]}"
 
     ARG_TYPE="${TYPE}" \
-        cli::core::variable::declare::inline "${NAME}"
+        cli::core::variable::declare "${NAME}"
 
-    cli::core::variable::read::inline "${NAME}"
+    cli::core::variable::read "${NAME}"
 
     cli::dump "${NAME}" "${NAME}_*"
 }
 
-cli::core::variable::read::inline() {
+cli::core::variable::read() {
     local ARG_SCOPE=${ARG_SCOPE-'CLI_SCOPE'}
     local NAME="$1"
 
     while read -a MAPFILE; do
-        cli::core::variable::put::inline "${NAME}" "${MAPFILE[@]}"
+        cli::core::variable::put "${NAME}" "${MAPFILE[@]}"
     done
 }
 

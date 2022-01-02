@@ -8,10 +8,10 @@ Command
 EOF
 }
 
-cli::bash::emit::expression::key::inline() {
+cli::bash::emit::expression::key() {
     echo -n "["
 
-    cli::bash::key::literal::inline "$1"
+    cli::bash::key::literal "$1"
     echo -n "${REPLY}"
 
     echo -n "]"

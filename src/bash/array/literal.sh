@@ -10,7 +10,7 @@ Summary
 EOF
 }
 
-cli::bash::array::literal::inline() {
+cli::bash::array::literal() {
     local ARRAY=( "$@" )
     local LITERAL=$(declare -p ARRAY)
 

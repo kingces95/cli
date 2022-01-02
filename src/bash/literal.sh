@@ -24,7 +24,7 @@ Examples
 EOF
 }
 
-cli::bash::literal::inline() {
+cli::bash::literal() {
     local literal="$*"
     
     if [[ "${literal}" =~ ^[a-zA-Z0-9_-]*$ ]]; then

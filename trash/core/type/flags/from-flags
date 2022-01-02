@@ -23,7 +23,7 @@ Description
 EOF
 }
 
-cli::core::type::from_flags::inline() {
+cli::core::type::from_flags() {
     MAPFILE=()
 
     local TYPE="${1-}"

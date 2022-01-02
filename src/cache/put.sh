@@ -15,14 +15,14 @@ Description
 EOF
 }
 
-cli::cache::put::inline() {
+cli::cache::put() {
     local CACHE="$1"
 
-    cli::path::dir::inline "${CACHE}"
+    cli::path::dir "${CACHE}"
     local DIR="${REPLY}"
     mkdir -p "${DIR}"
 
-    cli::temp::file::inline
+    cli::temp::file
     local TEMP="${REPLY}"
     cat > "${TEMP}"
 

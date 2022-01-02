@@ -15,11 +15,11 @@ EOF
 }
 
 main() {
-    cli::process::tree::inline "$@"
+    cli::process::tree "$@"
     declare -p MAP
 }
 
-cli::process::tree::inline() {
+cli::process::tree() {
     if [[ ! ${1-} ]]; then
         declare -Ag MAP=()
         set MAP
@@ -35,11 +35,11 @@ cli::process::tree::inline() {
 cli::process::tree::self_test() {
     cli::source cli-assert
 
-    cli::process::tree::inline
+    cli::process::tree
     [[ "${MAP[$$]-}" ]] || cli::assert
 
     ( 
-        cli::process::tree::inline
+        cli::process::tree
         [[ "${MAP[$BASHPID]-}" == "$$" ]] || cli::assert
     )
 }

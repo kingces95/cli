@@ -22,12 +22,12 @@ Description
 EOF
 }
 
-cli::core::type::is_builtin::inline() {
+cli::core::type::is_builtin() {
 
     if (( $# != 1 )); then
         false
 
-    elif cli::core::type::is_scaler::inline "$@"; then
+    elif cli::core::type::is_scaler "$@"; then
         true
 
     else

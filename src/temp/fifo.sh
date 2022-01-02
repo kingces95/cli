@@ -18,8 +18,8 @@ Description
 EOF
 }
 
-cli::temp::fifo::inline() {
-    cli::temp::file::inline "$@"
+cli::temp::fifo() {
+    cli::temp::file "$@"
     rm -f "${REPLY}"
     mkfifo "${REPLY}"
 }
@@ -28,17 +28,17 @@ cli::temp::fifo::self_test() {
 
     mapfile -t < <(
         # create a temp file
-        cli::temp::fifo::inline
+        cli::temp::fifo
         [[ -p "${REPLY}" ]] || cli::assert
         echo "${REPLY}"
 
         # create a temp fifo to explicitly delete
-        cli::temp::fifo::inline
+        cli::temp::fifo
         [[ -p "${REPLY}" ]] || cli::assert
         rm "${REPLY}"
 
         # create a temp file returned via a custom name
-        cli::temp::fifo::inline
+        cli::temp::fifo
         local MY_REPLY="${REPLY}"
         [[ -p "${MY_REPLY}" ]] || cli::assert
         echo "${MY_REPLY}"

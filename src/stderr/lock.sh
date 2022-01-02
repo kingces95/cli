@@ -13,13 +13,13 @@ Description
 EOF
 }
 
-cli::stderr::lock::inline() {
+cli::stderr::lock() {
     flock -x "${CLI_LOADER_LOCK}" cat
 }
 
 cli::stderr::lock::self_test() {
     lock() {
-        cli::stderr::lock::inline
+        cli::stderr::lock
     }
 
     for (( i=0; i<64; i++ )); do

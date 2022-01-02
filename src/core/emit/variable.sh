@@ -19,7 +19,7 @@ Description
 EOF
 }
 
-cli::core::emit::variable::inline() {
+cli::core::emit::variable() {
     : "${ARG_SCOPE?'Missing scope.'}"
 
     local NAME=$1
@@ -27,7 +27,7 @@ cli::core::emit::variable::inline() {
 
     local FLAGS=${2-}
 
-    cli::core::variable::get_info::inline "${NAME}" \
+    cli::core::variable::get_info "${NAME}" \
         || cli::assert "Variable '${NAME}' not in scope."
     local TYPE=( "${MAPFILE[@]}" )
 
@@ -36,7 +36,7 @@ cli::core::emit::variable::inline() {
         return
     fi
 
-    cli::bash::emit::variable::inline ${NAME} ${FLAGS}
+    cli::bash::emit::variable ${NAME} ${FLAGS}
 }
 
 cli::core::emit::variable::self_test() {

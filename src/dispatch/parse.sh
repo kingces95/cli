@@ -25,28 +25,28 @@ Declare
 EOF
 }
 
-cli::dispatch::parse::inline() {
+cli::dispatch::parse() {
     [[ "${ARG_SCOPE-}" ]] || cli::assert 'Missing scope.'
 
     # somehow the metadata should have been declared
-    cli::core::variable::get_info::inline ${CLI_META} || cli::assert "Missing metadata."
+    cli::core::variable::get_info ${CLI_META} || cli::assert "Missing metadata."
     ${REPLY_CLI_CORE_TYPE_IS_USER_DEFINED} || cli::assert "Metadata not user defined type."
 
     # tokenize
-    cli::args::tokenize::inline "$@"
+    cli::args::tokenize "$@"
 
     # parse
     ARG_META_ALIASES=${CLI_META}_ALIAS \
-        cli::args::parse::inline REPLY_CLI_ARGS_TOKENS
+        cli::args::parse REPLY_CLI_ARGS_TOKENS
 
     # resolve
     ARG_META_GROUPS=${CLI_META}_GROUP \
-        cli::args::resolve::inline REPLY_CLI_PARSE_ARGS
+        cli::args::resolve REPLY_CLI_PARSE_ARGS
     local CLI_META_GROUP=${REPLY}
 
     # verify
     ARG_META_GROUP=${CLI_META_GROUP} \
-        cli::args::verify::inline REPLY_CLI_PARSE_ARGS
+        cli::args::verify REPLY_CLI_PARSE_ARGS
 
     REPLY=${CLI_META_GROUP}
 }

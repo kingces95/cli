@@ -36,7 +36,7 @@ Examples
 EOF
 }
 
-cli::args::check::inline() {
+cli::args::check() {
     local name="${1-}"
     local value="${2-}"
     local type=${3:-'string'}
@@ -117,7 +117,7 @@ cli::args::check::self_test() {
     ${CLI_COMMAND[@]} -- myname myothervalue 'string' '.*' 'myvalue myothervalue' 0 100
 return
     test() {
-        ! { set -m; (cli::args::check::inline "$@") } 2>&1 1>/dev/stderr || cli::assert
+        ! { set -m; (cli::args::check "$@") } 2>&1 1>/dev/stderr || cli::assert
     }
 
     diff <(test myname 'two' 'integer') <(echo \

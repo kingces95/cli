@@ -10,6 +10,6 @@ Summary
 EOF
 }
 
-cli::test_inline::inline() {
+cli::test_inline() {
     echo 'Hello world!' "$@"
 }

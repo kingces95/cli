@@ -16,7 +16,7 @@ Description
 EOF
 }
 
-cli::temp::remove::inline() {
+cli::temp::remove() {
 
     local -n CLI_SUBSHELL_TEMP_FILE_BASHPID=CLI_SUBSHELL_TEMP_FILE_${BASHPID}
 
@@ -44,17 +44,17 @@ cli::temp::remove::self_test() {
 
     mapfile -t < <(
         # create temp file
-        cli::temp::file::inline
+        cli::temp::file
         echo "${REPLY}"
         set "${REPLY}"
 
         # create temp file an explicitly delete it
-        cli::temp::file::inline
+        cli::temp::file
         echo "${REPLY}"
         set "$@" "${REPLY}"
         rm "${REPLY}"
 
-        cli::temp::remove::inline "$@"
+        cli::temp::remove "$@"
 
         # explictly re-create file
         echo > "${REPLY}"

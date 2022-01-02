@@ -19,13 +19,13 @@ Description
 EOF
 }
 
-cli::core::variable::name::modifications::inline() {
+cli::core::variable::name::modifications() {
     [[ ${ARG_TYPE} ]] || cli::assert 'Missing type.'
 
     local NAME="${1-}"
     [[ ${NAME} ]] || cli::assert 'Missing name.'
 
-    cli::core::type::get_info::inline ${ARG_TYPE}
+    cli::core::type::get_info ${ARG_TYPE}
 
     ${REPLY_CLI_CORE_TYPE_IS_MODIFIED} \
         || cli::assert "Type '${ARG_TYPE}' is not modified."
@@ -35,7 +35,7 @@ cli::core::variable::name::modifications::inline() {
     local RESULT=()
     local ORDINAL
     for ORDINAL in "${!MAP_OF[@]}"; do
-        cli::core::variable::name::resolve::inline "${NAME}" "${ORDINAL}"
+        cli::core::variable::name::resolve "${NAME}" "${ORDINAL}"
         RESULT+=( "${REPLY}" )
     done
 

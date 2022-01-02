@@ -25,15 +25,15 @@ EOF
 
 cli::core::variable::put::main() {
     local NAME="${1-}"
-    cli::core::variable::put::inline "$@"
+    cli::core::variable::put "$@"
     cli::dump "${NAME}" "${NAME}_*"
 }
 
-cli::core::variable::put::inline() {
+cli::core::variable::put() {
     local NAME=${1-}
     shift
 
-    cli::core::variable::get_info::inline "${NAME}" \
+    cli::core::variable::get_info "${NAME}" \
         || cli::assert "Variable '${NAME}' not defiend."
 
     local TYPE="${REPLY}"
@@ -129,23 +129,23 @@ cli::core::variable::put::inline() {
         TYPE="${MAPFILE[*]}"
 
         # add ordinal to map_of map
-        if ! cli::set::test::inline REF "${KEY}"; then
+        if ! cli::set::test REF "${KEY}"; then
             REF+=( ["${KEY}"]=${#REF[@]} )
         fi
     fi
 
     # resolve variable name
     ARG_TYPE="${TYPE}" \
-        cli::core::variable::name::resolve::inline "${NAME}" "${KEY}"
+        cli::core::variable::name::resolve "${NAME}" "${KEY}"
     local NEXT_NAME="${REPLY}"
     local NEXT_TYPE="${MAPFILE[*]}"
 
     # declare variable
     ARG_TYPE="${NEXT_TYPE}" \
-        cli::core::variable::declare::inline "${NEXT_NAME}"
+        cli::core::variable::declare "${NEXT_NAME}"
 
     # set variable
-    cli::core::variable::put::inline "${NEXT_NAME}" "$@"
+    cli::core::variable::put "${NEXT_NAME}" "$@"
 }
 
 cli::core::variable::put::self_test() {
@@ -155,10 +155,10 @@ cli::core::variable::put::self_test() {
     dsl() {
         local RESULT="MY_REPLY_CLI_DSL_META"
         ARG_TYPE="cli_help_parse" \
-            cli::core::variable::declare::inline "${RESULT}"
+            cli::core::variable::declare "${RESULT}"
     
-        cli::core::variable::put::inline "${RESULT}" group "*" type "depth" "string"
-        cli::core::variable::put::inline "${RESULT}" group "*" type "max" "string"
+        cli::core::variable::put "${RESULT}" group "*" type "depth" "string"
+        cli::core::variable::put "${RESULT}" group "*" type "max" "string"
 
         diff <(cli::dump "${RESULT}" "${RESULT}_*") - <<-EOF
 			declare -A MY_REPLY_CLI_DSL_META_GROUP=(["*"]="0" )

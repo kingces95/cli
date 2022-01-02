@@ -19,11 +19,11 @@ Description
 EOF
 }
 
-cli::core::variable::match::inline() {
+cli::core::variable::match() {
     : "${ARG_SCOPE?'Missing scope.'}"
 
-    cli::bash::map::keys::inline ${ARG_SCOPE} \
-        | cli::bash::filter::glob::inline "$@"
+    cli::bash::map::keys ${ARG_SCOPE} \
+        | cli::bash::filter::glob "$@"
 }
 
 cli::core::variable::match::self_test() {

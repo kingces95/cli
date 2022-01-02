@@ -34,36 +34,36 @@ cli::dsl::load::main() {
     ARG_SCOPE="CLI_SCOPE" \
     ARG_META='MY_META' \
     ARG_NAME='MY_META_TABLES' \
-        cli::dsl::load::inline
+        cli::dsl::load
 }
 
-cli::dsl::load::inline() {
+cli::dsl::load() {
     local SCOPE_NAME="${ARG_SCOPE}"
     local RESULT="${ARG_NAME}"
     local PARSE="CLI_HELP_PARSE"
 
     # declare temp variable to hold inbound stream
     ARG_TYPE="cli_help_parse" \
-        cli::core::variable::declare::inline ${PARSE}
+        cli::core::variable::declare ${PARSE}
 
     # load stream
-    cli::core::variable::read::inline ${PARSE}
+    cli::core::variable::read ${PARSE}
 
     ARG_TYPE="cli_meta" \
-        cli::core::variable::declare::inline ${RESULT}
+        cli::core::variable::declare ${RESULT}
 
     # alias' must be unique across all group
-    cli::core::variable::write::inline ${PARSE}_GROUP \
+    cli::core::variable::write ${PARSE}_GROUP \
         | awk '$2=="alias" { print $3, $4 }' \
         | sort \
         | tee >(
             sort -uC || cli::assert 'Duplicate alias detected.'
-        ) | cli::core::variable::read::inline ${RESULT}_ALIAS
+        ) | cli::core::variable::read ${RESULT}_ALIAS
 
     # group specific metadata; e.g. the group id is not '*'
-    cli::core::variable::write::inline ${PARSE}_GROUP \
+    cli::core::variable::write ${PARSE}_GROUP \
         | awk '$1 != "*" && $2 != "alias"' \
-        | cli::core::variable::read::inline ${RESULT}_GROUP
+        | cli::core::variable::read ${RESULT}_GROUP
 
     local -n GROUP_REF=${RESULT}_GROUP
 
@@ -75,13 +75,13 @@ cli::dsl::load::inline() {
     local GROUP_NAME
     for GROUP_NAME in "${GROUP_NAMES[@]}"; do
 
-        cli::core::variable::write::inline ${PARSE}_GROUP \
+        cli::core::variable::write ${PARSE}_GROUP \
             | awk '$2 != "alias"' \
             | awk -v group="${GROUP_NAME}" '$1 == "*" { $1 = group; print; }' \
-			| cli::core::variable::read::inline ${RESULT}_GROUP
+			| cli::core::variable::read ${RESULT}_GROUP
     done
 
-    cli::core::variable::write::inline "${RESULT}"
+    cli::core::variable::write "${RESULT}"
 }
 
 cli::dsl::load::self_test() (

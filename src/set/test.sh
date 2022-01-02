@@ -14,7 +14,7 @@ Description
 EOF
 }
 
-cli::set::test::inline() {
+cli::set::test() {
     local -n SET_REF=${1:?'Missing set'}
     shift 
 
@@ -28,6 +28,6 @@ cli::set::test::self_test() {
     local KEY='foo bar'
     local -A SET=( [${KEY}]=true )
 
-    cli::set::test::inline SET "${KEY}" || cli::assert
-    ! cli::set::test::inline SET "${KEY} baz" || cli::assert
+    cli::set::test SET "${KEY}" || cli::assert
+    ! cli::set::test SET "${KEY} baz" || cli::assert
 }

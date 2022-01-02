@@ -27,9 +27,9 @@ Description
 EOF
 }
 
-cli::core::type::is_user_defined::inline() {   
-    ! cli::core::type::is_modified::inline "$@" \
-        && ! cli::core::type::is_builtin::inline "$1"
+cli::core::type::is_user_defined() {   
+    ! cli::core::type::is_modified "$@" \
+        && ! cli::core::type::is_builtin "$1"
 }
 
 self_test() {

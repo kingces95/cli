@@ -17,14 +17,14 @@ Description
 EOF
 }
 
-cli::bash::emit::statement::initialize::inline() {
+cli::bash::emit::statement::initialize() {
     local NAME=${1-}
     [[ "${NAME}" ]] || cli::assert 'Missing name.'
 
     local FLAGS=${2-}
 
     # declare expression
-    cli::bash::emit::expression::declare::inline ${NAME} ${FLAGS}
+    cli::bash::emit::expression::declare ${NAME} ${FLAGS}
     
     # assignment statement
     echo -n '='

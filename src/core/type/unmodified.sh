@@ -21,10 +21,10 @@ Description
 EOF
 }
 
-cli::core::type::unmodified::inline() {
+cli::core::type::unmodified() {
     MAPFILE=( "$@" )
 
-    while cli::core::type::unmodify::inline "${MAPFILE[@]}"; do
+    while cli::core::type::unmodify "${MAPFILE[@]}"; do
         :
     done
 

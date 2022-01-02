@@ -8,9 +8,9 @@ Command
 EOF
 }
 
-cli::bash::emit::expression::index::inline() {
+cli::bash::emit::expression::index() {
     echo -n $1
-    cli::bash::emit::expression::key::inline "$2"
+    cli::bash::emit::expression::key "$2"
 }
 
 cli::bash::emit::expression::index::self_test() {

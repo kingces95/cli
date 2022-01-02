@@ -108,13 +108,13 @@ main() {
                         emit::assign_string "${arg_name}" "\${2:-}"
                         emit::shift
                     fi \
-                        | emit::inline \
+                        | emit \
                         | emit::case_inline "${i}"
 
                 done
                 if ${any_args}; then
                     { emit::shift; echo 'arg_=( "$@" )'; emit::break; } \
-                        | emit::inline \
+                        | emit \
                         | emit::case_inline '--'
                 fi
                 emit::error "Unexpected argument '\$1'." \

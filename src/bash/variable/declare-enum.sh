@@ -22,12 +22,12 @@ EOF
 }
 
 cli::bash::variable::declare_enum::main() {
-    cli::bash::variable::declare_enum::inline "$@";
+    cli::bash::variable::declare_enum "$@";
     declare -p "$1"
     declare -p $(printf " $1_%s" "${@:2}")
 }
 
-cli::bash::variable::declare_enum::inline() {
+cli::bash::variable::declare_enum() {
     declare NAME=$1
     shift
 

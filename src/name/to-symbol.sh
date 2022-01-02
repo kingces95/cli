@@ -19,9 +19,9 @@ Description
 EOF
 }
 
-cli::name::to_symbol::inline() {
-    cli::name::to_bash::inline "$@"
-    cli::bash::join::inline '_' "${MAPFILE[@]^^}"
+cli::name::to_symbol() {
+    cli::name::to_bash "$@"
+    cli::bash::join '_' "${MAPFILE[@]^^}"
 }
 
 cli::name::to_symbol::self_test() {

@@ -25,7 +25,7 @@ cli::dsl::main() {
     readonly CLI_DSL_LITERAL_PROPERTIES='[Properties]'
     readonly CLI_DSL_LITERAL_DASHDASH='--'
 
-    cli::bash::variable::declare_enum::inline CLI_DSL_TOKEN \
+    cli::bash::variable::declare_enum CLI_DSL_TOKEN \
         'DEFAULT' \
         'FLAG' \
         'LIST' \
@@ -44,7 +44,7 @@ cli::dsl::main() {
         'DASHDASH' \
         'ARGUMENTS'
 
-    cli::bash::variable::declare_enum::inline CLI_DSL_PRODUCTION \
+    cli::bash::variable::declare_enum CLI_DSL_PRODUCTION \
         'NAME' \
         'ALIAS' \
         'DEFAULT' \

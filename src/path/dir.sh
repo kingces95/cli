@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-cli::path::dir::inline() { 
+cli::path::dir() { 
     REPLY="$(dirname $1)"
 }
 

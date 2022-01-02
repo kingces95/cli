@@ -15,17 +15,17 @@ Description
 EOF
 }
 
-cli::stderr::cat::inline() {
+cli::stderr::cat() {
 
     # create a temporary file
-    cli::temp::file::inline
+    cli::temp::file
 
     # write to file instead of stderr so generator can take lock
     cat > "${REPLY}"
 
     # lock and copy file to stderr
     cat "${REPLY}" \
-        | cli::stderr::lock::inline >&2 
+        | cli::stderr::lock >&2 
 
     # cleanup
     rm "${REPLY}"
@@ -46,7 +46,7 @@ cli::stderr::cat::self_test() {
         for ((i=0; i<${CHAR_COUNT}; i++)); do {
             printf ${CHARS}
         } done \
-            | cli::stderr::cat::inline
+            | cli::stderr::cat
     }
 
     local DUMPS=$( 

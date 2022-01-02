@@ -24,7 +24,7 @@ Examples
 EOF
 }
 
-cli::bash::which::inline() {
+cli::bash::which() {
     MAPFILE=()
 
     local NAME="$1"
@@ -36,7 +36,7 @@ cli::bash::which::inline() {
     for dir in "${DIRS[@]}"; do
         local PROBE="${dir}/${NAME}"
         MAPFILE+=( "${PROBE}" )
-        cli::path::get_info::inline "${PROBE}"
+        cli::path::get_info "${PROBE}"
 
         if ${REPLY_CLI_PATH_IS_EXECUTABLE}; then
             REPLY="${PROBE}"

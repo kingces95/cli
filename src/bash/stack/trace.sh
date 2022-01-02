@@ -12,10 +12,10 @@ Summary
 EOF
 }
 
-cli::bash::stack::trace::inline() {
-    cli::bash::stack::call::inline
+cli::bash::stack::trace() {
+    cli::bash::stack::call
     if [[ -n "${CLI_STACK_SHOW_PROCESS-}" ]]; then
-        cli::bash::stack::process::inline
+        cli::bash::stack::process
     fi
 }
 
@@ -26,7 +26,7 @@ cli::bash::stack::trace::self_test() {
     my_trap() {
         echo ---
         echo "${BASH_COMMAND} -> ${1-0}"
-        cli::bash::stack::trace::inline 1 | sed 's/^/  /'
+        cli::bash::stack::trace 1 | sed 's/^/  /'
     }
 
     # trap 'my_trap $?' ERR

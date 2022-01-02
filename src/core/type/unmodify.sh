@@ -24,11 +24,11 @@ Description
 EOF
 }
 
-cli::core::type::unmodify::inline() {
+cli::core::type::unmodify() {
     MAPFILE=()
 
     # type must actually be modified
-    cli::core::type::get_info::inline "$@"
+    cli::core::type::get_info "$@"
     if ! $REPLY_CLI_CORE_TYPE_IS_MODIFIED; then
         MAPFILE=( "$@" )
         return 1

@@ -14,10 +14,10 @@ Description
 EOF
 }
 
-cli::bash::map::keys::inline() {
+cli::bash::map::keys() {
     local -n MAP_REF=${1?'Missing map.'}
 
-    cli::bash::yield::inline "${!MAP_REF[@]}" | sort
+    cli::bash::yield "${!MAP_REF[@]}" | sort
 }
 
 cli::bash::map::keys::self_test() {

@@ -9,7 +9,7 @@ Command
 EOF
 }
 
-cli::bash::emit::initializer::array::inline() {
+cli::bash::emit::initializer::array() {
     local NAME="$1"
     local -n REF=${1?'Missing map variable name.'}
 
@@ -17,10 +17,10 @@ cli::bash::emit::initializer::array::inline() {
     for (( INDEX=0; INDEX < ${#REF[@]}; INDEX++ )); do
         local VALUE="${REF[$INDEX]}"
 
-        cli::bash::emit::expression::key_value::inline "${INDEX}" VALUE
+        cli::bash::emit::expression::key_value "${INDEX}" VALUE
         
         echo
-    done | cli::bash::emit::block::paren::inline
+    done | cli::bash::emit::block::paren
 }
 
 cli::bash::emit::initializer::array::self_test() {

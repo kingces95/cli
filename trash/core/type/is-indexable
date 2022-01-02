@@ -13,10 +13,10 @@ Summary
 EOF
 }
 
-cli::core::type::is_indexable::inline() {
-    cli::core::type::is_modified::inline "$@" || (
-        cli::core::type::is_builtin::inline "$@" \
-        && ! cli::core::type::is_scaler::inline "$@"
+cli::core::type::is_indexable() {
+    cli::core::type::is_modified "$@" || (
+        cli::core::type::is_builtin "$@" \
+        && ! cli::core::type::is_scaler "$@"
     ) 
 }
 

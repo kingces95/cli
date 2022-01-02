@@ -21,7 +21,7 @@ Description
 EOF
 }
 
-cli::core::variable::save::inline() {
+cli::core::variable::save() {
     local DIR="$1"
 
     if [[ -d "${DIR}" ]]; then
@@ -45,7 +45,7 @@ cli::core::variable::save::inline() {
         local FILE_PATH="${DIR}/${NAME}"
 
         # write record
-        cli::bash::write::inline "$@" >> "${FILE_PATH}"
+        cli::bash::write "$@" >> "${FILE_PATH}"
     done
 }
 

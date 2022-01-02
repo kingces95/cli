@@ -23,7 +23,7 @@ Examples
 EOF
 }
 
-cli::util::readset::inline() {
+cli::util::readset() {
     : ${arg_name=RESULT}
 
     declare -n ref=${arg_name}
@@ -62,7 +62,7 @@ cli::util::readset::self_test() {
 
     declare -A RESULT
     ${CLI_COMMAND[@]} ---emit | source /dev/stdin
-    cli::util::readset::inline <<< $'a'
+    cli::util::readset <<< $'a'
     assert::pipe_eq < <(declare -p RESULT) \
         'declare -A RESULT=([a]="true" )'
 }

@@ -18,11 +18,11 @@ EOF
 }
 
 cli::bash::join::main() {
-    cli::bash::join::inline "$@"
+    cli::bash::join "$@"
     echo "${REPLY}"
 }
 
-cli::bash::join::inline() {
+cli::bash::join() {
     local DELIMITER=${1?'Missing delimiter'}
     shift
 

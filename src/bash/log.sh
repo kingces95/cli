@@ -10,7 +10,7 @@ Summary
 EOF
 }
 
-cli::bash::log::inline() {
+cli::bash::log() {
     echo "$@" >&2
 }
 

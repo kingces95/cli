@@ -17,7 +17,7 @@ Description
 EOF
 }
 
-cli::name::to_bash::inline() {
+cli::name::to_bash() {
     MAPFILE=()
     while (( $# > 0 )); do
         [[ "$1" =~ ${CLI_REGEX_NAME} ]] || cli::assert \

@@ -69,7 +69,7 @@ Arguments
 EOF
 }
 
-cli::core::declare::inline() {
+cli::core::declare() {
     : ${arg_name:?}
     : ${arg_type=}
     : ${arg_read=false}
@@ -96,7 +96,7 @@ cli::core::declare::inline() {
             # initialize variable
             ARG_NAME=${arg_name} \
             ARG_TYPE=${arg_type} \
-                cli::core::variable::declare::inline
+                cli::core::variable::declare
         fi
 
         cli::assert \
@@ -116,7 +116,7 @@ cli::core::declare::inline() {
             arg_read=false \
             arg_print=false \
             arg_name=${arg_name} \
-                cli::core::declare::inline "${REPLY[@]}"
+                cli::core::declare "${REPLY[@]}"
         done
     fi
 
@@ -124,7 +124,7 @@ cli::core::declare::inline() {
     if (( $# > 0 )); then
         ARG_NAME=${arg_name} \
         ARG_TYPE=${current_type} \
-            cli::core::variable::put::inline "$@"
+            cli::core::variable::put "$@"
     fi
 
     # print
@@ -134,13 +134,13 @@ cli::core::declare::inline() {
         # local -A visited=()
         # arg_type=${current_type} \
         # arg_visited=visited \
-        #     cli::core::struct::emit::inline
+        #     cli::core::struct::emit
 
         # scope
         echo "declare -A CLI_SCOPE+=([${arg_name}]=\"${current_type}\" )"
 
         # value
-        cli::bash::emit::inline "${arg_name}" "${arg_name}_*"
+        cli::bash::emit "${arg_name}" "${arg_name}_*"
     fi
 }
 
@@ -152,7 +152,7 @@ cli::core::declare::main() {
     inline "$@"
 
     if ! ${arg_print}; then
-        cli::bash::emit::inline 'CLI_TYPE_*' 'CLI_SCOPE' "${arg_name}" "${arg_name}_*"
+        cli::bash::emit 'CLI_TYPE_*' 'CLI_SCOPE' "${arg_name}" "${arg_name}_*"
     fi
 }
 

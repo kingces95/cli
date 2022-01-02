@@ -27,7 +27,7 @@ EOF
 }
 
 cli::bash::variable::initialize::main() {
-    cli::bash::variable::initialize::inline "$@"
+    cli::bash::variable::initialize "$@"
 
     while (( $# > 0 )); do
         shift
@@ -36,8 +36,8 @@ cli::bash::variable::initialize::main() {
     done
 }
 
-cli::bash::variable::initialize::inline() {
-    cli::bash::variable::declare::inline "$@"
+cli::bash::variable::initialize() {
+    cli::bash::variable::declare "$@"
 
     while (( $# > 0 )); do
 

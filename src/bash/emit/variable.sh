@@ -21,27 +21,27 @@ Description
 EOF
 }
 
-cli::bash::emit::variable::inline() {
+cli::bash::emit::variable() {
     local NAME=${1-}
     [[ "${NAME}" ]] || cli::assert 'Missing name.'
     shift
 
     local FLAGS=${1-}
 
-    cli::bash::variable::get_info::inline "${NAME}" \
+    cli::bash::variable::get_info "${NAME}" \
         || cli::assert "Variable '${NAME}' not declared."
     FLAGS+=${REPLY}
 
     if ${REPLY_CLI_BASH_VARIABLE_IS_SCALER}; then
-        cli::bash::emit::initializer::string::inline ${NAME}
+        cli::bash::emit::initializer::string ${NAME}
 
     elif ${REPLY_CLI_BASH_VARIABLE_IS_MAP}; then
-        cli::bash::emit::initializer::map::inline ${NAME}
+        cli::bash::emit::initializer::map ${NAME}
 
     elif ${REPLY_CLI_BASH_VARIABLE_IS_ARRAY}; then
-        cli::bash::emit::initializer::array::inline ${NAME}
+        cli::bash::emit::initializer::array ${NAME}
 
-    fi | cli::bash::emit::statement::initialize::inline ${NAME} ${FLAGS}
+    fi | cli::bash::emit::statement::initialize ${NAME} ${FLAGS}
     
     echo
 }

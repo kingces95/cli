@@ -31,42 +31,42 @@ cli::args::initialize::main() {
 
     ARG_SCOPE=${ARG_SCOPE} \
     ARG_META=${ARG_META} \
-        cli::args::initialize::inline
+        cli::args::initialize
     local ARGS=${REPLY}
 
-    cli::core::variable::write::inline ${ARGS}
+    cli::core::variable::write ${ARGS}
 }
 
-cli::args::initialize::inline() {
+cli::args::initialize() {
     : ${ARG_SCOPE?'Missing scope.'}
     : ${ARG_META?'Missing metadata.'}
 
     # ARG_TYPE='cli_tokens' \
-    #     cli::core::variable::declare::inline REPLY_TOKENS
+    #     cli::core::variable::declare REPLY_TOKENS
     # ARG_TYPE='cli_args' \
-    #     cli::core::variable::declare::inline REPLY_ARGS
+    #     cli::core::variable::declare REPLY_ARGS
 
     local TOKENS
     local ARGS
     local META_GROUP
 
     # tokenize
-    cli::args::tokenize::inline "$@"
+    cli::args::tokenize "$@"
     TOKENS=${REPLY}
 
     # parse
     ARG_ALIAS=${ARG_META}_ALIAS \
-        cli::args::parse::inline ${TOKENS}
+        cli::args::parse ${TOKENS}
     ARGS=${REPLY}
 
     # resolve
     ARG_GROUPS=${ARG_META}_GROUP \
-        cli::args::resolve::inline ${ARGS}
+        cli::args::resolve ${ARGS}
     META_GROUP=${REPLY}
 
     # verify
     ARG_META_GROUP=${META_GROUP} \
-        cli::args::verify::inline ${ARGS}
+        cli::args::verify ${ARGS}
 
     # return group
     REPLY=${META_GROUP}
@@ -81,10 +81,10 @@ cli::args::declare::self_test() (
     # declare metadata
     local ARG_META='MY_META'
     ARG_TYPE='cli_meta' \
-        cli::core::variable::declare::inline ${ARG_META}
+        cli::core::variable::declare ${ARG_META}
 
     # load metadata
-    cli::core::variable::read::inline ${ARG_META} < <( 
+    cli::core::variable::read ${ARG_META} < <( 
         cli dsl sample ---load 
     )
 

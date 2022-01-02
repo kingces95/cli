@@ -10,7 +10,7 @@ Summary
 EOF
 }
 
-cli::bash::printf::inline() {
+cli::bash::printf() {
     local FORMAT=${1-}
     [[ $"{FORMAT}" ]] || cli::assert 'Missing format.'
     shift

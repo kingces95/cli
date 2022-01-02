@@ -10,19 +10,19 @@ Command
 EOF
 }
 
-cli::bash::emit::initializer::map::inline() {
+cli::bash::emit::initializer::map() {
     local MAP_NAME=$1
     local -n REF=${MAP_NAME?'Missing map variable name.'}
 
-    cli::bash::map::keys::inline ${MAP_NAME} \
+    cli::bash::map::keys ${MAP_NAME} \
         | while read; do
             local KEY="${REPLY}"
             local VALUE="${REF[$KEY]}"
 
-            cli::bash::emit::expression::key_value::inline "${KEY}" VALUE
+            cli::bash::emit::expression::key_value "${KEY}" VALUE
             
             echo
-        done | cli::bash::emit::block::paren::inline
+        done | cli::bash::emit::block::paren
 }
 
 cli::bash::emit::initializer::map::self_test() {

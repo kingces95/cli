@@ -13,10 +13,10 @@ EOF
 }
 
 main() {
-    cli::io::dir::remove::inline "$@"
+    cli::io::dir::remove "$@"
 }
 
-cli::io::dir::remove::inline() {
+cli::io::dir::remove() {
     rm -r -f "$@"
 }
 

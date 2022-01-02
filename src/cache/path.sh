@@ -17,11 +17,11 @@ Arguments
 EOF
 }
 
-cli::cache::path::inline() {
-    cli::path::name::inline "$1"
+cli::cache::path() {
+    cli::path::name "$1"
     local NAME="${REPLY}"
 
-    cli::path::dir::inline "$1"
+    cli::path::dir "$1"
     local DIR="${REPLY}"
 
     REPLY="${DIR}/.cli/${NAME}"

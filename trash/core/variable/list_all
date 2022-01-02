@@ -18,14 +18,14 @@ Description
 EOF
 }
 
-cli::core::variable::list::inline() {
+cli::core::variable::list() {
     : "${ARG_SCOPE?'Missing scope.'}"
     
     MAPFILE=()
     local RESULT=()
 
     local NAME="$1"
-    cli::core::variable::get_info::inline "${NAME}" \
+    cli::core::variable::get_info "${NAME}" \
         || cli::assert "Variable '${NAME}' not in scope."
 
     # builtin
@@ -38,13 +38,13 @@ cli::core::variable::list::inline() {
     
         # user defined type
         else
-            cli::core::type::get::inline ${REPLY}
+            cli::core::type::get ${REPLY}
             local -n TYPE_OR_MAP_OF=${REPLY}
         fi
 
         local FIELD_OR_ORDINAL
         for FIELD_OR_ORDINAL in "${!TYPE_OR_MAP_OF[@]}"; do
-            cli::core::variable::resolve::inline "${NAME}" "${FIELD_OR_ORDINAL}"
+            cli::core::variable::resolve "${NAME}" "${FIELD_OR_ORDINAL}"
             RESULT+=( "${REPLY}" )
         done
     fi

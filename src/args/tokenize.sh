@@ -73,8 +73,8 @@ cli::args::tokenize::main() {
 
     local TOKENS='REPLY_CLI_ARGS_TOKENS'
 
-    cli::args::tokenize::inline "$@"
-    cli::args::tokenize::inline "$@"
+    cli::args::tokenize "$@"
+    cli::args::tokenize "$@"
     local -n TOKENS_ID=${TOKENS}_ID
     local -n TOKENS_IDENTIFIER=${TOKENS}_IDENTIFIER
 
@@ -83,13 +83,13 @@ cli::args::tokenize::main() {
     done
 }
 
-cli::args::tokenize::inline() {
+cli::args::tokenize() {
     : ${ARG_SCOPE?'Missing scope.'}
 
     local TOKENS='REPLY_CLI_ARGS_TOKENS'
-    cli::core::variable::unset::inline ${TOKENS}
+    cli::core::variable::unset ${TOKENS}
     ARG_TYPE='cli_tokens' \
-        cli::core::variable::declare::inline ${TOKENS}
+        cli::core::variable::declare ${TOKENS}
 
     local -n TOKEN_REF="${TOKENS}_ID"
     local -n IDENTIFIER_REF="${TOKENS}_IDENTIFIER"

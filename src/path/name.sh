@@ -15,7 +15,7 @@ Description
 EOF
 }
 
-cli::path::name::inline() { 
+cli::path::name() { 
     REPLY="${1##*/}"; 
 }
 

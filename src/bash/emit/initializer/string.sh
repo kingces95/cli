@@ -8,11 +8,11 @@ Command
 EOF
 }
 
-cli::bash::emit::initializer::string::inline() {
+cli::bash::emit::initializer::string() {
     [[ ${1:-} ]] || cli::assert 'Missing string variable name.'
 
     local -n REF=${1-}
-    cli::bash::string::literal::inline "${REF}"
+    cli::bash::string::literal "${REF}"
     echo -n "${REPLY}"
 }
 
