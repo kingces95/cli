@@ -4,7 +4,7 @@ cli::source cli core emit variable
 cli::source cli core emit scope
 cli::source cli bash emit function
 
-help() {
+cli::core::emit::global::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

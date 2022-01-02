@@ -7,7 +7,7 @@ cli::source cli core variable load
 cli::source cli core variable read
 cli::source cli core type to-bash
 
-help() {
+cli::dsl::load::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

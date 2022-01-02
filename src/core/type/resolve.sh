@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::core::type::resolve::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

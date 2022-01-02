@@ -2,7 +2,7 @@
 cli::source cli temp fifo
 cli::source cli temp remove
 
-help() {
+cli::bash::group::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

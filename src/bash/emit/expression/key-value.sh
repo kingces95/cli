@@ -2,7 +2,7 @@
 cli::source cli bash emit expression key
 cli::source cli bash emit initializer string
 
-help() {
+cli::bash::emit::expression::key_value::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

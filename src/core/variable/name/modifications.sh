@@ -2,7 +2,7 @@
 cli::source cli core type get-info
 cli::source cli core variable name resolve
 
-help() {
+cli::core::variable::name::modifications::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

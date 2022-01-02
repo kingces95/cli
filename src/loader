@@ -921,13 +921,6 @@ cli::export() {
     cli::loader::emit::functions "$@"
 }
 
-cli::help() {
-    echo
-    echo 'Global Arguments'
-    echo '    --help -h        [Flag] : Show this message and exit.'
-    echo '    --self-test      [Flag] : Runs a self test.'
-}
-
 cli::source() {
     (( $# > 0 )) || cli::assert 'Missing import.'
     
@@ -935,6 +928,13 @@ cli::source() {
 }
 
 # loader library
+cli::loader::help() {
+    echo
+    echo 'Global Arguments'
+    echo '    --help -h        [Flag] : Show this message and exit.'
+    echo '    --self-test      [Flag] : Runs a self test.'
+}
+
 cli::loader::emit::functions() {
     cli::loader::function::list "$@" \
         | while read; do 
@@ -1209,6 +1209,7 @@ cli::loader::shim() {
     local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
     local -n CLI_FUNCTION_INLINE="${CLI_SYMBOL}_FUNCTION_INLINE"
     local -n CLI_FUNCTION_SELF_TEST="${CLI_SYMBOL}_FUNCTION_SELF_TEST"
+    local -n CLI_FUNCTION_HELP="${CLI_SYMBOL}_FUNCTION_HELP"
     if [[ ! -v CLI_FUNCTION_MAIN ]]; then
 
         if [[ ${CLI_TYPE} == group ]]; then
@@ -1220,6 +1221,7 @@ cli::loader::shim() {
         CLI_FUNCTION_INLINE="::${REPLY}::inline"
         CLI_FUNCTION_MAIN="${REPLY}::main"
         CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
+        CLI_FUNCTION_HELP="${REPLY}::help"
     fi
 
     # CLI_IMPORT
@@ -1231,6 +1233,8 @@ cli::loader::shim() {
     if [[ "${1-}" == ---* ]]; then
         while true; do
             case "$1" in
+                '---fhelp')
+                    echo ${CLI_FUNCTION_HELP} ;;
                 '---type')
                     echo ${CLI_TYPE} ;;
                 '---which') 
@@ -1321,10 +1325,8 @@ cli::loader::main::help() {
             '--') 
                 break ;;
             '-h') ;& '--help')
-                ::cli::bash::function::is_declared::inline 'help' \
-                    || cli::assert "Unexpected missing 'help' in '${CLI_COMMAND[@]}'."
-                help 
-                cli::help
+                cli::loader::main::invoke ${CLI_FUNCTION_HELP} 
+                cli::loader::help
                 return ;;
         esac
         shift
@@ -1380,6 +1382,12 @@ cli::loader::main::dispatch() {
 
 cli::loader::main::group() {
     [[ "${CLI_COMMAND[@]: -1}" == '.group' ]] || cli::assert
+
+    if [[ "${1-}" == '-l' ]]; then
+        ::cli::path::dir::inline "${CLI_SOURCE}"
+        cli list --dir "${REPLY}"
+        return
+    fi
 
     (( $# == 0 )) \
         || cli::assert "Unexpected arguments passed to '${CLI_COMMAND[*]}': $@"

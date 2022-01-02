@@ -5,7 +5,7 @@ cli::source cli core variable write
 cli::source cli core variable put
 cli::source cli core variable unset
 
-help() {
+cli::args::parse::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

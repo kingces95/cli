@@ -2,7 +2,7 @@
 cli::source cli name to-bash
 cli::source cli bash join
 
-help() {
+cli::name::to_main::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

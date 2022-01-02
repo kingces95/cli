@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash string literal
 
-help() {
+cli::bash::key::literal::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

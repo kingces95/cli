@@ -3,7 +3,7 @@ cli::source cli core variable get-info
 cli::source cli core variable get
 cli::source cli bash emit variable
 
-help() {
+cli::core::emit::variable::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

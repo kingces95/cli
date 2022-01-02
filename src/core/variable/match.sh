@@ -2,7 +2,7 @@
 cli::source cli bash filter glob
 cli::source cli bash map keys
 
-help() {
+cli::core::variable::match::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

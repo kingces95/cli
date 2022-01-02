@@ -4,7 +4,7 @@ cli::source cli core type get
 cli::source cli core variable resolve
 cli::source cli core variable get-info
 
-help() {
+cli::core::variable::write::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

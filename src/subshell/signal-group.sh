@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::subshell::signal_group::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

@@ -3,7 +3,7 @@ cli::source cli path make-absolute
 cli::source cli path name
 cli::source cli shim source
 
-help() {
+cli::shim::shebang::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

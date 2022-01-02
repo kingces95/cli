@@ -2,7 +2,7 @@
 cli::source cli path dir
 cli::source cli path name
 
-help() {
+cli::cache::path::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

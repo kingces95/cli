@@ -2,7 +2,7 @@
 cli::source cli path dir
 cli::source cli temp file
 
-help() {
+cli::cache::put::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

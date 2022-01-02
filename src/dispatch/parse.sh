@@ -5,7 +5,7 @@ cli::source cli args parse
 cli::source cli args resolve
 cli::source cli args verify
 
-help() {
+cli::dispatch::parse::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]} 

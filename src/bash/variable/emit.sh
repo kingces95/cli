@@ -2,7 +2,7 @@
 cli::source cli bash variable list
 # cli::source cli bash emit variable
 
-help() {
+cli::bash::variable::emit::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

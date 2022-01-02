@@ -9,7 +9,7 @@ cli::source cli core type get
 cli::source cli core type to-bash
 cli::source cli set test
 
-help() {
+cli::core::variable::declare::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

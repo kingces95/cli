@@ -2,7 +2,7 @@
 cli::source cli temp remove
 cli::source cli subshell on-exit
 
-help() {
+cli::temp::file::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

@@ -4,7 +4,7 @@ cli::source cli core variable read
 cli::source cli core variable write
 cli::source cli core variable put
 
-help() {
+cli::args::emit::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

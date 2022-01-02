@@ -3,7 +3,7 @@ cli::source cli core variable get-info
 cli::source cli core variable name fields
 cli::source cli core variable name modifications
 
-help() {
+cli::core::variable::children::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

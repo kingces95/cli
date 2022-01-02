@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli-emit
 
-help() {
+cli::emit::global_variable::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

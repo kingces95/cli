@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash emit expression key
 
-help() {
+cli::bash::emit::expression::index::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

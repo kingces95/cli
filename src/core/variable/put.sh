@@ -5,7 +5,7 @@ cli::source cli core variable name resolve
 cli::source cli core variable get-info
 cli::source cli set test
 
-help() {
+cli::core::variable::put::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

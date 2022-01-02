@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::emit::packed::define_initialize::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

@@ -2,7 +2,7 @@
 cli::source cli bash emit block paren 
 cli::source cli bash emit expression key-value 
 
-help() {
+cli::bash::emit::initializer::array::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

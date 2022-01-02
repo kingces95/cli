@@ -2,7 +2,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli path get-info
 
-help() {
+cli::bash::which::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

@@ -2,7 +2,7 @@
 cli::source cli bash literal
 cli::source cli attribute is-defined
 
-help() {
+cli::bash::stack::call::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

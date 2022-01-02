@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash emit indent
 
-help() {
+cli::bash::emit::block::curly::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

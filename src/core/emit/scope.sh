@@ -2,7 +2,7 @@
 cli::source cli core variable get-info
 cli::source cli bash emit expression map
 
-help() {
+cli::core::emit::scope::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

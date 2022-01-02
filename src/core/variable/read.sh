@@ -2,7 +2,7 @@
 cli::source cli core variable put
 cli::source cli core variable declare
 
-help() {
+cli::core::variable::read::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

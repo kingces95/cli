@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash type get-info
 
-help() {
+cli::bash::variable::declaration::get_info::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

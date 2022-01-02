@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli path name
 
-help() {
+cli::core::variable::load::help() {
 cat << EOF
 Command
     ${CLI_COMMAND[@]}

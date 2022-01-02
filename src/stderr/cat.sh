@@ -2,7 +2,7 @@
 cli::source cli stderr lock
 cli::source cli temp file
 
-help() {
+cli::stderr::cat::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

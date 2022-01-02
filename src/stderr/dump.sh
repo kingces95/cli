@@ -2,7 +2,7 @@
 cli::source cli stderr cat
 cli::source cli subshell signal-group
 
-help() {
+cli::stderr::dump::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash variable declare-enum
 
-help() {
+cli::dsl::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

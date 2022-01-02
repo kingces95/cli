@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::process::parent::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

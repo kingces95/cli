@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash yield
 
-help() {
+cli::bash::map::keys::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

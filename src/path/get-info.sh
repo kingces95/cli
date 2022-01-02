@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::path::get_info::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

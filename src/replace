@@ -1,0 +1,27 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+cli::replace::help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+
+Summary
+    Replace help with command::name::help.
+
+Arguments
+    -- : The cli group.
+EOF
+}
+
+process() {
+    local CLI="$@"
+    local SOURCE=$(${CLI} ---which)
+    local FUNCTION=$(${CLI} ---fhelp)
+    
+    sed -i '' s/^help/${FUNCTION}/ "${SOURCE}"
+}
+
+cli::replace::main() (
+    cli find -t c -- "$@" \
+        | while read; do process ${REPLY}; done
+)

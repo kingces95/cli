@@ -4,7 +4,7 @@ cli::source cli core variable declare
 cli::source cli core variable read
 cli::source cli core emit global
 
-help() {
+cli::dsl::build::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

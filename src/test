@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 # cli::source cli test-inline
 
-help() {
+cli::test::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

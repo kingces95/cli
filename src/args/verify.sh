@@ -7,7 +7,7 @@ cli::source cli core variable write
 cli::source cli core variable put
 cli::source cli set intersect
 
-help() {
+cli::args::verify::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

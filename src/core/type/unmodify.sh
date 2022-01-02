@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli core type get-info
 
-help() {
+cli::core::type::unmodify::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

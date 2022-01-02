@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli bash write
 
-help() {
+cli::core::variable::save::help() {
 cat << EOF
 Command
     ${CLI_COMMAND[@]}

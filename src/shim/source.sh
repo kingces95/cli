@@ -2,7 +2,7 @@
 cli::source cli bash which
 cli::source cli bash function is-declared
 
-help() {
+cli::shim::source::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

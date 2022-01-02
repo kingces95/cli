@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::stderr::lock::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

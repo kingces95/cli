@@ -2,7 +2,7 @@
 cli::source cli bash emit indent
 cli::source cli bash emit block curly
 
-help() {
+cli::bash::emit::function::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

@@ -2,7 +2,7 @@
 cli::source cli bash key literal
 cli::source cli bash string literal
 
-help() {
+cli::bash::map::literal::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

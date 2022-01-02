@@ -3,7 +3,7 @@ cli::source cli core type unmodified
 cli::source cli core type get
 cli::source cli core type get-info
 
-help() {
+cli::core::type::emit::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

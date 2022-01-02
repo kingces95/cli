@@ -1,6 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+cli::source cli path get-info
 
-help() {
+cli::list::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}
@@ -16,7 +17,7 @@ Description
     then by name.
 
 Arguments
-    --dir -d            : The directory. Default is the current directory.
+    -- : The cli group.
 EOF
     cat << EOF
 
@@ -26,30 +27,49 @@ Examples
 EOF
 }
 
-main() (
-    : ${ARG_DIR:="."}
+cli::list::main() (
+    local DIR=$(dirname $($@ .group ---which))
 
     # include dot files
-    local glob='* .[^.]*'
+    local GLOB='* .[^.]*'
 
-    cd "${ARG_DIR}"
+    cd "${DIR}"
 
     # print '<type> <name>'
-    for entry in ${glob}; do
-        if [[ "${entry}" == '.cli' ]]; then continue; fi
-        if [[ ! -f "${entry}" && ! -d "${entry}" ]]; then continue; fi
-        if [[ ! -x "${entry}" ]]; then continue; fi
+    for ENTRY in ${GLOB}; do
+
+        # exclude cache directory
+        if [[ "${ENTRY}" == '.cli' ]]; then
+            continue
+        fi
+
+        ::cli::path::get_info::inline "${ENTRY}"
+
+        if ! ${REPLY_CLI_PATH_IS_FILE} && ! ${REPLY_CLI_PATH_IS_DIRECTORY}; then 
+            continue
+        fi
+
+        if ! ${REPLY_CLI_PATH_IS_EXECUTABLE}; then 
+            continue
+        fi
 
         # print type
-        if [[ -f "${entry}" ]]; then
+        if ${REPLY_CLI_PATH_IS_FILE}; then
+
+            if [[ ${ENTRY} == *.sh ]]; then
+                ENTRY=${ENTRY%.sh}
+            fi
+
             echo -n 'c' # command
-        elif [[ -d "${entry}" ]]; then 
+
+        elif ${REPLY_CLI_PATH_IS_DIRECTORY}; then 
+
             echo -n 'g' # group
         else 
             continue
         fi
 
         # print name
-        echo " ${entry//_/-}"
-    done | sort
+        echo " ${ENTRY}"
+    done | sort -k2
 )

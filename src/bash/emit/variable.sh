@@ -5,7 +5,7 @@ cli::source cli bash emit initializer string
 cli::source cli bash emit initializer map
 cli::source cli bash emit initializer array
 
-help() {
+cli::bash::emit::variable::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

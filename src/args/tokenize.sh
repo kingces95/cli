@@ -2,7 +2,7 @@
 cli::source cli core variable declare
 cli::source cli core variable unset
 
-help() {
+cli::args::tokenize::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

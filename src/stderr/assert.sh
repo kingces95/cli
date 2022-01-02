@@ -2,7 +2,7 @@
 cli::source cli stderr dump
 cli::source cli bash stack trace
 
-help() {
+cli::stderr::assert::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

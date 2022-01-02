@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli core variable match
 
-help() {
+cli::core::variable::find::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

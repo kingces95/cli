@@ -1,6 +1,6 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 
-help() {
+cli::find::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}
@@ -9,9 +9,9 @@ Summary
     Find commands and groups of a cli.
 
 Arguments
-    --cli -c     [Required] : Name of cli.
     --traversal             : Specify the type of traversal. Allowed values:
                               pre, post. Default: pre.
+    --
 
 Primary Arguments
     --type -t               : True if type of entry is of the specified type.
@@ -36,72 +36,72 @@ EOF
 }
 
 find() {
-    local node="$*"
+    local NODE="$*"
 
     # post-order traversal
     if [[ ${ARG_TRAVERSAL} == 'post' ]]; then
-        visit_children "${node}"
+        visit_children "${NODE}"
     fi
 
-    visit 'g' "${node}"
+    visit 'g' "${NODE}"
 
     # pre-order traversal
     if [[ ${ARG_TRAVERSAL} == 'pre' ]]; then
-        visit_children "${node}"
+        visit_children "${NODE}"
     fi
 }
 
 visit_children() {
-    local node="$1"
-    local type
-    local name
+    local NODE="$1"
+    local TYPE
+    local NAME
 
-    ${node} | while read type name; do {
-        if [[ "${type}" == 'c' ]]; then
-            visit 'c' "${node} ${name}"
+    cli list -- ${NODE} | while read TYPE NAME; do {
+        if [[ "${TYPE}" == 'c' ]]; then
+            visit 'c' "${NODE} ${NAME}"
         else
-            find "${node}" "${name}"
+            find "${NODE}" "${NAME}"
         fi
     }
     done
 }
 
 visit() {
-    local type=$1
-    local path=$2
-    local name=${path##* }
+    local TYPE=$1
+    local PTH=$2
+    local NAME=${PTH##* }
 
-    if predicate "${type}" "${name}"; then
+    if predicate "${TYPE}" "${NAME}"; then
         
-        # select type
+        # select TYPE
         if ${ARG_LS}; then 
-            echo -n "${type} "
+            echo -n "${TYPE} "
         fi
 
-        # select full command name
-        echo ${path}
+        # select full command NAME
+        echo ${PTH}
     fi
 }
 
 predicate() {
-    local type=$1
-    local name=$2
+    local TYPE=$1
+    local NAME=$2
 
-    # filter by type
+    # filter by TYPE
     if [[ ! "${ARG_TYPE}" == '' ]]; then
-        if [[ ! "${ARG_TYPE}" == "${type}" ]]; then 
+        if [[ ! "${ARG_TYPE}" == "${TYPE}" ]]; then 
             return 1
         fi
     fi
 
-    # filter by name
+    # filter by NAME
     if [[ -n "${ARG_NAME}" ]]; then
-        if [[ ! "${name}" == ${ARG_NAME} ]]; then 
+        if [[ ! "${NAME}" == ${ARG_NAME} ]]; then 
             return 1
         fi
     fi
 }
 
 cli::find::main() {
-    find "${ARG_CLI}"
+    find "$@"
 }

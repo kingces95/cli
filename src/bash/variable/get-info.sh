@@ -2,7 +2,7 @@
 cli::source cli bash type get-info
 cli::source cli bash variable declaration get-info
 
-help() {
+cli::bash::variable::get_info::help() {
     cat << EOF | cli::core::type::help
 Command
     ${CLI_COMMAND[@]}

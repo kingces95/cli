@@ -2,7 +2,7 @@
 cli::source cli core variable get-info
 cli::source cli core variable name fields
 
-help() {
+cli::core::variable::initialize::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

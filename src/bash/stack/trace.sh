@@ -2,7 +2,7 @@
 cli::source cli bash stack process
 cli::source cli bash stack call
 
-help() {
+cli::bash::stack::trace::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

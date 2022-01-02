@@ -19,7 +19,7 @@ cli::source cli core variable put
 #     --field -f     [Properties] : Fields of type
 #     --                          : Value
 
-help() {
+cli::core::declare::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

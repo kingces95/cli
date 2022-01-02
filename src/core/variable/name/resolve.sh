@@ -3,7 +3,7 @@ cli::source cli core type get-info
 cli::source cli core type get
 cli::source cli core type unmodify
 
-help() {
+cli::core::variable::name::resolve::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

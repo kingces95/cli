@@ -3,7 +3,7 @@ cli::source cli core variable declare
 cli::source cli core variable put
 cli::source cli core variable write
 
-help() {
+cli::dsl::meta::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

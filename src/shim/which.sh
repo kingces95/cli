@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli shim source
 
-help() {
+cli::shim::which::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}

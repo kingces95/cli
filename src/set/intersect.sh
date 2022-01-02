@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 cli::source cli set test
 
-help() {
+cli::set::intersect::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]}
