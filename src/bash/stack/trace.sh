@@ -21,7 +21,7 @@ cli::bash::stack::trace() {
 
 cli::bash::stack::trace::self_test() {
 
-    # cli::fail 'Test failure!'
+    # cli::stderr::fail 'Test failure!'
 
     my_trap() {
         echo ---

@@ -79,7 +79,7 @@ cli::args::verify() {
     local OPTION
     for OPTION in "${!NAMED_ARGS_REF[@]}"; do
         if [[ ! ${TYPE_REF[${OPTION}]+set} ]]; then
-            cli::fail "Unexpected unknown argument '--${OPTION}'" \
+            cli::stderr::fail "Unexpected unknown argument '--${OPTION}'" \
                 "passed to command '${CLI_COMMAND[@]}'."
         fi
     done
@@ -96,7 +96,7 @@ cli::args::verify() {
 
             # fail if required and missing
             [[ ! ${REQUIRE_REF[$OPTION]+set} == 'set' ]] \
-                || cli::fail "Missing required argument '--${OPTION}'" \
+                || cli::stderr::fail "Missing required argument '--${OPTION}'" \
                     "in call to command '${CLI_COMMAND[@]}'."
 
             # switch has an explict default
@@ -119,7 +119,7 @@ cli::args::verify() {
 
             # fail if required and empty
             if [[ -n ${REQUIRE_REF[$OPTION]+set} ]]; then
-                cli::fail "Required argument '--${OPTION}'" \
+                cli::stderr::fail "Required argument '--${OPTION}'" \
                     "passed to command '${CLI_COMMAND[@]}' has empty value."
             fi
         fi
@@ -140,7 +140,7 @@ cli::args::verify() {
             'map') 
                 for VALUE in "${ARGS_NAMED_N_REF[@]}"; do
                     if [[ ! "${VALUE}" =~ ${CLI_REGEX_PROPERTY_ARG} ]]; then
-                        cli::fail "Unexpected value '${VALUE}' for argument '--${OPTION}'" \
+                        cli::stderr::fail "Unexpected value '${VALUE}' for argument '--${OPTION}'" \
                             "passed to command '${CLI_COMMAND[@]}'." \
                             "Expected a value that matches regex '${CLI_REGEX_PROPERTY_ARG}'."
                     fi
@@ -166,7 +166,7 @@ cli::args::verify() {
 
     # positional
     if ! ${POSITIONAL_REF} && (( ${#POSITIONAL_ARGS_REF[@]} > 0 )); then
-        cli::fail "Expected no positional arguments passed to command '${CLI_COMMAND[@]}'," \
+        cli::stderr::fail "Expected no positional arguments passed to command '${CLI_COMMAND[@]}'," \
             "but got ${#POSITIONAL_ARGS_REF[@]}: '${POSITIONAL_ARGS_REF[*]}'."
     fi
 }

@@ -110,7 +110,7 @@ cli::args::parse() {
             elif (( token == CLI_ARG_TOKEN_END_OPTIONS )); then
                 POSITIONAL
             else
-                cli::fail "Unexpected arg '${identifier}' (token type ${token_name})" \
+                cli::stderr::fail "Unexpected arg '${identifier}' (token type ${token_name})" \
                     "encountered while parsing cli."
             fi
         done
@@ -131,7 +131,7 @@ cli::args::parse() {
         # trap for unknown arguments
         local alias="${ALIAS_REF[$identifier]-}"
         if [[ -z "${alias}" ]]; then
-            cli::fail "Unexpected unknown alias \"-${identifier}\"" \
+            cli::stderr::fail "Unexpected unknown alias \"-${identifier}\"" \
                 "passed as argument ? to command '${CLI_COMMAND[@]}'."
         fi
 

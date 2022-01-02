@@ -108,7 +108,7 @@ cli::core::wire::load() {
             local -n TYPE_REF=CLI_TYPE_${type^^}
 
             if [[ ! "${TYPE_REF[$1]+set}" == 'set' ]]; then
-                cli::fail "Field '$1' not found in '${ARG_TYPE}' fields: { ${!TYPE_REF[@]} }."
+                cli::stderr::fail "Field '$1' not found in '${ARG_TYPE}' fields: { ${!TYPE_REF[@]} }."
             fi
 
             ARG_REPLY_REF+=( "${ARG_NAME} ${type[*]}" )

@@ -788,7 +788,7 @@ inline() {
         {
             echo -n "TRAP ERR: exit=${CLI_TRAP_EXIT_CODE}"
             if (( ${#CLI_PIPESTATUS[@]} > 1 )); then
-                echo -n ", pipe=[$(cli::join ',' "${CLI_PIPESTATUS[@]}")]"
+                echo -n ", pipe=[$(cli::bash::join ',' "${CLI_PIPESTATUS[@]}")]"
             fi
             echo ", bpid=${BPID}, pid=$$"
             echo "BASH_COMMAND ERR: ${BASH_COMMAND}"
@@ -1397,8 +1397,6 @@ cli::loader::main::inline() {
                     while read -a MAPFILE; do 
                         cli::loader::main::inline -- "$@" "${MAPFILE[@]}"
                     done ;;
-                '---stop') 
-                    ;; 
                 '---') 
                     break ;;
                 *) cli::assert "Unexpected unknown internal option \"$1\" for command '${CLI_COMMAND[*]}'."
@@ -1579,7 +1577,7 @@ cli::loader::main::command::dispatch() {
             '---read')
                 shift
                 while read -a REPLY; do ${CLI_FUNCTION_MAIN} "$@" "${REPLY[@]}"; done ;;
-            *) cli::fail "Unexpected unknown internal option \"$1\"."
+            *) cli::stderr::fail "Unexpected unknown internal option \"$1\"."
         esac 
         return
     done
@@ -1629,36 +1627,6 @@ cli::dump() {
 }
 
 loader_source() {
-
-    alias_inline_import() {
-        local COMMAND="$1"
-        local ALIAS="${2-}"
-
-        if [[ ! "${ALIAS}" ]]; then
-            cli::name::to_bash ${COMMAND}
-            cli::bash::join '::' "${MAPFILE[@]}"
-            ALIAS="${REPLY}" 
-        fi
-
-        cli::name::to_inline ${COMMAND}
-        eval "${ALIAS}() { ${REPLY} \"\$@\"; }"
-    }
-
-    diff_import_as() {
-        local COMMAND="$1"
-        shift
-        
-        local ALIAS="$1"
-        shift
-
-        diff_import "${COMMAND}" "$@"
-        alias_inline_import "${COMMAND}" "${ALIAS}"
-    }
-
-    diff_import() {
-        diff_import "$@"
-        alias_inline_import "$1"
-    }
 
     diff_import() {
         cli::source $1
@@ -1744,17 +1712,17 @@ loader_source() {
         'cli path dir' \
         'cli temp file'
 
-    diff_import_as 'cli stderr lock' 'cli::lock'
+    diff_import 'cli stderr lock'
     diff_import 'cli stderr cat' \
         'cli stderr lock' \
         'cli temp file'
     diff_import 'cli stderr dump' \
         'cli stderr cat' \
         'cli subshell signal-group'
-    diff_import_as 'cli stderr assert' 'cli::assert' \
+    diff_import 'cli stderr assert' \
         'cli stderr dump' \
         'cli bash stack trace'
-    diff_import_as 'cli stderr fail' 'cli::fail' \
+    diff_import 'cli stderr fail' \
         'cli stderr dump'
     diff_import 'cli stderr on-err' \
         'cli stderr dump' \
@@ -1767,13 +1735,13 @@ loader_source() {
     diff_import 'cli bash filter glob'
     diff_import 'cli bash function list' \
         'cli bash filter glob'
-    diff_import_as 'cli bash which' 'cli::which' \
+    diff_import 'cli bash which' \
         'cli path get-info'
-    diff_import_as 'cli bash log' 'cli::log'
+    diff_import 'cli bash log'
     diff_import 'cli bash printf'
-    diff_import_as 'cli bash return' 'cli::return'
-    diff_import_as 'cli bash join' 'cli::join'
-    diff_import_as 'cli bash literal' 'cli::literal'
+    diff_import 'cli bash return'
+    diff_import 'cli bash join'
+    diff_import 'cli bash literal'
     diff_import 'cli bash function is-declared'
 
     diff_import 'cli name parse'
@@ -1789,7 +1757,7 @@ loader_source() {
         'cli bash join'
 
     diff_import 'cli attribute is-defined'
-    diff_import_as 'cli bash stack call' 'cli::stacktrace' \
+    diff_import 'cli bash stack call' \
         'cli bash literal' \
         'cli attribute is-defined'
     diff_import 'cli bash stack process'
@@ -1804,7 +1772,7 @@ loader_source() {
         'cli shim source'
     diff_import 'cli shim probe' \
         'cli shim which'
-    diff_import_as 'cli shim shebang' 'cli::shebang' \
+    diff_import 'cli shim shebang' \
         'cli path make-absolute' \
         'cli path name' \
         'cli shim source'

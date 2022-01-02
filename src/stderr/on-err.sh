@@ -26,7 +26,7 @@ cli::stderr::on_err() {
     {
         echo -n "TRAP ERR: exit=${CLI_TRAP_EXIT_CODE}"
         if (( ${#CLI_PIPESTATUS[@]} > 1 )); then
-            echo -n ", pipe=[$(cli::join ',' "${CLI_PIPESTATUS[@]}")]"
+            echo -n ", pipe=[$(cli::bash::join ',' "${CLI_PIPESTATUS[@]}")]"
         fi
         echo ", bpid=${BPID}, pid=$$"
         echo "BASH_COMMAND ERR: ${BASH_COMMAND}"

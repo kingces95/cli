@@ -106,7 +106,7 @@ cli::core::declare() {
     fi
 
     if [[ -z "${current_type}" ]]; then
-        cli::fail "Unexpected failure to find type for variable '${arg_name}' in CLI_SCOPE."
+        cli::stderr::fail "Unexpected failure to find type for variable '${arg_name}' in CLI_SCOPE."
     fi
 
     # read

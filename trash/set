@@ -43,7 +43,7 @@ declare_global_variable() {
 
 main() {
     if (( $# < 2 )); then
-        cli::fail "Unexpected lack of name and scope."
+        cli::stderr::fail "Unexpected lack of name and scope."
     fi
 
     # read variables, and metadata stored in CLI_SCOPE__*, CLI_TYPE_*

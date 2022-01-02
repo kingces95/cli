@@ -116,7 +116,7 @@ cli::core::wire::read() {
     if (( $# == 0 )); then 
 
         if ! cli::core::type::is_scaler ${ARG_TYPE}; then
-            cli::fail "Missing value for type '${ARG_TYPE[*]}'." \
+            cli::stderr::fail "Missing value for type '${ARG_TYPE[*]}'." \
                 "Non-scaler types hae no default value."
         fi
 

@@ -50,13 +50,13 @@ cli::args::check() {
         'string') ;;
         'integer') regex='^[-]?[0-9]+$' ;;
         'boolean') regex='^true$|^false$|^$' ;;
-        *) cli::fail "Unexpected argument type '${type}' for argument '--${name}'."
+        *) cli::stderr::fail "Unexpected argument type '${type}' for argument '--${name}'."
     esac
 
     # regex
     if [[ -n "${regex}" ]]; then
         if [[ ! "${value}" =~ ${regex} ]]; then
-            cli::fail "Unexpected value '${value}' for argument '--${name}'" \
+            cli::stderr::fail "Unexpected value '${value}' for argument '--${name}'" \
                 "passed to command '${CLI_COMMAND[@]}'." \
                 "Expected a value that matches regex '${regex}'."
         fi
@@ -73,7 +73,7 @@ cli::args::check() {
         done
 
         if [[ -z "${value}" || -z ${set[${value}]+set} ]]; then
-            cli::fail "Unexpected value '${value}' for argument '--${name}'" \
+            cli::stderr::fail "Unexpected value '${value}' for argument '--${name}'" \
                 "passed to command '${CLI_COMMAND[@]}'." \
                 "Expected a value in the set { "${!set[@]}" }."
         fi
@@ -83,24 +83,24 @@ cli::args::check() {
     case ${type} in
         'string') 
             if (( ${#value} < ${min} )); then
-                cli::fail "Unexpected value '${value}' for argument '--${name}'" \
+                cli::stderr::fail "Unexpected value '${value}' for argument '--${name}'" \
                     "passed to command '${CLI_COMMAND[@]}'." \
                     "Expected a value whose length is at least ${min}."
             fi
             if (( ${#value} > ${max} )); then
-                cli::fail "Unexpected value '${value}' for argument '--${name}'" \
+                cli::stderr::fail "Unexpected value '${value}' for argument '--${name}'" \
                     "passed to command '${CLI_COMMAND[@]}'." \
                     "Expected a value whose length is no more than ${max}."
             fi
             ;;
         'integer') regex='[-]?[0-9]+' 
             if (( ${value} < ${min} )); then
-                cli::fail "Unexpected value '${value}' for argument '--${name}'" \
+                cli::stderr::fail "Unexpected value '${value}' for argument '--${name}'" \
                     "passed to command '${CLI_COMMAND[@]}'." \
                     "Expected a value that is at least ${min}."
             fi
             if (( ${value} > ${max} )); then
-                cli::fail "Unexpected value '${value}' for argument '--${name}'" \
+                cli::stderr::fail "Unexpected value '${value}' for argument '--${name}'" \
                     "passed to command '${CLI_COMMAND[@]}'." \
                     "Expected a value that is no more than ${max}."
             fi

@@ -127,7 +127,7 @@ cli::args::tokenize() {
         elif [[ "$1" == ---* ]]; then
 
             if [[ ! "$1" =~ ^---([a-z][a-z0-9-]*)$ ]]; then
-                cli::fail "Unexpected option \"$1\"" \
+                cli::stderr::fail "Unexpected option \"$1\"" \
                     "does not match regex ${DASH_DASH_DASH_OPTION_REGEX}" \
                     "passed to command \"${CLI_COMMAND[@]}\"."
             fi
@@ -137,7 +137,7 @@ cli::args::tokenize() {
         elif [[ "$1" == --* ]]; then
                 
             if [[ ! "$1" =~ ^--([a-z][a-z0-9-]*)$ ]]; then
-                cli::fail "Unexpected option \"$1\"" \
+                cli::stderr::fail "Unexpected option \"$1\"" \
                     "does not match regex ${DASH_DASH_OPTION_REGEX}" \
                     "passed to command \"${CLI_COMMAND[@]}\"."
             fi
@@ -147,7 +147,7 @@ cli::args::tokenize() {
         elif [[ "$1" == -* ]]; then
 
             if [[ ! "$1" =~ ^-([a-z][a-z0-9-]*)$ ]]; then
-                cli::fail "Unexpected option \"$1\"" \
+                cli::stderr::fail "Unexpected option \"$1\"" \
                     "does not match regex ${DASH_FLAGS_REGEX}" \
                     "passed to command \"${CLI_COMMAND[@]}\"."
             fi
