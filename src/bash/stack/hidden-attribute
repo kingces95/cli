@@ -10,7 +10,7 @@ Summary
 EOF
 }
 
-declare -A CLI_TYPE_CLI_BASH_STACK_HIDDEN_ATTRIBUTE=()
+# declare -A CLI_TYPE_CLI_BASH_STACK_HIDDEN_ATTRIBUTE=()
 
 main() {
     cli::export CLI_TYPE_CLI_BASH_STACK

@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable declare
-cli::source cli core variable unset
+CLI_IMPORT=(
+    "cli core variable declare"
+    "cli core variable unset"
+)
 
 cli::args::tokenize::help() {
     cat << EOF

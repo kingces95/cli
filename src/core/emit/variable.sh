@@ -1,7 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable get-info
-cli::source cli core variable get
-cli::source cli bash emit variable
+CLI_IMPORT=(
+    "cli bash emit variable"
+    "cli core variable get"
+    "cli core variable get-info"
+)
 
 cli::core::emit::variable::help() {
     cat << EOF
@@ -91,9 +93,9 @@ cli::core::emit::variable::self_test() {
     diff <(${CLI_COMMAND[@]} -- MY_INTEGER) - <<< 'declare -i MY_INTEGER="42"'
     diff <(${CLI_COMMAND[@]} -- MY_ARRAY) - <<-EOF
 		declare -a MY_ARRAY=(
-		    [0]="a"
-		    [1]="b"
-		    [2]="c"
+		    "a"
+		    "b"
+		    "c"
 		)
 		EOF
     diff <(${CLI_COMMAND[@]} -- MY_MAP) - <<-EOF

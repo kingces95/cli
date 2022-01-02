@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash emit expression declare
+CLI_IMPORT=(
+    "cli bash emit expression declare"
+)
 
 cli::bash::emit::statement::initialize::help() {
     cat << EOF

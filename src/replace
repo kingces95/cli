@@ -1,4 +1,10 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
+CLI_IMPORT=(
+    "cli bash emit expression declare"
+    "cli bash emit initializer array"
+    "cli bash emit statement assignment"
+    "cli cache put"
+)
 
 cli::replace::help() {
     cat << EOF
@@ -16,9 +22,33 @@ EOF
 process() {
     local CLI="$@"
     local SOURCE=$(${CLI} ---which)
-    local FUNCTION=$(${CLI} ---fhelp)
-    
-    sed -i '' s/^help/${FUNCTION}/ "${SOURCE}"
+    local -a IMPORTS=()
+
+    MAPFILE=()
+    ${CLI} ---imports | sort -u | mapfile -t
+    IMPORTS=( "${MAPFILE[@]}" )
+
+    echo ${SOURCE} >&2
+    if (( ${#IMPORTS[@]} == 0 )); then
+        return
+    fi
+
+    local BASH=$(
+        cli::bash::emit::statement::assignment \
+            <(echo -n CLI_IMPORT) \
+            <(cli::bash::emit::initializer::array IMPORTS) \
+    )
+
+    sed -i '' '/^cli::source.*/d' "${SOURCE}"
+
+    cat "${SOURCE}" \
+        | {
+            read
+            echo "${REPLY}"
+            echo "${BASH}"
+            cat
+        } | cli::cache::put "${SOURCE}"
+    chmod a+x "${SOURCE}" 
 }
 
 cli::replace::main() (

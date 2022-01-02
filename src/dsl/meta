@@ -1,7 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable declare
-cli::source cli core variable put
-cli::source cli core variable write
+CLI_IMPORT=(
+    "cli core variable declare"
+    "cli core variable put"
+    "cli core variable write"
+)
 
 cli::dsl::meta::help() {
     cat << EOF

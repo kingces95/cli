@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli shim which
+CLI_IMPORT=(
+    "cli shim which"
+)
 
 cli::shim::probe::help() {
     cat << EOF

@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash variable list
+CLI_IMPORT=(
+    "cli bash variable list"
+)
 # cli::source cli bash emit variable
 
 cli::bash::variable::emit::help() {

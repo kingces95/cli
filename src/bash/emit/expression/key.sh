@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash key literal 
+CLI_IMPORT=(
+    "cli bash key literal"
+)
 
 cli::bash::emit::expression::key::help() {
     cat << EOF

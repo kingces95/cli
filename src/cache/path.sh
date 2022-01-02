@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli path dir
-cli::source cli path name
+CLI_IMPORT=(
+    "cli path dir"
+    "cli path name"
+)
 
 cli::cache::path::help() {
     cat << EOF

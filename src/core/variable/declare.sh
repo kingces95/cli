@@ -1,13 +1,15 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash variable get-info
-cli::source cli core variable get-info
-cli::source cli core variable name resolve
-cli::source cli core variable initialize
-cli::source cli core variable unset
-cli::source cli core type get-info
-cli::source cli core type get
-cli::source cli core type to-bash
-cli::source cli set test
+CLI_IMPORT=(
+    "cli bash variable get-info"
+    "cli core type get"
+    "cli core type get-info"
+    "cli core type to-bash"
+    "cli core variable get-info"
+    "cli core variable initialize"
+    "cli core variable name resolve"
+    "cli core variable unset"
+    "cli set test"
+)
 
 cli::core::variable::declare::help() {
     cat << EOF

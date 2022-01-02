@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli-emit
+CLI_IMPORT=(
+    "cli-emit"
+)
 
 cli::dsl::bgen::help() {
     cat << EOF

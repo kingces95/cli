@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli temp remove
-cli::source cli subshell on-exit
+CLI_IMPORT=(
+    "cli subshell on-exit"
+    "cli temp remove"
+)
 
 cli::temp::file::help() {
     cat << EOF

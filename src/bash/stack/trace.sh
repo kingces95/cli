@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash stack process
-cli::source cli bash stack call
+CLI_IMPORT=(
+    "cli bash stack call"
+    "cli bash stack process"
+)
 
 cli::bash::stack::trace::help() {
     cat << EOF

@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli name to-bash
-cli::source cli bash join
+CLI_IMPORT=(
+    "cli bash join"
+    "cli name to-bash"
+)
 
 cli::name::to_function::help() {
     cat << EOF

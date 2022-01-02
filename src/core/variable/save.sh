@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash write
+CLI_IMPORT=(
+    "cli bash write"
+)
 
 cli::core::variable::save::help() {
 cat << EOF

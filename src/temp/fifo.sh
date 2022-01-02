@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli temp file
+CLI_IMPORT=(
+    "cli temp file"
+)
 
 cli::temp::fifo::help() {
     cat << EOF

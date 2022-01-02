@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash literal
-cli::source cli attribute is-defined
+CLI_IMPORT=(
+    "cli attribute is-defined"
+    "cli bash literal"
+)
 
 cli::bash::stack::call::help() {
     cat << EOF

@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core type resolve
-cli::source cli bash variable get-info
+CLI_IMPORT=(
+    "cli bash variable get-info"
+    "cli core type resolve"
+)
 
 cli::core::type::get::help() {
     cat << EOF | cli::core::type::help

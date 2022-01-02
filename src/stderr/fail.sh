@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli stderr dump
+CLI_IMPORT=(
+    "cli stderr dump"
+)
 
 cli::stderr::fail::help() {
     cat << EOF

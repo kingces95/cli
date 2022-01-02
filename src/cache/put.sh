@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli path dir
-cli::source cli temp file
+CLI_IMPORT=(
+    "cli path dir"
+    "cli temp file"
+)
 
 cli::cache::put::help() {
     cat << EOF

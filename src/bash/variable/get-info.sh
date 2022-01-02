@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash type get-info
-cli::source cli bash variable declaration get-info
+CLI_IMPORT=(
+    "cli bash type get-info"
+    "cli bash variable declaration get-info"
+)
 
 cli::bash::variable::get_info::help() {
     cat << EOF | cli::core::type::help

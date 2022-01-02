@@ -1,11 +1,13 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable declare
-cli::source cli core variable put
-cli::source cli core variable write
-cli::source cli core variable save
-cli::source cli core variable load
-cli::source cli core variable read
-cli::source cli core type to-bash
+CLI_IMPORT=(
+    "cli core type to-bash"
+    "cli core variable declare"
+    "cli core variable load"
+    "cli core variable put"
+    "cli core variable read"
+    "cli core variable save"
+    "cli core variable write"
+)
 
 cli::dsl::load::help() {
     cat << EOF

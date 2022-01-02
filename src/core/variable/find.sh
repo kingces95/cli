@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable match
+CLI_IMPORT=(
+    "cli core variable match"
+)
 
 cli::core::variable::find::help() {
     cat << EOF | cli::core::type::help

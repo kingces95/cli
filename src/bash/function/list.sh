@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash filter glob
+CLI_IMPORT=(
+    "cli bash filter glob"
+)
 
 cli::bash::function::list::help() {
     cat << EOF

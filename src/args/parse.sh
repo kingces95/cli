@@ -1,9 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable declare
-cli::source cli core variable read
-cli::source cli core variable write
-cli::source cli core variable put
-cli::source cli core variable unset
+CLI_IMPORT=(
+    "cli core variable declare"
+    "cli core variable put"
+    "cli core variable read"
+    "cli core variable unset"
+    "cli core variable write"
+)
 
 cli::args::parse::help() {
     cat << EOF

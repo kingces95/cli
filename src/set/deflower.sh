@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli set test
+CLI_IMPORT=(
+    "cli set test"
+)
 
 cli::set::deflower::help() {
     cat << EOF

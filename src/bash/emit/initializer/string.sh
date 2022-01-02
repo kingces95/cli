@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash string literal 
+CLI_IMPORT=(
+    "cli bash string literal"
+)
 
 cli::bash::emit::initializer::string::help() {
     cat << EOF

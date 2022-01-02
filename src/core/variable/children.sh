@@ -1,7 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable get-info
-cli::source cli core variable name fields
-cli::source cli core variable name modifications
+CLI_IMPORT=(
+    "cli core variable get-info"
+    "cli core variable name fields"
+    "cli core variable name modifications"
+)
 
 cli::core::variable::children::help() {
     cat << EOF | cli::core::type::help

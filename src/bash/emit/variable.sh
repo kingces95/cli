@@ -1,9 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash variable get-info
-cli::source cli bash emit statement initialize
-cli::source cli bash emit initializer string
-cli::source cli bash emit initializer map
-cli::source cli bash emit initializer array
+CLI_IMPORT=(
+    "cli bash emit initializer array"
+    "cli bash emit initializer map"
+    "cli bash emit initializer string"
+    "cli bash emit statement initialize"
+    "cli bash variable get-info"
+)
 
 cli::bash::emit::variable::help() {
     cat << EOF
@@ -59,9 +61,9 @@ cli::bash::emit::variable::self_test() {
     diff <(${CLI_COMMAND[@]} -- MY_INTEGER) - <<< 'declare -i MY_INTEGER="42"'
     diff <(${CLI_COMMAND[@]} -- MY_ARRAY) - <<-EOF
 		declare -a MY_ARRAY=(
-		    [0]="a"
-		    [1]="b"
-		    [2]="c"
+		    "a"
+		    "b"
+		    "c"
 		)
 		EOF
     diff <(${CLI_COMMAND[@]} -- MY_MAP) - <<-EOF

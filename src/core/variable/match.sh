@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash filter glob
-cli::source cli bash map keys
+CLI_IMPORT=(
+    "cli bash filter glob"
+    "cli bash map keys"
+)
 
 cli::core::variable::match::help() {
     cat << EOF | cli::core::type::help

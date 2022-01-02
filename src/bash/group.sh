@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli temp fifo
-cli::source cli temp remove
+CLI_IMPORT=(
+    "cli temp fifo"
+    "cli temp remove"
+)
 
 cli::bash::group::help() {
     cat << EOF

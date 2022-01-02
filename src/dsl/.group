@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash variable declare-enum
+CLI_IMPORT=(
+    "cli bash variable declare-enum"
+)
 
 cli::dsl::help() {
     cat << EOF

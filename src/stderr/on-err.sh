@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli stderr dump
-cli::source cli bash stack trace
+CLI_IMPORT=(
+    "cli bash stack trace"
+    "cli stderr dump"
+)
 
 cli::stderr::on_err::help() {
     cat << EOF

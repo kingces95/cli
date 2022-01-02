@@ -1,8 +1,10 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable declare
-cli::source cli core variable read
-cli::source cli core variable write
-cli::source cli core variable put
+CLI_IMPORT=(
+    "cli core variable declare"
+    "cli core variable put"
+    "cli core variable read"
+    "cli core variable write"
+)
 
 cli::args::emit::help() {
     cat << EOF

@@ -1,9 +1,11 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable get-info
-cli::source cli args tokenize
-cli::source cli args parse
-cli::source cli args resolve
-cli::source cli args verify
+CLI_IMPORT=(
+    "cli args parse"
+    "cli args resolve"
+    "cli args tokenize"
+    "cli args verify"
+    "cli core variable get-info"
+)
 
 cli::dispatch::parse::help() {
     cat << EOF

@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable children
+CLI_IMPORT=(
+    "cli core variable children"
+)
 
 cli::core::variable::unset::help() {
     cat << EOF | cli::core::type::help

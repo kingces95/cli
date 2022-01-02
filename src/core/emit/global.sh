@@ -1,8 +1,10 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable find
-cli::source cli core emit variable
-cli::source cli core emit scope
-cli::source cli bash emit function
+CLI_IMPORT=(
+    "cli bash emit function"
+    "cli core emit scope"
+    "cli core emit variable"
+    "cli core variable find"
+)
 
 cli::core::emit::global::help() {
     cat << EOF
@@ -61,9 +63,9 @@ cli::core::emit::global::self_test() {
 
     diff <(${CLI_COMMAND[@]} -- MY_TEST) - <<-EOF
 		declare -ga MY_TEST_ARRAY_FIELD=(
-		    [0]="x"
-		    [1]="y"
-		    [2]="z"
+		    "x"
+		    "y"
+		    "z"
 		)
 		declare -g MY_TEST_BOOLEAN_FIELD="true"
 		declare -gi MY_TEST_INTEGER_FIELD="21"

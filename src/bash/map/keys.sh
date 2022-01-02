@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash yield
+CLI_IMPORT=(
+    "cli bash yield"
+)
 
 cli::bash::map::keys::help() {
     cat << EOF

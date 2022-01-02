@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli path name
+CLI_IMPORT=(
+    "cli path name"
+)
 
 cli::core::variable::load::help() {
 cat << EOF

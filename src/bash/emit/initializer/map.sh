@@ -1,7 +1,9 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash emit block paren 
-cli::source cli bash emit expression key-value 
-cli::source cli bash map keys
+CLI_IMPORT=(
+    "cli bash emit block paren"
+    "cli bash emit expression key-value"
+    "cli bash map keys"
+)
 
 cli::bash::emit::initializer::map::help() {
     cat << EOF

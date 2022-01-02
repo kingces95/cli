@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli core variable get-info
-cli::source cli bash emit expression map
+CLI_IMPORT=(
+    "cli bash emit expression map"
+    "cli core variable get-info"
+)
 
 cli::core::emit::scope::help() {
     cat << EOF

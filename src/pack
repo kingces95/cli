@@ -1,5 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli_emit
+CLI_IMPORT=(
+    "cli_emit"
+)
 
 cli::pack::help() {
     cat << EOF

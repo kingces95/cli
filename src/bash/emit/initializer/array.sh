@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash emit block paren 
-cli::source cli bash emit expression key-value 
+CLI_IMPORT=(
+    "cli bash emit block paren"
+    "cli bash emit initializer string"
+)
 
 cli::bash::emit::initializer::array::help() {
     cat << EOF
@@ -17,7 +19,7 @@ cli::bash::emit::initializer::array() {
     for (( INDEX=0; INDEX < ${#REF[@]}; INDEX++ )); do
         local VALUE="${REF[$INDEX]}"
 
-        cli::bash::emit::expression::key_value "${INDEX}" VALUE
+        cli::bash::emit::initializer::string VALUE
         
         echo
     done | cli::bash::emit::block::paren
@@ -25,5 +27,5 @@ cli::bash::emit::initializer::array() {
 
 cli::bash::emit::initializer::array::self_test() {
     local ARR=(a)
-    diff <( ${CLI_COMMAND[@]} -- ARR; echo ) - <<< $'(\n    [0]="a"\n)'
+    diff <( ${CLI_COMMAND[@]} -- ARR; echo ) - <<< $'(\n    "a"\n)'
 }

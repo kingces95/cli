@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash key literal
-cli::source cli bash string literal
+CLI_IMPORT=(
+    "cli bash key literal"
+    "cli bash string literal"
+)
 
 cli::bash::map::literal::help() {
     cat << EOF

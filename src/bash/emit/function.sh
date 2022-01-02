@@ -1,6 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
-cli::source cli bash emit indent
-cli::source cli bash emit block curly
+CLI_IMPORT=(
+    "cli bash emit block curly"
+    "cli bash emit indent"
+)
 
 cli::bash::emit::function::help() {
     cat << EOF
