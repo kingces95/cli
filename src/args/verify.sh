@@ -46,8 +46,6 @@ EOF
 }
 
 cli::args::verify::main() {
-    cli::source cli args resolve
-
     ARG_TYPE='cli_args' \
         cli::core::variable::declare MY_ARGS
     cli::core::variable::read MY_ARGS

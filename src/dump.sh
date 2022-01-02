@@ -15,5 +15,5 @@ cli::dump() {
 }
 
 cli::self_test() {
-    cli::source cli-assert
+    :
 }

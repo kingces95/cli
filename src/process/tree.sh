@@ -33,8 +33,6 @@ cli::process::tree() {
 }
 
 cli::process::tree::self_test() {
-    cli::source cli-assert
-
     cli::process::tree
     [[ "${MAP[$$]-}" ]] || cli::assert
 

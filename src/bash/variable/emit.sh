@@ -2,7 +2,6 @@
 CLI_IMPORT=(
     "cli bash variable list"
 )
-# cli::source cli bash emit variable
 
 cli::bash::variable::emit::help() {
     cat << EOF

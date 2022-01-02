@@ -40,8 +40,6 @@ cli::temp::remove() {
 }
 
 cli::temp::remove::self_test() {
-    cli::source cli temp file
-
     mapfile -t < <(
         # create temp file
         cli::temp::file

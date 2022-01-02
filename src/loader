@@ -420,15 +420,11 @@ cli::loader::import() {
         return
     fi
 
-    [[ ! "${CLI_COMMAND[@]}" == 'cli dispatch parse' ]] || cli::assert ${CLI_TYPE}
-
     # missing group
     if [[ ! -f "${CLI_SOURCE}" ]]; then
         [[ ${CLI_TYPE} == group ]] || cli::assert
         return
     fi
-
-    # echo "importing ${CLI_COMMAND[*]}" >&2
 
     # source the import!
     cli::loader::source::exports
@@ -993,54 +989,11 @@ loader_source() {
     diff_import() {
         cli::source $1
 
-        if [[ -n "${CLI_LOADER_IMPORT_DISABLE-}" ]]; then
-            while (( $# > 0 )); do 
-                CLI_LOADER_IMPORTED[$1]=true
-                shift
-            done
-
-            return
-        fi
-
         local COMMAND="$1"
         shift
 
+        CLI_LOADER_IMPORTED[${COMMAND}]=true
         CLI_LOADER_COVERED["${COMMAND}"]=true
-
-        # capture existing function
-        cli::name::to_inline ${COMMAND}
-        FQN="${REPLY}"
-
-        cli::bash::function::is_declared ${FQN} \
-            || cli::assert "Expected '${FQN}' to be inlined into loader."
-        local EXISTING_FUNCTION=$(
-            cli::loader::emit::imports "$@"
-            declare -f ${FQN}
-        )
-
-        # assert exiting function matches inlined function
-        local DIFF=$(diff <(echo "${EXISTING_FUNCTION}") $(${COMMAND} ---exports) || true)
-
-        if [[ -n "${DIFF}" ]]; then
-
-            cli::shim::probe ${COMMAND}
-            echo "EXISTING_FUNCTION != INLINE_FUNCTION, FQN=${FQN}, ${REPLY}"
-            echo "to disable check declare -x CLI_LOADER_IMPORT_DISABLE=1"
-            
-            echo "---diff---"
-            echo "${DIFF}"
-
-            echo "---existing---"
-            echo "${EXISTING_FUNCTION}"
-
-            # capture inline function    
-            echo "---inline---"
-            local INLINE_FUNCTION
-            INLINE_FUNCTION=$(${COMMAND}) \
-                || cli::assert "Expected command '${COMMAND}' to export inline function."
-            echo "${INLINE_FUNCTION}"
-            exit 1
-        fi >&2
     }
 
     # these functions pre-imported because the import logic itself depends on them
@@ -1208,7 +1161,7 @@ loader_source() {
         printf '%s\n' "${!CLI_LOADER_COVERED[@]}" \
             | sort -u \
             | mapfile -t
-        printf '# cli::source %s\n' "${MAPFILE[@]}"
+        printf '# %s\n' "${MAPFILE[@]}"
         echo
 
         for import in "${MAPFILE[@]}"; do
