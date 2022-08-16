@@ -42,6 +42,8 @@ cli::shim::probe() {
 }
 
 cli::shim::probe::self_test() (
+    cli temp dir ---source
+    
     diff <(echo $0) <(${CLI_COMMAND[@]} ---reply cli shim probe) || cli::assert
 
     cli::temp::dir 

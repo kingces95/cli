@@ -7,7 +7,7 @@ CLI_IMPORT=(
     "cli core variable get-info"
 )
 
-cli::dispatch::parse::help() {
+cli::core::parse::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]} 
@@ -27,7 +27,7 @@ Declare
 EOF
 }
 
-cli::dispatch::parse() {
+cli::core::parse() {
     [[ "${ARG_SCOPE-}" ]] || cli::assert 'Missing scope.'
 
     # somehow the metadata should have been declared
@@ -53,6 +53,6 @@ cli::dispatch::parse() {
     REPLY=${CLI_META_GROUP}
 }
 
-cli::dispatch::parse::self_test() {
+cli::core::parse::self_test() {
     return
 }   

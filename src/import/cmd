@@ -1,0 +1,19 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+CLI_IMPORT=(
+    "cli import inline-a"
+)
+
+cli::import::cmd::help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Test.
+EOF
+}
+
+cli::import::cmd::main() {
+    echo 'function=cmd'
+    declare -f cli::import::inline_a
+}

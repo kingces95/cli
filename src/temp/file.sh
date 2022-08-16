@@ -22,7 +22,6 @@ EOF
 }
 
 cli::temp::file() {
-    
     # create and return a temporary file
     local TEMP_FILE=$(mktemp "${1-"${TMPDIR:-/tmp/}"}cli-XXXXXXXX")
 

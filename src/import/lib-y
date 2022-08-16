@@ -1,0 +1,24 @@
+#!/usr/bin/env CLI_NAME=cli bash-cli-part
+
+cli::import::lib_y::help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Test.
+EOF
+}
+
+cli::import::lib_y::main() {
+    lib_y::foo() {
+        echo "function=lib_y::foo"
+    }
+    lib_y::bar() {
+        echo "function=lib_y::bar"
+    }
+
+    declare -f lib_y::foo
+    declare -f lib_y::bar
+}
+

@@ -11,10 +11,10 @@ Summary
 Description
     Argument \$1 is the path to the generated file.
 
-    Argument \$2 - \$n are the source files which the generated file depends.
+    Argument \$2 - \$n are the source files on which the generated file depends.
     
     Success if the generated file exists and is older than the source 
-    file, otherwise failure.
+    file(s), otherwise failure.
 EOF
 }
 
@@ -48,10 +48,19 @@ cli::cache::test::self_test() {
     cli::temp::file
     local NEW="${REPLY}"
 
+    while [[ ! "${OLDEST}" -ot "${OLD}" ]]; do
+        touch "${OLD}"
+    done
+
+    while [[ ! "${OLD}" -ot "${NEW}" ]]; do
+        touch "${NEW}"
+    done
+
     ! ${CLI_COMMAND[@]} -- 'no_cache_file' "${OLD}" || cli::assert
     ! ${CLI_COMMAND[@]} -- "${OLD}" "${OLD}" || cli::assert
     ! ${CLI_COMMAND[@]} -- "${OLD}" "${NEW}" || cli::assert
     ! ${CLI_COMMAND[@]} -- "${OLD}" "${OLDEST}" "${NEW}" || cli::assert
+    ${CLI_COMMAND[@]} -- "${NEW}" "${OLD}" || cli::assert
     ${CLI_COMMAND[@]} -- "${NEW}" "${OLD}" || cli::assert
     ${CLI_COMMAND[@]} -- "${NEW}" "${OLD}" "${OLD}" || cli::assert
 }

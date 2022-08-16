@@ -25,13 +25,13 @@ EOF
 
 Examples
     List commands and groups of 'cli' in post-order
-        ${CLI_COMMAND[@]} --cli cli --ls --traversal post
+        ${CLI_COMMAND[@]} --ls --traversal post -- cli
 
     List groups of 'cli'
-        ${CLI_COMMAND[@]} --cli cli --type g
+        ${CLI_COMMAND[@]} --type g -- cli
 
     List emit commands of 'cli'
-        ${CLI_COMMAND[@]} --cli "cli emit" --type c
+        ${CLI_COMMAND[@]} --type c --cli cli emit
 EOF
 }
 

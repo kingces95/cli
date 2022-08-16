@@ -23,7 +23,7 @@ Details
 EOF
 }
 
-cli::shim::shebang() {    
+cli::shim::shebang() {
 
     # CLI_NAME
     [[ "${CLI_NAME}" ]] \
