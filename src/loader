@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-# loader sourcing itself
-# if [[ -v CLI_IFS ]]; then
-#     cli::bash::function::is_declared loader_source || cli::assert
-#     loader_source
-#     return
-# fi
-
 # supress background processes from displaying their exit status upon completion.
 # see https://mywiki.wooledge.org/BashFAQ/024
 set +m
@@ -555,7 +548,6 @@ cli::loader::shim() {
         CLI_CACHE="${REPLY}"
     fi
 
-
     # CLI_FUNCTION, MAIN, INLINE, and SELF_TEST
     local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
     local -n CLI_FUNCTION_INLINE="${CLI_SYMBOL}_FUNCTION_INLINE"
@@ -953,9 +945,9 @@ cli::loader::main::command::dispatch() {
     while [[ "${1-}" == ---* ]]; do
         case "$1" in
             '---args-tokenize')
-                cli::write CLI_TOKENS ;;
+                ;; # cli ::write CLI_TOKENS ;;
             '---args-load')
-                cli::write CLI_ARGS ;;
+                ;; # cli ::write CLI_ARGS ;;
             '---args')
                 cli::dump 'ARG_*' ;;
             '---cli')
@@ -1068,6 +1060,13 @@ cli::loader::self_test() (
 )
 
 cli::loader::main::imports() {
+    local FUNCTIONS=$(
+        declare -F \
+            | egrep 'cli::' \
+            | awk '{ print $3 }' \
+            | paste -s -d'|'
+    )
+
     declare -F \
         | egrep 'cli::' \
         | awk '{ print $3 }' \
@@ -1075,15 +1074,12 @@ cli::loader::main::imports() {
         | egrep -o 'cli(::[0-9a-z_]+)+' \
         | cat - <(echo 'cli::shim::shebang') \
         | sort -u \
-        | egrep -v 'cli::loader::' \
-        | egrep -v 'cli::assert|cli::source|cli::export|cli::dump|cli::loader|cli::write' \
+        | egrep -v "${FUNCTIONS}" \
         | sed 's/::/ /g' \
         | sed 's/_/-/g'
 }
 
 cli::loader::main::shim() {
-    # cli::loader::main::imports; return
-
     trap 'cli::stderr::on_err $?' ERR
 
     # source The Shim
@@ -1130,7 +1126,9 @@ cli::loader::main::shim() {
         unset -f "${REPLY}"
     done < <(
         declare -F \
-            | egrep -v 'cli::loader' \
+            | egrep -v 'cli::loader::main::help' \
+            | egrep -v 'cli::loader::help' \
+            | egrep -v 'cli::loader::self_test' \
             | egrep '(help|self_test)$' \
             | awk '{ print $3 }'
     )
