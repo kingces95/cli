@@ -175,9 +175,7 @@ declare CLI_STACK_SHOW_HIDDEN
 declare -A CLI_SCOPE=()
 
 # caches
-declare -A CLI_LOADER_CACHE_IMPORTED=(
-    ["cli .group"]=true
-)
+declare -A CLI_LOADER_CACHE_IMPORTED=()
 declare -A CLI_LOADER_CACHE_COVERED=()
 declare -A CLI_LOADER_CACHE_SOURCED_PATHS=()
 
@@ -1114,10 +1112,13 @@ cli::loader::main::shim() {
             fi < <(declare -p DEPENDENCY)
         done
     done
-    CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader']=true
+
+    # load loader
+    CLI_LOADER_CACHE_SOURCED_PATHS[$(cli loader ---which)]=true
+    CLI_LOADER_CACHE_IMPORTED["cli .group"]=true
+    cli loader ---source
 
     # reimport intrinsic dependencies to populate loader data structures
-    cli loader ---source
     local COMMAND
     for COMMAND in "${!CLI_LOADER_CLI_LOADER_INTRINSIC[@]}"; do
         ${COMMAND} ---source
