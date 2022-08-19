@@ -204,13 +204,6 @@ cli::assert() {
 }
 
 # loader library
-cli::loader::help() {
-    echo
-    echo 'Global Arguments'
-    echo '    --help -h        [Flag] : Show this message and exit.'
-    echo '    --self-test      [Flag] : Runs a self test.'
-}
-
 cli::loader::emit::function() {
     local FUNCTION="$1"
     shift
@@ -311,6 +304,41 @@ cli::loader::cache::test() {
 #             CLI_FUNCTION $@
 
 # loader core
+cli::loader::help() {
+    cat << EOF
+Command
+    ${CLI_COMMAND[@]}
+    
+Summary
+    Loader library.
+EOF
+}
+
+cli::loader::help::global() {
+    echo
+    echo 'Global Arguments'
+    echo '    --help -h        [Flag] : Show this message and exit.'
+    echo '    --self-test      [Flag] : Runs a self test.'
+}
+
+cli::loader::help::extended() {
+    cli::loader::help::global
+    echo
+    echo 'Loader Arguments'
+    echo '    ---help          [Flag] : Show extened help.'
+    echo '    ---env           [Flag] : Dump script environment variables.'
+    echo '    ---imports       [Flag] : List imported libraries.'
+    echo '    ---variables     [Flag] : Dump command specific constants.'
+    echo '    ---type          [Flag] : Print command type (command, inline, or group).'
+    echo '    ---which         [Flag] : Print path to command file.'
+    echo '    ---cache         [Flag] : Print path to command cache directory.'
+    echo '    ---print         [Flag] : Print command file.'
+    echo '    ---source        [Flag] : Source the command as if it were a library.'
+    echo '    ---backpatch     [Flag] : ...'
+    echo '    ---exports       [Flag] : Print path to library source.'
+    echo '    ---dependencies  [Flag] : ....'
+}
+
 cli::loader::import_parent() {
     local COMMAND=( "${CLI_COMMAND[@]}" )
 
@@ -454,17 +482,14 @@ cli::loader::shim() {
 
         while true; do
             case "$1" in
-                '---eval0')
-                    shift
-                    eval "$@" ;;
                 '---assert')
-                    cli::assert ;;
-                '---subshell-assert')
-                    ( cli::assert ) ;;
+                    cli::assert $@;;
+                '---assert-subshell')
+                    ( cli::assert $@ ) ;;
                 '---err')
-                    err() { return 1; }; err ;;
-                '---subshell-err')
-                    err() { return 1; }; ( err; ) ;;
+                    err() { return 1; }; err $@ ;;
+                '---err-subshell')
+                    err() { return 1; }; ( err $@; ) ;;
                 *)
                     break ;;
             esac
@@ -668,7 +693,11 @@ cli::loader::main::help() {
                 break ;;
             '-h') ;& '--help')
                 cli::loader::main::invoke ${CLI_FUNCTION_HELP} 
-                cli::loader::help
+                cli::loader::help::global
+                return ;;
+            '---help')
+                cli::loader::main::invoke ${CLI_FUNCTION_HELP} 
+                cli::loader::help::extended
                 return ;;
         esac
         shift
@@ -920,9 +949,12 @@ cli::loader::main::command::known() {
     ARG_SELF_TEST=false
 
     if (( $# > 0 )); then
+        [[ ! "${CLI_COMMAND[*]}" == 'cli loader' ]] \
+            || cli::assert "Command 'cli loader' takes no arguments."
+
         # if any arguments, then arguments are positional
         [[ "$1" == '--' ]] \
-            || cli::assert "Known command '${CLI_COMMAND[@]}' cannot have arguments."
+            || cli::assert "Known command '${CLI_COMMAND[@]}' cannot have named arguments."
         shift
     fi
 
@@ -1004,11 +1036,9 @@ cli::loader::main() {
     # cli::loader::emit::variables cli | sort -k4
     {
         (
-            CLI_LOADER_CACHE_SOURCED_PATHS=()
             CLI_COMMAND_STACK=()
             CLI_SCOPE=()
 
-            declare -p CLI_LOADER_CACHE_SOURCED_PATHS
             declare -p CLI_COMMAND_STACK
             declare -p CLI_SCOPE
         )
@@ -1016,6 +1046,7 @@ cli::loader::main() {
         declare -p CLI_LOADER_CACHE_COVERED
         declare -p CLI_LOADER_LOCK
 
+        declare -p CLI_LOADER_CACHE_SOURCED_PATHS
         declare -p CLI_LOADER_CLI_LOADER_INTRINSIC
         declare -p CLI_LOADER_CLI_LOADER_SOURCE
         declare -p CLI_LOADER_CLI_LOADER_IMPORT
