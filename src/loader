@@ -177,16 +177,7 @@ declare -A CLI_SCOPE=()
 # caches
 declare -A CLI_LOADER_CACHE_IMPORTED=(
     ["cli .group"]=true
-    # ["cli attribute .group"]=true
-    # ["cli bash .group"]=true
-    # ["cli cache .group"]=true
-    # ["cli name .group"]=true
-    # ["cli path .group"]=true
-    # ["cli set .group"]=true
-    ["cli shim .group"]=true
-    # ["cli stderr .group"]=true
     ["cli subshell .group"]=true
-    # ["cli temp .group"]=true
 )
 declare -A CLI_LOADER_CACHE_COVERED=()
 declare -A CLI_LOADER_CACHE_SOURCED_PATHS=()
@@ -356,7 +347,7 @@ cli::loader::import_parent() {
     # TODO: expect only the group main function; e.g. cli::args::group::main
     if ! diff <( cli::loader::emit::variables "${MAPFILE[@]}" ) - < /dev/null > /dev/null; then
         echo "Attempt to import '${COMMAND[@]}' but variables already defined:" >&2
-        cli::export "${MAPFILE[@]}" | sed 's/^/  /' >&2
+        cli::loader::emit::variables "${MAPFILE[@]}" | sed 's/^/  /' >&2
         cli::assert "${MAPFILE[@]}"
     fi
 
@@ -524,7 +515,7 @@ cli::loader::shim() {
     # CLI_SOURCE (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
     local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
     if [[ ! -v CLI_SOURCE ]]; then
-        cli::shim::probe "${CLI_COMMAND[@]}" \
+        cli::shim::which "${CLI_COMMAND[@]}" \
             || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
         CLI_SOURCE="${REPLY}"
 
@@ -932,7 +923,8 @@ cli::loader::main::command::known() {
 
     if (( $# > 0 )); then
         # if any arguments, then arguments are positional
-        [[ "$1" == '--' ]] || cli::assert
+        [[ "$1" == '--' ]] \
+            || cli::assert "Known command '${CLI_COMMAND[@]}' cannot have arguments."
         shift
     fi
 
@@ -1084,6 +1076,7 @@ cli::loader::main::shim() {
 
     # source The Shim
     source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
+    local ROOT_DIR=$(cli ---root)
 
     # harvest imports
     mapfile -t CLI_LOADER_CLI_LOADER_IMPORT < <(cli::loader::main::imports)
@@ -1103,7 +1096,7 @@ cli::loader::main::shim() {
         # bind
         local SEGMENTS=( ${COMMAND} )
         IFS='/'
-        local SOURCE="${CLI_SHIM_ROOT_DIR_CLI}/${SEGMENTS[*]:1}.sh"
+        local SOURCE="${ROOT_DIR}/${SEGMENTS[*]:1}.sh"
         IFS="${CLI_IFS}"
 
         # source
@@ -1133,16 +1126,8 @@ cli::loader::main::shim() {
             | awk '{ print $3 }'
     )
 
-    # assert The Shim declared 'cli'
-    cli::bash::function::is_declared 'cli' || cli::assert
-
-    # assert The Shim declared 'CLI_SHIM_ROOT_DIR_CLI'
-    [[ -v CLI_SHIM_ROOT_DIR_CLI ]] || cli::assert
-
     CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader']=true
     cli loader "$@"
 }
 
 cli::loader::main::shim "$@"
-
-# cat src/loader | egrep -o cli::[a-z:_]+ | sort -u | grep -v cli::loader

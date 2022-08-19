@@ -24,25 +24,26 @@ EOF
 }
 
 cli::shim::shebang() {
+    local SOURCE_PATH_RELATIVE="${1-}"
+    shift
+
+    # SOURCE_PATH
+    cli::path::make_absolute "${SOURCE_PATH_RELATIVE}"
+    local SOURCE_PATH="${REPLY}"
 
     # CLI_NAME
     [[ "${CLI_NAME}" ]] \
         || cli::assert "Shebang failed to declare 'CLI_NAME'." 
 
-    # SHIM_ROOT_DIR_REF
+    # ROOT_DIR
     cli::shim::source "${CLI_NAME}" \
         || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
-    local -n SHIM_ROOT_DIR_REF="CLI_SHIM_ROOT_DIR_${CLI_NAME^^}"
-
-    # SOURCE_PATH
-    cli::path::make_absolute "$1"
-    local SOURCE_PATH="${REPLY}"
-    shift
+    local ROOT_DIR=$("${CLI_NAME}" ---root)
 
     # REL_PATH
-    local REL_PATH="${SOURCE_PATH##"${SHIM_ROOT_DIR_REF}/"}"
+    local REL_PATH="${SOURCE_PATH##"${ROOT_DIR}/"}"
     (( ${#REL_PATH} < ${#SOURCE_PATH} )) \
-        || cli::assert "Source path '${SOURCE_PATH}' is not a subpath of '${SHIM_ROOT_DIR_REF}'." 
+        || cli::assert "Source path '${SOURCE_PATH}' is not a subpath of '${ROOT_DIR}'." 
 
     # COMMAND
     local IFS=/
@@ -52,10 +53,11 @@ cli::shim::shebang() {
     set "${COMMAND[@]}" "$@"
 
     # epilog
-    unset REL_PATH
+    unset SOURCE_PATH_RELATIVE
     unset SOURCE_PATH
+    unset REL_PATH
     unset COMMAND
-    unset -n SHIM_ROOT_DIR_REF
+    unset ROOT_DIR
 
     # post conditions
     [[ -v CLI_NAME ]] || cli::assert
@@ -64,6 +66,7 @@ cli::shim::shebang() {
 }
 
 cli::shim::shebang::self_test() (
+    cli temp dir ---source
 
     cli::temp::dir 
     local DIR="${REPLY}"
@@ -73,8 +76,13 @@ cli::shim::shebang::self_test() (
 
     # emit foo shim
     cat <<-EOF > "${FOO_SHIM}"
-		declare -rg CLI_SHIM_ROOT_DIR_FOO="\${FOO_SRC_DIR}"
-		foo() { echo "\$@"; }
+		foo() { 
+            if [[ "\${1-}" == '---root' ]]; then
+                echo "\${FOO_SRC_DIR}"
+                return
+            fi
+            echo "\$@"; 
+        }
 		EOF
     chmod a+x "${FOO_SHIM}"
 

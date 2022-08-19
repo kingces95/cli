@@ -27,29 +27,29 @@ EOF
 
 cli::shim::source() {
     local NAME="${1-}"
+    shift
+
     [[ ${NAME} ]] || cli::assert 'Missing shim name.'
 
-    local -n SHIM_ROOT_DIR_NAME="CLI_SHIM_ROOT_DIR_${NAME^^}"
-    if [[ "${SHIM_ROOT_DIR_NAME-}" ]]; then
-        return 0
+    if declare -F "${NAME}" >/dev/null; then
+        return
     fi
 
     # resolve the path to the shim by searching PATH
-    cli::bash::which "$1" || return 1
-    
+    cli::bash::which "${NAME}" \
+        || cli::assert "Failed to find shim '${NAME}' on the path."
+
     # source the shim
     source "${REPLY}"
 
-    # verify shim published the path to the root of its commands
-    [[ "${SHIM_ROOT_DIR_NAME-}" ]] \
-        || cli::assert "Shim '$1' failed to define ${SHIM_ROOT_DIR_NAME}."
-
     # verify the shim published a function of the same name.
     cli::bash::function::is_declared "${NAME}" \
-        || cli::assert "Shim '$1' failed to define function ${NAME}."
+        || cli::assert "Shim '${NAME}' failed to define function ${NAME}."
 }
 
 cli::shim::source::self_test() (
+    cli temp dir ---source
+
     cli::temp::dir 
     local DIR="${REPLY}"
     local FOO_SHIM="${DIR}/foo"
@@ -57,19 +57,20 @@ cli::shim::source::self_test() (
     # emit a shim
     cat <<-EOF > "${FOO_SHIM}"
 		#!/usr/bin/env bash-cli-shim
-        declare -rg CLI_SHIM_ROOT_DIR_FOO="\${BASH_SOURCE%/*}/src"
 		foo() {
+            if [[ "\${1-}" == '---root' ]]; then
+                echo "\${BASH_SOURCE%/*}/src"
+                return
+            fi
 		    echo ok
 		}
 		EOF
     chmod a+x "${FOO_SHIM}"
 
-    ! ${CLI_COMMAND[@]} -- foo || cli::assert
-
     # update PATH
     PATH+=":${DIR}"
 
-    # resolve the command
+    # source foo shim
     ${CLI_COMMAND[@]} -- foo
 
     diff <(foo) - <<< 'ok' || cli::assert
