@@ -51,7 +51,9 @@ cli::core::variable::save() {
     done
 }
 
-cli::core::variable::save::self_test() (
+cli::core::variable::save::self_test() (   
+    cli temp dir ---source
+    
     cli::temp::dir
     local DIR="${REPLY}"
 

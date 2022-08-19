@@ -39,6 +39,7 @@ cli::core::variable::load() {
 }
 
 cli::core::variable::load::self_test() (
+    cli temp dir ---source
     cli core variable save ---source
 
     cli::temp::dir

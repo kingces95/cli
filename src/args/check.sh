@@ -108,14 +108,14 @@ cli::args::check() {
     esac
 }
 
-cli::args::check::self_test() {
+cli::args::check::self_test() (
     ${CLI_COMMAND[@]} -- myname myvalue
     ${CLI_COMMAND[@]} -- myname true 'boolean'
     ${CLI_COMMAND[@]} -- myname false 'boolean'
     ${CLI_COMMAND[@]} -- myname '' 'boolean'
     ${CLI_COMMAND[@]} -- myname myvalue 'string' '.*' 'myvalue myothervalue' 0 100
     ${CLI_COMMAND[@]} -- myname myothervalue 'string' '.*' 'myvalue myothervalue' 0 100
-return
+
     test() {
         ! { set -m; (cli::args::check "$@") } 2>&1 1>/dev/stderr || cli::assert
     }
@@ -159,4 +159,4 @@ return
         "Unexpected value '5' for argument '--myname' passed to command '${CLI_COMMAND[@]}'." \
         "Expected a value that is no more than 2."
     ) || cli::assert
-}
+)

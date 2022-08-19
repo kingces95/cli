@@ -26,7 +26,18 @@ Examples
 EOF
 }
 
-cli::util::readmap() {
+cli::util::readmap::main() {
+    local NAME="$1"
+
+    declare -A "${NAME}"
+
+    local KEY VALUE
+    while read -r KEY VALUE; do
+        cli::util::readmap::add "${NAME}" "${KEY}" "${VALUE}"
+    done
+}
+
+cli::util::readmap::add() {
     : ${arg_name=RESULT}
     : ${1?"Unexpected missing key."}
     : ${2?"Unexpected missing value."}
@@ -37,14 +48,6 @@ cli::util::readmap() {
     eval "set $1 $2"
 
     ref+=( [$1]=$2 )
-}
-
-cli::util::readmap::main() {
-    declare -A ${arg_name}
-    while read -r key value; do
-        inline "${key}" "${value}"
-    done
-    declare -p ${arg_name}
 }
 
 cli::util::readmap::self_test() {

@@ -12,7 +12,7 @@ cli::name::main() {
 }
 
 cli::name::self_test() {
-    echo cli name from-inline --self-test
+    cli name from-inline --self-test
     cli name parse --self-test
     cli name to-bash --self-test
     cli name to-inline --self-test

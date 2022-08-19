@@ -186,9 +186,9 @@ cli::args::verify::self_test() (
     )
 
     # cli dsl sample
+    local COMMAND_LINE='--id 42 -f banana -h --header Foo -- a0 a1'
     diff <(
         # sample command line
-        local COMMAND_LINE='--id 42 -f banana -h --header Foo -- a0 a1'
         cli args tokenize -- ${COMMAND_LINE} \
             | cli args parse -- \
                 <( cli::core::variable::write ${ARG_META}_ALIAS ) \
@@ -201,7 +201,7 @@ cli::args::verify::self_test() (
 			named id 42
 			named header Foo
 			EOF
-return
+    return
 
     meta() {
         echo 'type props map'

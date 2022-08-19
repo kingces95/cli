@@ -9,9 +9,7 @@ Summary
     Split an bash inline function name into the corresponding command.
 
 Description
-    Give a bash function name delimited by :: and ending in ,
-    replace :: with space and dash with underbar except it it appears 
-    after :: in which case convert it to period.
+    Give a bash function name return a command. 
 
     Return the result in REPLY.
 EOF
@@ -24,7 +22,7 @@ cli::name::from_inline() {
     # [[ "${@: -1}" == 'inline' ]] \
     #     || cli::assert "Shim called from non-inline function ${FUNCNAME[1]}."
 
-    REPLY=${@:1:$(( $# -1 ))}
+    REPLY=$@
 }
 
 cli::name::from_inline::self_test() {

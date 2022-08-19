@@ -337,6 +337,16 @@ cli::loader::help::extended() {
     echo '    ---backpatch     [Flag] : ...'
     echo '    ---exports       [Flag] : Print path to library source.'
     echo '    ---dependencies  [Flag] : ....'
+    echo '    ---tokenize      [Flag] : ....'
+    echo '    ---parse         [Flag] : ....'
+    echo '    ---meta          [Flag] : ....'
+    echo '    ---load          [Flag] : ....'
+    echo '    ---build         [Flag] : ....'
+    echo '    ---args-tokenize [Flag] : ....'
+    echo '    ---args-load     [Flag] : ....'
+    echo '    ---args          [Flag] : ....'
+    echo '    ---cli           [Flag] : ....'
+    echo '    ---read          [Flag] : ....'
 }
 
 cli::loader::import_parent() {
