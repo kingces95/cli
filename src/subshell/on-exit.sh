@@ -20,8 +20,10 @@ cli::subshell::on_exit() {
     if (( ${#CLI_SUBSHELL_ON_EXIT[@]} == 0 )); then
         cli::subshell::on_exit::trap() {
             local -n CLI_SUBSHELL_ON_EXIT=CLI_SUBSHELL_ON_EXIT_${BASHPID}
-            for delegate in ${CLI_SUBSHELL_ON_EXIT[@]}; do
-                ${delegate}
+            
+            local DELEGATE
+            for DELEGATE in ${CLI_SUBSHELL_ON_EXIT[@]}; do
+                ${DELEGATE}
             done
         }
         trap cli::subshell::on_exit::trap EXIT

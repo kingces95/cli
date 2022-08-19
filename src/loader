@@ -177,7 +177,6 @@ declare -A CLI_SCOPE=()
 # caches
 declare -A CLI_LOADER_CACHE_IMPORTED=(
     ["cli .group"]=true
-    ["cli subshell .group"]=true
 )
 declare -A CLI_LOADER_CACHE_COVERED=()
 declare -A CLI_LOADER_CACHE_SOURCED_PATHS=()
@@ -382,8 +381,9 @@ cli::loader::import() {
     fi
 
     # loader
-    [[ ! "${CLI_COMMAND[@]}" == 'cli loader' ]] \
-        || cli::assert 'Importing the loader is disallowed.'
+    if [[ "${CLI_COMMAND[@]}" == 'cli loader' ]]; then
+        return
+    fi
 
     cli::loader::import_parent
 
@@ -1088,6 +1088,8 @@ cli::loader::main::shim() {
     local -i INDEX
     for (( INDEX=0; INDEX<${#DEPENDENCY[@]}; INDEX++ )); do
         local COMMAND="${DEPENDENCY[${INDEX}]}"
+        # echo "${COMMAND}" >&2
+
         if [[ "${COMMAND}" =~ 'cli core' ]]; then
             continue
         fi
@@ -1112,6 +1114,14 @@ cli::loader::main::shim() {
             fi < <(declare -p DEPENDENCY)
         done
     done
+    CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader']=true
+
+    # reimport intrinsic dependencies to populate loader data structures
+    cli loader ---source
+    local COMMAND
+    for COMMAND in "${!CLI_LOADER_CLI_LOADER_INTRINSIC[@]}"; do
+        ${COMMAND} ---source
+    done
 
     # loader imports are all inline and have three functions: main, help, self_test
     # importing an linine function only imports the main function so unset the others
@@ -1126,7 +1136,6 @@ cli::loader::main::shim() {
             | awk '{ print $3 }'
     )
 
-    CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader']=true
     cli loader "$@"
 }
 
