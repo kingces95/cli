@@ -6,23 +6,27 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Set REPLY to the group id of $1. 
+    Print the group id of $1. 
 
 Description
     By default $1 is the process id of the subprocess. 
 EOF
 }
 
-main() {
-    cli::proc::parent "$@"
-    declare -p REPLY
-}
+cli::process::group() {
+    local PID="${1-${BASHPID}}"
 
-cli::process::parent() {
-    local PID=${1-${BASHPID}}
-    read < <(ps -p $$ -o pgid=)
+    # trim whitespace
+    read REPLY < <(ps -p "${PID}" -o pgid=)
+
+    echo "${REPLY}"
 }
 
 cli::process::group::self_test() {
-    :
+    local GPID="$(cli::process::group)"
+
+    # enable job control; new subprocs and their subprocs get their own GPID
+    ( [[ $(cli::process::group) == ${GPID} ]] || cli::assert )
+    set -m
+    ( [[ ! $(cli::process::group) == ${GPID} ]] || cli::assert )
 }

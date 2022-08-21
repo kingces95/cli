@@ -844,6 +844,7 @@ cli::loader::main::command::load() {
     local META="${CLI_CACHE}/meta"
     local LOAD="${CLI_CACHE}/load"
 
+    # file has been touched but check if help changed; if not, use cached meta
     if [[ -f "${META_SH}" && -f "${HELP}" ]] \
         && diff "${HELP}" <( cli::loader::main::dispatch -h ) > /dev/null; then
         cli::loader::source "${META_SH}"

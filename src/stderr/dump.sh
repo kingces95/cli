@@ -1,7 +1,7 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 CLI_IMPORT=(
     "cli stderr cat"
-    "cli subshell signal-group"
+    "cli process signal"
 )
 
 cli::stderr::dump::help() {
@@ -26,7 +26,7 @@ cli::stderr::dump() {
     cli::stderr::cat
 
     # issue control-c
-    cli::subshell::signal_group
+    cli::process::signal
 }
 
 cli::stderr::dump::self_test() {

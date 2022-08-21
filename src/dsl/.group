@@ -69,7 +69,6 @@ cli::dsl::self_test() {
     ( cli dsl sample --self-test )
     ( cli dsl tokenize --self-test )
     ( cli dsl parse --self-test )
-    ( echo cli dsl meta --self-test )
+    ( cli dsl meta --self-test )
     ( cli dsl load --self-test )
-    ( echo cli dsl bgen --self-test )
 }

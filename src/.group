@@ -23,7 +23,7 @@ cli::self_test() {
     cli core .group --self-test 
     cli dsl .group --self-test 
     cli eg .group --self-test 
-    echo cli import .group --self-test 
+    # cli import .group --self-test 
     cli name .group --self-test
     cli path .group --self-test
     cli process .group --self-test

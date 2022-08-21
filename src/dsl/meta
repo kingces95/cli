@@ -22,7 +22,7 @@ Command
             boolean positional
         }
 
-    'required' is an array of required options
+    'require' is an array of required options
 
     'default' is an associative array of default values which are
     assigned when the option is not present on the command line. All known

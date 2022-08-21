@@ -13,5 +13,4 @@ cli::subshell::main() {
 
 cli::subshell::self_test() {
     cli subshell on-exit --self-test
-    echo cli subshell signal-group --self-test
 }
