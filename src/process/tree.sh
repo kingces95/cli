@@ -6,38 +6,30 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Load the parent process of each process into an array.
+    Load the parent process of each process into map REPLY_CLI_PROCESS_TREE.
 
 Description
-    Load the parent process of each process into an array MAP. A custom
-    name for the array can be passed in as the first positional argument.
+    Key of REPLY_CLI_PROCESS_TREE is the process and the value it's parent.
 EOF
 }
 
-main() {
-    cli::process::tree "$@"
-    declare -p MAP
-}
-
 cli::process::tree() {
-    if [[ ! ${1-} ]]; then
-        declare -Ag MAP=()
-        set MAP
-    fi
+    declare -Ag REPLY_CLI_PROCESS_TREE=()
 
-    local -n CLI_SUBSHELL_TREE_REF_ARRAY=$1
+    local PROCESS_ID
+    local PARENT_PROCESS_ID
 
-    while read pid ppid; do
-        CLI_SUBSHELL_TREE_REF_ARRAY[${pid}]=${ppid}
+    while read PROCESS_ID PARENT_PROCESS_ID; do
+        REPLY_CLI_PROCESS_TREE["${PROCESS_ID}"]="${PARENT_PROCESS_ID}"
     done < <(ps -o pid=,ppid=)
 }
 
 cli::process::tree::self_test() {
     cli::process::tree
-    [[ "${MAP[$$]-}" ]] || cli::assert
+    [[ "${REPLY_CLI_PROCESS_TREE[$$]-}" ]] || cli::assert
 
     ( 
         cli::process::tree
-        [[ "${MAP[$BASHPID]-}" == "$$" ]] || cli::assert
+        [[ "${REPLY_CLI_PROCESS_TREE[$BASHPID]-}" == "$$" ]] || cli::assert
     )
 }

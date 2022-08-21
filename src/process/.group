@@ -13,7 +13,6 @@ cli::process::main() {
 
 cli::process::self_test() {
     cli process signal --self-test
-    cli process group --self-test
-    echo cli process parent --self-test
-    echo cli process tree --self-test
+    cli process get-info --self-test
+    cli process tree --self-test
 }
