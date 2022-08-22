@@ -25,22 +25,31 @@ cli::stderr::dump() {
     # copy stdin to stderr
     cli::stderr::cat
 
+    # this would interleave
+    # cat >&2
+
     # issue control-c
     cli::process::signal
 }
 
-cli::stderr::dump::self_test() {
+cli::stderr::dump::self_test() (
+    cli temp file ---source
+    cli stderr message ---source
 
-    if (( $# > 0 )); then
-        eval "$1"
-        echo 'NO CTRL-C' >&2
-    else
-        test() {
-            set -m
-            if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1 1> /dev/null; then exit 1; fi 
-        }
+    set -m
 
-        diff <(test "echo 'LOG AND CTRL-C' | cli::stderr::dump") \
-            <(echo "LOG AND CTRL-C") || cli::assert
-    fi
-}
+    cli::temp::file
+    local FILE="${REPLY}"
+
+    assert() {
+        cli::stderr::message $@ | cli::stderr::dump
+    }
+
+    # assert multistage failure does not interleave
+    ! ( assert a | assert b ) 2> "${FILE}" || cli::assert
+    egrep -q '^(a+b+|b+a+)$' < <(cat "${FILE}" | tr -d '\n') || cli::assert
+
+    # assert control-c kills pipeline
+    ! ( assert a | { read; assert b; } ) 2> "${FILE}" || cli::assert
+    egrep -q '^a+$' < "${FILE}" || cli::assert
+)

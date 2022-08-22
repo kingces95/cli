@@ -34,28 +34,17 @@ cli::stderr::cat() {
 }
 
 cli::stderr::cat::self_test() {
-    local CHAR_COUNT=1024
+    cli temp file ---source
+    cli stderr message ---source
 
-    # a pipeline stage that emits a log larger than the pipe buffer
-    segment() {
+    cli::temp::file
+    local FILE="${REPLY}"
 
-        local CHARS=$(
-            for ((i=0; i<${CHAR_COUNT}; i++)); do 
-                printf $1
-            done
-        )
-
-        for ((i=0; i<${CHAR_COUNT}; i++)); do {
-            printf ${CHARS}
-        } done \
-            | cli::stderr::cat
+    log() {
+        cli::stderr::message $@ | cli::stderr::cat
     }
 
-    local DUMPS=$( 
-        # simulate a mulit stage pipeline log 
-        ( segment 'a' | segment 'b' ) 2>&1 || cli::assert 
-    )
-
-    # assert the logs from the two pipeline stages do not inerleave
-    [[ "${DUMPS}" =~ ^(a+b+|b+a+)$ ]] || cli::assert
+    # assert multistage failure does not interleave
+    ( log a | log b ) 2> "${FILE}" || cli::assert
+    egrep -q '^(a+b+|b+a+)$' < <(cat "${FILE}" | tr -d '\n') || cli::assert
 }

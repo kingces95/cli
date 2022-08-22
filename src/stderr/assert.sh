@@ -32,7 +32,7 @@ cli::stderr::assert() {
     } | cli::stderr::dump
 }
 
-cli::stderr::assert::self_test() {
+cli::stderr::assert::self_test() (
     test() {
         set -m
         cli::stderr::assert "$@" \
@@ -52,4 +52,4 @@ cli::stderr::assert::self_test() {
 		  self_test                                          /Users/Setup/git/cli/src/stderr/assert:51
 		  cli stderr assert --self-test                      /Users/Setup/git/cli/cli:6
 		EOF
-}
+)

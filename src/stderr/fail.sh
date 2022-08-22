@@ -9,12 +9,10 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Copies an IFS join of the arguments to stderr stream before exiting 
-    with code 1.
+    Print a message then kill the process group.
 
-Examples
-    Test a condition
-        [[ \${foo} == 'bar' ]] || ${CLI_COMMAND[@]} -- 'Foo does not equal bar.'
+Description
+    Report an error to the user using stderr. The arguments are joined together with IFS.
 EOF
 }
 
@@ -23,16 +21,24 @@ cli::stderr::fail() {
         | cli::stderr::dump
 }
 
-cli::stderr::fail::self_test() {
-    if (( $# > 0 )); then
-        eval "$1"
-    else
-        test() {
-            set -m
-            if ${CLI_COMMAND[@]} --self-test -- "$@" 2>&1; then exit 1; fi 
-        }
+cli::stderr::fail::self_test() (
+    cli temp file ---source
+    cli stderr message ---source
 
-        diff <( test "cli::stderr::fail 'Bad news'" ) \
-            <( echo 'Bad news' ) || cli::assert
-    fi
-}
+    set -m
+
+    cli::temp::file
+    local FILE="${REPLY}"
+
+    assert() {
+        cli::stderr::fail $@
+    }
+
+    # assert multistage failure does not interleave
+    ! ( assert a | assert b ) 2> "${FILE}" || cli::assert
+    egrep -q '^(a+b+|b+a+)$' < <(cat "${FILE}" | tr -d '\n') || cli::assert
+
+    # assert control-c kills pipeline
+    ! ( assert a | { read; assert b; } ) 2> "${FILE}" || cli::assert
+    egrep -q '^a+$' < "${FILE}" || cli::assert
+)
