@@ -121,7 +121,6 @@ readonly -A CLI_TYPE_CLI_ARGS=(
     [named]="map_of array"
     [positional]="array"
 )
-readonly -A CLI_TYPE_CLI_BASH_STACK_HIDDEN_ATTRIBUTE=()
 
 # tokens
 readonly -a CLI_ARG_TOKEN=(

@@ -1,8 +1,8 @@
 #!/usr/bin/env CLI_NAME=cli bash-cli-part
 CLI_IMPORT=(
     "cli bash variable emit"
-    "cli core struct emit"
-    "cli core type is-scaler"
+    # "cli core struct emit"
+    # "cli core type is-scaler"
     "cli core variable declare"
     "cli core variable put"
 )

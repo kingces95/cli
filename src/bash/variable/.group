@@ -16,7 +16,7 @@ cli::bash::variable::main() {
 cli::bash::variable::self_test() {
     cli bash variable declaration .group --self-test
     cli bash variable declare-enum --self-test
-    echo cli bash variable emit --self-test
+    cli bash variable emit --self-test
     cli bash variable get-info --self-test
     cli bash variable list --self-test
 }

@@ -18,5 +18,4 @@ cli::core::self_test() {
     cli core type .group --self-test
     cli core variable .group --self-test
     cli core emit .group --self-test
-    echo cli core declare --self-test
 }

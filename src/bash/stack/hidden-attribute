@@ -12,6 +12,10 @@ EOF
 
 # declare -A CLI_TYPE_CLI_BASH_STACK_HIDDEN_ATTRIBUTE=()
 
-main() {
+cli::bash::stack::hidden_attribute::main() {
     cli::export CLI_TYPE_CLI_BASH_STACK
+}
+
+cli::bash::stack::hidden_attribute::self_test() {
+    :
 }
