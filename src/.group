@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::help() {
     cat << EOF
@@ -22,7 +22,6 @@ cli::self_test() {
     cli cache .group --self-test
     cli core .group --self-test 
     cli dsl .group --self-test 
-    cli eg .group --self-test 
     # cli import .group --self-test 
     cli name .group --self-test
     cli path .group --self-test

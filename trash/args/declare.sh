@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli args parse"
     "cli args resolve"
@@ -87,10 +87,10 @@ cli::args::declare::self_test() (
 
     # load metadata
     cli::core::variable::read ${ARG_META} < <( 
-        cli dsl sample ---load 
+        cli sample kitchen-sink ---load 
     )
 
-    # cli dsl sample
+    # cli sample kitchen-sink
     diff <( 
         ${CLI_COMMAND[@]} -- --id 42 -f banana -h --header Foo -- a0 a1 
     ) - <<-EOF || cli::assert

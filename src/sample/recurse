@@ -1,6 +1,6 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
-cli::eg::recurse::help() {
+cli::sample::recurse::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]} 
@@ -14,7 +14,7 @@ Arguments
 EOF
 }
 
-cli::eg::recurse::main() {
+cli::sample::recurse::main() {
     echo ${ARG_DEPTH}
     if (( ${ARG_DEPTH} == ${ARG_MAX} )); then
         return
@@ -24,7 +24,7 @@ cli::eg::recurse::main() {
     echo ${ARG_DEPTH}
 }
 
-cli::eg::recurse::self_test() {
+cli::sample::recurse::self_test() {
     local CACHE="$(${CLI_COMMAND[@]} ---cache)/meta.sh"
     if [[ -f "${CACHE}" ]]; then
         rm "${CACHE}"

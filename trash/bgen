@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli-emit"
 )
@@ -78,7 +78,7 @@ emit() {
 }
 
 self_test() {
-    cli dsl sample -h \
+    cli sample kitchen-sink -h \
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \

@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli args check"
     "cli core variable declare"
@@ -33,7 +33,7 @@ Examples
     cli args tokenize -- --header foo --help \\
         | cli args parse \\
         | cli args check -- \\
-            <( cli dsl sample ---load )
+            <( cli sample kitchen-sink ---load )
 EOF
 }
 
@@ -73,7 +73,7 @@ cli::args::resolve() {
 
 cli::args::resolve::self_test() (
 
-    # cli dsl sample
+    # cli sample kitchen-sink
     (
         local -A SCOPE=()
         ARG_SCOPE='SCOPE'
@@ -85,7 +85,7 @@ cli::args::resolve::self_test() (
 
         # load metadata
         cli::core::variable::read ${ARG_META} < <( 
-            cli dsl sample ---load 
+            cli sample kitchen-sink ---load 
         )
 
         diff <(
@@ -107,7 +107,7 @@ cli::args::resolve::self_test() (
         ) - <<< 'MY_META_GROUP_1'
     )
 
-    # cli dsl simple
+    # cli sample simple
     (
         local -A SCOPE=()
         ARG_SCOPE='SCOPE'
@@ -119,7 +119,7 @@ cli::args::resolve::self_test() (
 
         # load metadata
         cli::core::variable::read ${ARG_META} < <( 
-            cli dsl simple ---load 
+            cli sample simple ---load 
         )
 
         diff <(

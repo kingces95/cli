@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli stderr lock"
     "cli temp file"
@@ -21,16 +21,17 @@ cli::stderr::cat() {
 
     # create a temporary file
     cli::temp::file
+    local SCRATCH="${REPLY}"
 
     # write to file instead of stderr so generator can take lock
-    cat > "${REPLY}"
+    cat > "${SCRATCH}"
 
     # lock and copy file to stderr
-    cat "${REPLY}" \
+    cat "${SCRATCH}" \
         | cli::stderr::lock >&2 
 
     # cleanup
-    rm "${REPLY}"
+    rm "${SCRATCH}"
 }
 
 cli::stderr::cat::self_test() {

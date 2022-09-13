@@ -70,7 +70,7 @@ readonly CLI_REGEX_STRUCT_FIELD_NAME=${CLI_REGEX_VARIABLE_NAME}
 readonly CLI_REGEX_TYPE_NAME="^(map_of[[:space:]])*[a-z][a-z0-9_]*$"
 readonly CLI_REGEX_GLOBAL_NAME="^[A-Z][A-Z0-9_]*$"
 
-readonly -A CLI_KNOWN_COMMANDS=(
+readonly -A CLI_LOADER_KNOWN_COMMANDS=(
     ['cli loader']=
     ['cli dsl tokenize']=
     ['cli dsl parse']=
@@ -506,13 +506,13 @@ cli::loader::shim() {
         done
     fi
 
-    # CLI_NAME (e.g. cli)
-    [[ "${CLI_NAME}" ]] || cli::assert "Shim failed to define CLI_NAME."
-    [[ "${CLI_NAME}" =~ ${CLI_REGEX_NAME} ]] || cli::assert "Bad shim name."
+    # CLI_TOOL (e.g. cli)
+    [[ "${CLI_TOOL}" ]] || cli::assert "Shim failed to define CLI_TOOL."
+    [[ "${CLI_TOOL}" =~ ${CLI_REGEX_NAME} ]] || cli::assert "Bad shim name."
 
     # CLI_COMMAND (e.g. cli loader)
     cli::name::parse "$@"
-    local -a CLI_COMMAND=( "${CLI_NAME}" "${MAPFILE[@]}" )
+    local -a CLI_COMMAND=( "${CLI_TOOL}" "${MAPFILE[@]}" )
     shift ${#MAPFILE[@]}
 
     # CLI_SYMBOL (e.g. CLI_LOADER_CLI_LOADER)
@@ -525,10 +525,10 @@ cli::loader::shim() {
         CLI_GROUP="${CLI_COMMAND[@]: 0: $(( ${#CLI_COMMAND[@]} -1 )) }"
     fi
 
-    # CLI_COMMAND_NAME (e.g. CLI_LOADER_CLI_LOADER_NAME=loader)
-    local -n CLI_COMMAND_NAME="${CLI_SYMBOL}_NAME"
-    if [[ ! -v CLI_COMMAND_NAME ]]; then
-        CLI_COMMAND_NAME=${CLI_COMMAND[@]: -1}
+    # CLI_NAME (e.g. CLI_LOADER_CLI_LOADER_NAME=loader)
+    local -n CLI_NAME="${CLI_SYMBOL}_NAME"
+    if [[ ! -v CLI_NAME ]]; then
+        CLI_NAME=${CLI_COMMAND[@]: -1}
     fi
 
     # CLI_META (e.g. CLI_LOADER_CLI_LOADER_META)
@@ -539,7 +539,7 @@ cli::loader::shim() {
     if [[ ! -v CLI_TYPE ]]; then
         CLI_TYPE=command
 
-        if [[ ${CLI_COMMAND_NAME} == '.group' ]]; then
+        if [[ ${CLI_NAME} == '.group' ]]; then
             CLI_TYPE=group
         fi
     fi
@@ -600,11 +600,11 @@ cli::loader::shim() {
         while true; do
             case "$1" in
                 '---variables')
-                    echo "CLI_NAME=${CLI_NAME[@]}"
+                    echo "CLI_TOOL=${CLI_TOOL}"
                     echo "CLI_COMMAND=(" "${CLI_COMMAND[@]}" ")"
                     echo "CLI_SYMBOL=${CLI_SYMBOL}"
                     echo "CLI_GROUP=${CLI_GROUP}"
-                    echo "CLI_COMMAND_NAME=${CLI_COMMAND_NAME}"
+                    echo "CLI_NAME=${CLI_NAME}"
                     echo "CLI_META=${CLI_META}"
                     echo "CLI_TYPE=${CLI_TYPE}"
                     echo "CLI_SOURCE=${CLI_SOURCE}"
@@ -614,6 +614,14 @@ cli::loader::shim() {
                     echo "CLI_FUNCTION_SELF_TEST=${CLI_FUNCTION_SELF_TEST}"
                     echo "CLI_FUNCTION_HELP=${CLI_FUNCTION_HELP}"
                     ;;
+                '---cli')
+                    echo ${CLI_TOOL} ;;
+                '---command')
+                    echo ${CLI_COMMAND[@]} ;;
+                '---name')
+                    echo ${CLI_NAME} ;;
+                '---group')
+                    echo ${CLI_GROUP} ;;
                 '---type')
                     echo ${CLI_TYPE} ;;
                 '---which') 
@@ -651,7 +659,7 @@ cli::loader::main::prolog() {
 
     # establish frame
     # local -A CLI_SCOPE=(
-    #     [CLI_NAME]='string'
+    #     [CLI_TOOL]='string'
     #     [CLI_COMMAND]='array'
     #     [CLI_IMPORT]='array'
     # )
@@ -717,7 +725,7 @@ cli::loader::main::help() {
 
 cli::loader::main::dispatch() {
     
-    [[ -v CLI_NAME ]] || cli::assert
+    [[ -v CLI_TOOL ]] || cli::assert
     [[ -v CLI_TYPE ]] || cli::assert
     [[ -v CLI_COMMAND ]] || cli::assert
 
@@ -886,7 +894,7 @@ cli::loader::main::command() {
         done
     fi
 
-    if cli::set::test CLI_KNOWN_COMMANDS "${CLI_COMMAND[*]}"; then
+    if cli::set::test CLI_LOADER_KNOWN_COMMANDS "${CLI_COMMAND[*]}"; then
         cli::loader::main::command::known "$@"
         return
     fi
@@ -1053,6 +1061,7 @@ cli::loader::main() {
             declare -p CLI_SCOPE
         )
         declare -p CLI_LOADER_CACHE_IMPORTED
+        declare -p CLI_LOADER_KNOWN_COMMANDS
         declare -p CLI_LOADER_CACHE_COVERED
         declare -p CLI_LOADER_LOCK
 
@@ -1091,7 +1100,11 @@ cli::loader::self_test() (
 )
 
 cli::loader::main::imports() {
-    local FUNCTIONS=$(
+    # harvest imported inline functions by searching functions for
+    # calls to function that are not already defiend. Print the imports. 
+    # For example, a call to cli::foo_bar would be printed as "cli foo-bar".
+
+    local FUNCTIONS_REGEX=$(
         declare -F \
             | egrep 'cli::' \
             | awk '{ print $3 }' \
@@ -1105,7 +1118,7 @@ cli::loader::main::imports() {
         | egrep -o 'cli(::[0-9a-z_]+)+' \
         | cat - <(echo 'cli::shim::shebang') \
         | sort -u \
-        | egrep -v "${FUNCTIONS}" \
+        | egrep -v "${FUNCTIONS_REGEX}" \
         | sed 's/::/ /g' \
         | sed 's/_/-/g'
 }
@@ -1123,7 +1136,7 @@ cli::loader::main::shim() {
     # list of dependencies
     local -a DEPENDENCY=( "${CLI_LOADER_CLI_LOADER_IMPORT[@]}" )
 
-    # source dependencies
+    # source transitive set of dependencies (prune "cli core")
     local -i INDEX
     for (( INDEX=0; INDEX<${#DEPENDENCY[@]}; INDEX++ )); do
         local COMMAND="${DEPENDENCY[${INDEX}]}"

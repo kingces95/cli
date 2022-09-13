@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::dsl::parse::help() {
     cat << EOF
@@ -216,7 +216,7 @@ cli::dsl::parse::main() {
 }
 
 cli::dsl::parse::self_test() {
-    diff <(cli dsl sample -h \
+    diff <(cli sample kitchen-sink -h \
             | cli dsl tokenize \
             | cli dsl parse
         ) \

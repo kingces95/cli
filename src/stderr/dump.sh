@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli stderr cat"
     "cli process signal"
@@ -39,17 +39,21 @@ cli::stderr::dump::self_test() (
     set -m
 
     cli::temp::file
-    local FILE="${REPLY}"
+    local SCRATCH="${REPLY}"
 
     assert() {
         cli::stderr::message $@ | cli::stderr::dump
     }
 
     # assert multistage failure does not interleave
-    ! ( assert a | assert b ) 2> "${FILE}" || cli::assert
-    egrep -q '^(a+b+|b+a+)$' < <(cat "${FILE}" | tr -d '\n') || cli::assert
+    ! ( assert a | assert b ) 2> "${SCRATCH}" \
+        || cli::assert 'Expected pipeline to report control-c error.'
+    egrep -q '^(a+b+|b+a+)$' < <(cat "${SCRATCH}" | tr -d '\n') \
+        || cli::assert 'Interleave detected.'
 
     # assert control-c kills pipeline
-    ! ( assert a | { read; assert b; } ) 2> "${FILE}" || cli::assert
-    egrep -q '^a+$' < "${FILE}" || cli::assert
+    ! ( assert a | { read; assert b; } ) 2> "${SCRATCH}" \
+        || cli::assert 'Control-c failed to kill pipeline.'
+    egrep -q '^a+$' < "${SCRATCH}" \
+        || cli::assert 'Expected error from first stage of pipeline.'
 )

@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::dsl::tokenize::help() {
     cat << EOF
@@ -173,7 +173,7 @@ cli::dsl::tokenize::main() {
 }
 
 cli::dsl::tokenize::self_test() (    
-    diff <(cli dsl sample -h \
+    diff <(cli sample kitchen-sink -h \
             | cli dsl tokenize \
         ) \
         <(cat <<-EoF

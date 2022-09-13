@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli path make-absolute"
     "cli path name"
@@ -14,7 +14,7 @@ Summary
     Shim to execute a command invoked as a file.
 
 Details
-    The variable CLI_NAME must be declared and set to the name of the shim.
+    The variable CLI_TOOL must be declared and set to the name of the shim.
 
     Argument \$1 is the path to the command file. The remaining positional 
     arguments are to be passed to the command.
@@ -31,14 +31,14 @@ cli::shim::shebang() {
     cli::path::make_absolute "${SOURCE_PATH_RELATIVE}"
     local SOURCE_PATH="${REPLY}"
 
-    # CLI_NAME
-    [[ "${CLI_NAME}" ]] \
-        || cli::assert "Shebang failed to declare 'CLI_NAME'." 
+    # CLI_TOOL
+    [[ "${CLI_TOOL}" ]] \
+        || cli::assert "Shebang failed to declare 'CLI_TOOL'." 
 
     # ROOT_DIR
-    cli::shim::source "${CLI_NAME}" \
-        || cli::assert "Shebang failed to find shim for cli '${CLI_NAME}'."
-    local ROOT_DIR=$("${CLI_NAME}" ---root)
+    cli::shim::source "${CLI_TOOL}" \
+        || cli::assert "Shebang failed to find shim for cli '${CLI_TOOL}'."
+    local ROOT_DIR=$("${CLI_TOOL}" ---root)
 
     # REL_PATH
     local REL_PATH="${SOURCE_PATH##"${ROOT_DIR}/"}"
@@ -47,7 +47,7 @@ cli::shim::shebang() {
 
     # COMMAND
     local IFS=/
-    local -a COMMAND=( ${CLI_NAME} ${REL_PATH} )
+    local -a COMMAND=( ${CLI_TOOL} ${REL_PATH} )
     IFS=${CLI_IFS}
 
     set "${COMMAND[@]}" "$@"
@@ -60,7 +60,7 @@ cli::shim::shebang() {
     unset ROOT_DIR
 
     # post conditions
-    [[ -v CLI_NAME ]] || cli::assert
+    [[ -v CLI_TOOL ]] || cli::assert
 
     "$@" 
 }
@@ -90,6 +90,6 @@ cli::shim::shebang::self_test() (
     PATH="${DIR}:${PATH}"
 
     # discover, source, and invoke the shim with the command
-    diff <(CLI_NAME=foo cli::shim::shebang "${FOO_BAR}" -- a0 a1 a2) - <<< 'bar -- a0 a1 a2' \
+    diff <(CLI_TOOL=foo cli::shim::shebang "${FOO_BAR}" -- a0 a1 a2) - <<< 'bar -- a0 a1 a2' \
         || cli::assert
 )

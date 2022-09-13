@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli bash function is-declared"
     "cli bash which"
@@ -20,7 +20,7 @@ Description
 
     When sourced the shim must 1) declare CLI_SHIM_ROOT_DIR_XXX where XXX is 
     the name of the cli and the value of the variable is the root directory
-    of commands and 2) declare a function which sets CLI_NAME and then calls
+    of commands and 2) declare a function which sets CLI_TOOL and then calls
     cli::name with the user supplied arguments.
 EOF
 }

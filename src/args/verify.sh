@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli args check"
     "cli args resolve"
@@ -41,7 +41,7 @@ Examples
     cli args tokenize -- --header foo --help \\
         | cli args parse \\
         | cli args check -- \\
-            <( cli dsl sample ---load )
+            <( cli sample kitchen-sink ---load )
 EOF
 }
 
@@ -182,10 +182,10 @@ cli::args::verify::self_test() (
 
     # load metadata
     cli::core::variable::read ${ARG_META} < <( 
-        cli dsl sample ---load 
+        cli sample kitchen-sink ---load 
     )
 
-    # cli dsl sample
+    # cli sample kitchen-sink
     local COMMAND_LINE='--id 42 -f banana -h --header Foo -- a0 a1'
     diff <(
         # sample command line

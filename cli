@@ -5,6 +5,6 @@ cli() {
         return
     fi
 
-    local CLI_NAME="${FUNCNAME}"
+    local CLI_TOOL="${FUNCNAME}"
     cli::loader::shim "$@"
 }

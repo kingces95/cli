@@ -1,12 +1,19 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
-cli::dsl::simple::help() {
+cli::sample::kitchen_sink::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]} 
 
 Summary    
     Sample command to test Domain Specific Language.
+
+Arguments when --id
+    --id -i                     : Id of the thing.
+
+Arguments when --name
+    --name                      : Name of the thing.
+    --namespace                 : Namespace of the thing.
 
 Arguments
     --run-as                    : Run as the specified user.
@@ -19,16 +26,12 @@ Arguments
     --my-props -p  [Properties] : A map.
     --                          : Arbitrary arguments.
 
-Global Arguments
-    --help -h            [Flag] : Show this message and exit.
-    --self-test          [Flag] : Runs a self test.
-
 Examples
     --ignore-me -i   [Required] : Default 10.
 EOF
 }
 
-cli::dsl::simple::main() {
+cli::sample::kitchen_sink::main() { 
     echo "${ARG_HEADER}"
     if [[ "${ARG_DUMP}" == 'true' ]]; then
         declare -p
@@ -40,6 +43,6 @@ cli::dsl::simple::main() {
     fi
 }
 
-cli::dsl::simple::self_test() {
+cli::sample::kitchen_sink::self_test() {
     return
 }   

@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli bash variable declare-enum"
 )
@@ -65,8 +65,8 @@ cli::dsl::main() {
 }
 
 cli::dsl::self_test() {
-    ( cli dsl simple --self-test )
-    ( cli dsl sample --self-test )
+    ( cli sample simple --self-test )
+    ( cli sample kitchen-sink --self-test )
     ( cli dsl tokenize --self-test )
     ( cli dsl parse --self-test )
     ( cli dsl meta --self-test )

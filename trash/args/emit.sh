@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli core variable declare"
     "cli core variable put"
@@ -124,25 +124,25 @@ cli::args::emit::self_test() {
 
     cli args tokenize -- --id 42 -f orange -h --header Foo --my-list a b --my-props a=x b=y -- a0 a1 \
         | cli args parse -- <({
-                cli dsl sample ---load \
+                cli sample kitchen-sink ---load \
                     | awk '$1 == "alias" { $1=""; print }'
             }) \
         | cli args initialize -- <({
-                cli dsl sample ---load \
+                cli sample kitchen-sink ---load \
                     | awk '$1 != "alias" && $1 != "bash_name" { $1=""; print }' \
                     | awk '$1 == "id" { $1=""; print }'
             }) \
         | ${CLI_COMMAND[@]} -- <({
-                cli dsl sample ---load \
+                cli sample kitchen-sink ---load \
                     | awk '$1 != "alias" { $1=""; print }' \
                     | awk '$1 =="id" && $2 == "type" { print $3, $4 }'
             }) <({
-                source <(cli dsl sample ---bgen | grep CLI_META_GROUP_0_TYPE)
+                source <(cli sample kitchen-sink ---bgen | grep CLI_META_GROUP_0_TYPE)
                 for field in ${!CLI_META_GROUP_0_TYPE[@]}; do
                     echo ${field} "${CLI_META_GROUP_0_TYPE[${field}]}"
                 done
             }) <({
-                source <(cli dsl sample ---bgen | grep CLI_META_BASH_NAME)
+                source <(cli sample kitchen-sink ---bgen | grep CLI_META_BASH_NAME)
                 for field in ${!CLI_META_BASH_NAME[@]}; do
                     echo ${field} "${CLI_META_BASH_NAME[${field}]}"
                 done

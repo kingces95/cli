@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli core type to-bash"
     "cli core variable declare"
@@ -87,7 +87,7 @@ cli::dsl::load() {
 }
 
 cli::dsl::load::self_test() (
-    diff <(cli dsl simple -h \
+    diff <(cli sample simple -h \
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \
@@ -114,7 +114,7 @@ cli::dsl::load::self_test() (
 		group * allow fruit banana
 		EOF
 
-    diff <(cli dsl sample -h \
+    diff <(cli sample kitchen-sink -h \
         | cli dsl tokenize \
         | cli dsl parse \
         | cli dsl meta \

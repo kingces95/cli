@@ -1,6 +1,6 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
-cli::eg::simplest::help() {
+cli::sample::simplest::help() {
     cat << EOF
 Command
     ${CLI_COMMAND[@]} 
@@ -10,10 +10,10 @@ Summary
 EOF
 }
 
-cli::eg::simplest::main() {
+cli::sample::simplest::main() {
     :    
 }
 
-cli::eg::simplest::self_test() {
+cli::sample::simplest::self_test() {
     return
 }   

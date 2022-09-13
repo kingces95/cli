@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::stderr::lock::help() {
     cat << EOF
@@ -6,10 +6,10 @@ Command
     ${CLI_COMMAND[@]}
     
 Summary
-    Blocks until taking an exclusive lock on path then copies the stdin to stdout.
+    Atomic copy of stdin to stdout.
 
 Description
-    First positional argument is a path to the file to use as lock.
+    First positional argument is the path to the lock file.
 EOF
 }
 

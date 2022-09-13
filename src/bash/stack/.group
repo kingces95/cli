@@ -1,4 +1,4 @@
-#!/usr/bin/env CLI_NAME=cli bash-cli-part
+#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::bash::stack::help() {
     cat << EOF
@@ -17,5 +17,5 @@ cli::bash::stack::self_test() {
     echo cli bash stack call --self-test
     echo cli bash stack process --self-test
     echo cli bash stack trace --self-test
-    cli bash stack hiddent-attribute --self-test
+    cli bash stack hidden-attribute --self-test
 }
