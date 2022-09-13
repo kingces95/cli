@@ -42,12 +42,10 @@ CLI Type | Bash Type | Name | Description
 [Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#clisymbol) | Backing metadata variable name prefix |
 
 ## Constant Variables
----
 
 ### `CLI_IFS`
 
 ## Frame Variables
----
 Frame variables are mutable bash variables that provide information about the command being executed. 
 
 
@@ -72,7 +70,6 @@ The portion of the command line that identifies the command group.
 For example, if the command line is `cli temp file --help`, then the group is `cli temp`.
 
 ## Frame Metadata Variables
----
 Frame variables are mutable bash variables that provide information about the command being executed. Frame metadata variables reference an immutable [backing variables](#backing-variables). 
 
 If a command calls another command then, the loader will update the frame metadata variable references to the corresponding backing variables for the called command.
@@ -111,7 +108,6 @@ Switch `---cache` will reflect on the path to a command's cache directory file. 
 Prefix of the backing variables holding metadata describing the command. For example, the `CLI_SYMBOL` for command `cli list` is `CLI_LOADER_CLI_LIST`. 
 
 ## Backing Variables 
----
 Backing variables are immutable bash variables. Each [frame variable](#frame-variables) references a backing variable. The name of the variable is composed of a prefix and suffix. Each command has a unix prefix that is stored in `CLI_SYMBOL`. 
 
 Each prefix begins with `CLI_LOADER` followed by the command. For example, `cli list` has the prefix `CLI_LOADER_CLI_LIST`. 
@@ -119,7 +115,6 @@ Each prefix begins with `CLI_LOADER` followed by the command. For example, `cli 
 The suffix corresponds to a [frame variable](#frame-variables). For example, command `cli list` has a frame variable `CLI_TYPE` which references a backing variable with suffix `TYPE` or, putting it all together, `CLI_LOADER_CLI_LIST_TYPE`. 
 
 ## Loader Variables
----
 
 ### `CLI_LOADER_LOCK`
 ### `CLI_LOADER_CACHE_IMPORTED`
