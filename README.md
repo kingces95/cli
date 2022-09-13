@@ -23,23 +23,23 @@ A command executes in an environment. The environment is defined by a set of var
 ## Summary
 The following lists all environment variables. Examples are for the command line `cli sample kitchen-sink --help`.
 
-Type | Bash Type | Name | Description | Example | Option
---- | --- | --- | --- | --- | ---
-[Constant](#constant-variables) | string | [CLI_IFS](#cliifs) | Original IFS value | n/a | n/a
-[Frame](#frame-variables) | array | [CLI_COMMAND](#clicommand) | Full command name | `cli sample kitchen-sink` | `---command`
-[Frame](#frame-variables) | string | [CLI_NAME](#clicommandname) | Command name | `kitchen-sink` |  `---name`
-[Frame](#frame-variables) | string | [CLI_TOOL](#cliname) | Tool name | `cli` |  `---cli`
-[Frame](#frame-variables) | string | [CLI_GROUP](#cligroup) | Parent group full name | `cli sample` |  `---group`
-[Metadata](#frame-metadata-variables) | string | [CLI_META](#climeta) | Metadata harvested from help | | 
-[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#clitype) | Type; `command`, `inline`, or `group` | | `---type`
-[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#clisource) | Path to command source file | | `---source`
-[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#clicache) | Path to command cache directory | | `---cache`
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_MAIN](#clifunctionmain) | Command main function name | `cli::sample::kitchen_sink::main` | 
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_INLINE](#clifunctioninline) | Command inline function name | `cli::sample::kitchen_sink::inline` | 
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_SELF_TEST](#clifunctionselftest) | Command self-test function name | `cli::sample::kitchen_sink::self_test` | 
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_HELP](#clifunctionhelp) | Command help function name | `cli::sample::kitchen_sink::help` | 
-[Metadata](#frame-metadata-variables) | array | [CLI_IMPORT](#cliimport) | Imported commands | | 
-[Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#clisymbol) | Backing metadata variable name prefix | | 
+CLI Type | Bash Type | Name | Description
+--- | --- | --- | ---
+[Constant](#constant-variables) | string | [CLI_IFS](#cliifs) | Original IFS value
+[Frame](#frame-variables) | array | [CLI_COMMAND](#clicommand) | Full command name
+[Frame](#frame-variables) | string | [CLI_NAME](#clicommandname) | Command name
+[Frame](#frame-variables) | string | [CLI_TOOL](#cliname) | Tool name
+[Frame](#frame-variables) | string | [CLI_GROUP](#cligroup) | Parent group full name
+[Metadata](#frame-metadata-variables) | string | [CLI_META](#climeta) | Metadata harvested from help |
+[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#clitype) | Type; `command`, `inline`, or `group`
+[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#clisource) | Path to command source file
+[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#clicache) | Path to command cache directory
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_MAIN](#clifunctionmain) | Command main function name
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_INLINE](#clifunctioninline) | Command inline function name
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_SELF_TEST](#clifunctionselftest) | Command self-test function name
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_HELP](#clifunctionhelp) | Command help function name
+[Metadata](#frame-metadata-variables) | array | [CLI_IMPORT](#cliimport) | Imported commands |
+[Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#clisymbol) | Backing metadata variable name prefix |
 
 ## Constant Variables
 ---
