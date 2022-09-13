@@ -25,21 +25,21 @@ The following lists all environment variables. Examples are for the command line
 
 CLI Type | Bash Type | Name | Description
 --- | --- | --- | ---
-[Constant](#constant-variables) | string | [CLI_IFS](#cliifs) | Original IFS value
-[Frame](#frame-variables) | array | [CLI_COMMAND](#clicommand) | Full command name
-[Frame](#frame-variables) | string | [CLI_NAME](#clicommandname) | Command name
-[Frame](#frame-variables) | string | [CLI_TOOL](#cliname) | Tool name
-[Frame](#frame-variables) | string | [CLI_GROUP](#cligroup) | Parent group full name
-[Metadata](#frame-metadata-variables) | string | [CLI_META](#climeta) | Metadata harvested from help |
-[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#clitype) | Type; `command`, `inline`, or `group`
-[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#clisource) | Path to command source file
-[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#clicache) | Path to command cache directory
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_MAIN](#clifunctionmain) | Command main function name
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_INLINE](#clifunctioninline) | Command inline function name
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_SELF_TEST](#clifunctionselftest) | Command self-test function name
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_HELP](#clifunctionhelp) | Command help function name
-[Metadata](#frame-metadata-variables) | array | [CLI_IMPORT](#cliimport) | Imported commands |
-[Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#clisymbol) | Backing metadata variable name prefix |
+[Constant](#constant-variables) | string | [CLI_IFS](#cli_ifs) | Original IFS value
+[Frame](#frame-variables) | array | [CLI_COMMAND](#cli_command) | Full command name
+[Frame](#frame-variables) | string | [CLI_NAME](#cli_commandname) | Command name
+[Frame](#frame-variables) | string | [CLI_TOOL](#cli_name) | Tool name
+[Frame](#frame-variables) | string | [CLI_GROUP](#cli_group) | Parent group full name
+[Metadata](#frame-metadata-variables) | string | [CLI_META](#cli_meta) | Metadata harvested from help |
+[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#cli_type) | Type; `command`, `inline`, or `group`
+[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#cli_source) | Path to command source file
+[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#cli_cache) | Path to command cache directory
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_MAIN](#cli_function_main) | Command main function name
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_INLINE](#cli_function_inline) | Command inline function name
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_SELF_TEST](#cli_function_self_test) | Command self-test function name
+[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_HELP](#cli_function_help) | Command help function name
+[Metadata](#frame-metadata-variables) | array | [CLI_IMPORT](#cli_import) | Imported commands |
+[Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#cli_symbol) | Backing metadata variable name prefix |
 
 ## Constant Variables
 
@@ -70,7 +70,7 @@ The portion of the command line that identifies the command group.
 For example, if the command line is `cli temp file --help`, then the group is `cli temp`.
 
 ## Frame Metadata Variables
-Frame variables are mutable bash variables that provide information about the command being executed. Frame metadata variables reference an immutable [backing variables](#backing-variables). 
+Frame variables are mutable bash variables that provide information about the command being executed. Every frame metadata variable references an immutable [backing variable](#backing-variables). 
 
 If a command calls another command then, the loader will update the frame metadata variable references to the corresponding backing variables for the called command.
 
