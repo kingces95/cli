@@ -17,33 +17,36 @@ Environment Variables
     CLI_META_
 ```
 
+# Constant Variables
+Constant values are readonly bash variables not associated with any specific command.
+
+### `CLI_IFS`
+The original value of `IFS`.
+
 # Environment Variables
 A command executes in an environment. The environment is defined by a set of variables prefixed with `CLI`. The set is divided into mutable [Frame Variables](#frame-variables) and immutable [Backing Variables](#backing-variables).
+
 
 ## Summary
 The following lists all environment variables. Examples are for the command line `cli sample kitchen-sink --help`.
 
-CLI Type | Bash Type | Name | Description
---- | --- | --- | ---
-[Constant](#constant-variables) | string | [CLI_IFS](#cli_ifs) | Original IFS value
-[Frame](#frame-variables) | array | [CLI_COMMAND](#cli_command) | Full command name
-[Frame](#frame-variables) | string | [CLI_NAME](#cli_commandname) | Command name
-[Frame](#frame-variables) | string | [CLI_TOOL](#cli_name) | Tool name
-[Frame](#frame-variables) | string | [CLI_GROUP](#cli_group) | Parent group full name
+CLI Type | Bash Type | Name | Description | Option
+--- | --- | --- | --- | ---
+[Frame](#frame-variables) | array | [CLI_COMMAND](#cli_command) | Full command name | `---command`
+[Frame](#frame-variables) | string | [CLI_NAME](#cli_name) | Command name | `---name`
+[Frame](#frame-variables) | string | [CLI_TOOL](#cli_tool) | Tool name | `---tool`
+[Frame](#frame-variables) | string | [CLI_GROUP](#cli_group) | Parent group full name | `---group`
+[Frame](#frame-variables) | string | [CLI_TOOL_PATH](#cli_tool_path) | Absolute path to the tool | `---tool-name`
 [Metadata](#frame-metadata-variables) | string | [CLI_META](#cli_meta) | Metadata harvested from help |
-[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#cli_type) | Type; `command`, `inline`, or `group`
-[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#cli_source) | Path to command source file
-[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#cli_cache) | Path to command cache directory
+[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#cli_type) | Type; `command`, `inline`, or `group` | `---type`
+[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#cli_source) | Path to command source file | `---source`
+[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#cli_cache) | Path to command cache directory | `---cache`
 [Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_MAIN](#cli_function_main) | Command main function name
 [Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_INLINE](#cli_function_inline) | Command inline function name
 [Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_SELF_TEST](#cli_function_self_test) | Command self-test function name
 [Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_HELP](#cli_function_help) | Command help function name
 [Metadata](#frame-metadata-variables) | array | [CLI_IMPORT](#cli_import) | Imported commands |
 [Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#cli_symbol) | Backing metadata variable name prefix |
-
-## Constant Variables
-
-### `CLI_IFS`
 
 ## Frame Variables
 Frame variables are mutable bash variables that provide information about the command being executed. 
@@ -63,6 +66,9 @@ For example, if the command line is `cli list --help`, then the command name is 
 The portion of the command line that is the name of the cli tool. 
 
 For example, if the command line is `cli list --help`, then the name is `cli`.
+
+### `CLI_TOOL_PATH` 
+The absolute path to the tool. 
 
 ### `CLI_GROUP` 
 The portion of the command line that identifies the command group. 

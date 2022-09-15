@@ -30,15 +30,15 @@ cli::shim::which() {
 
     cli::shim::source "${SHIM}" || return 1
 
-    REPLY=$( ${SHIM} ---root )
+    local ROOT_DIR=$( ${SHIM} ---root )
     
-    [[ -d "${REPLY}" ]] \
-        || cli::assert "Shim '${SHIM} ---root' returned '${REPLY}' which is not a directory."
+    [[ -d "${ROOT_DIR}" ]] \
+        || cli::assert "Shim '${SHIM} ---root' returned '${ROOT_DIR}' which is not a directory."
 
     MAPFILE=()
 
     local IFS=/
-    REPLY="${REPLY}/$*"
+    REPLY="${ROOT_DIR}/$*"
     MAPFILE+=( "${REPLY}" )
 
     # probe for .sh

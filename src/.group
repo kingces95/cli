@@ -15,7 +15,7 @@ cli::main() {
 }
 
 cli::self_test() {
-
+    
     cli args .group --self-test 
     cli attribute .group --self-test
     cli bash .group --self-test

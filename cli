@@ -1,10 +1,36 @@
 #!/usr/bin/env bash-cli-shim
-cli() { 
-    if [[ "${1-}" == '---root' ]]; then
-        echo "${BASH_SOURCE%/*}/src"
-        return
+cli() {
+
+    # CLI_TOOL
+    local -n CLI_TOOL="CLI_LOADER_SHIM_NAME_CLI"
+    if [ ! -v CLI_TOOL ]; then
+        readonly CLI_LOADER_SHIM_NAME_CLI="${FUNCNAME}"
     fi
 
-    local CLI_TOOL="${FUNCNAME}"
+    # CLI_TOOL_PATH
+    local -n CLI_TOOL_PATH="CLI_LOADER_SHIM_WHICH_CLI"
+    if [ ! -v CLI_TOOL_PATH ]; then
+        readonly CLI_LOADER_SHIM_WHICH_CLI="$( cd $(dirname ${BASH_SOURCE}); pwd)/${CLI_TOOL}"
+    fi
+
+    # CLI_ROOT
+    local -n CLI_ROOT="CLI_LOADER_SHIM_ROOT_CLI"
+    if [ ! -v CLI_ROOT ]; then
+        readonly CLI_LOADER_SHIM_ROOT_CLI="$(dirname ${CLI_TOOL_PATH})/src"
+    fi
+    
+    while true; do
+        case "$1" in
+            '---tool')
+                echo "${CLI_TOOL}" ;;
+            '---tool-path')
+                echo "${CLI_TOOL_PATH}" ;;
+            '---root')
+                echo "${CLI_ROOT}" ;;
+            *) break ;;
+        esac
+        return
+    done
+
     cli::loader::shim "$@"
 }

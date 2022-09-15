@@ -90,6 +90,6 @@ cli::shim::shebang::self_test() (
     PATH="${DIR}:${PATH}"
 
     # discover, source, and invoke the shim with the command
-    diff <(CLI_TOOL=foo cli::shim::shebang "${FOO_BAR}" -- a0 a1 a2) - <<< 'bar -- a0 a1 a2' \
+    diff <(local CLI_TOOL=foo; cli::shim::shebang "${FOO_BAR}" -- a0 a1 a2) - <<< 'bar -- a0 a1 a2' \
         || cli::assert
 )

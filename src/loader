@@ -304,13 +304,13 @@ cli::loader::cache::test() {
 
 # loader core
 cli::loader::help() {
-    cat << EOF
-Command
-    ${CLI_COMMAND[@]}
-    
-Summary
-    Loader library.
-EOF
+    cat <<-EOF
+		Command
+		    ${CLI_COMMAND[@]}
+		    
+		Summary
+		    Loader library.
+		EOF
 }
 
 cli::loader::help::global() {
@@ -344,7 +344,6 @@ cli::loader::help::extended() {
     echo '    ---args-tokenize [Flag] : ....'
     echo '    ---args-load     [Flag] : ....'
     echo '    ---args          [Flag] : ....'
-    echo '    ---cli           [Flag] : ....'
     echo '    ---read          [Flag] : ....'
 }
 
@@ -402,7 +401,7 @@ cli::loader::backpatch() {
     unset -f "$1"
 
     # backpatch stub
-    cli::loader::source::exports
+    cli::loader::exports::source
 
     cli::bash::function::is_declared "$1" \
         || cli::assert "Failed to backpatch stub '$1'."
@@ -424,7 +423,7 @@ cli::loader::import() {
 
     # re-source intrinisic functions to populate loader variables
     if cli::set::test CLI_LOADER_CLI_LOADER_INTRINSIC "${CLI_COMMAND[@]}"; then
-        cli::loader::source::exports
+        cli::loader::exports::source
         return
     fi
 
@@ -458,10 +457,10 @@ cli::loader::import() {
     fi
 
     # source the import!
-    cli::loader::source::exports
+    cli::loader::exports::source
 }
 
-cli::loader::source::exports() {
+cli::loader::exports::source() {
 
     if ! cli::loader::cache::test 'exports.sh'; then 
         ( ${CLI_COMMAND[@]} ---exports > /dev/null )
@@ -472,16 +471,15 @@ cli::loader::source::exports() {
 }
 
 cli::loader::source() {
-    cli::path::make_absolute "$1"
-    set "${REPLY}"
+    local SOURCE="$1"
+    shift
 
-    if ! cli::set::deflower CLI_LOADER_CACHE_SOURCED_PATHS "$1"; then
+    if ! cli::set::deflower CLI_LOADER_CACHE_SOURCED_PATHS "${SOURCE}"; then
         return
     fi
 
-    [[ -f "$1" ]] || cli::assert "File missing. Cannot source path '$1'."
-    # echo source "$1" >&2
-    source "$1"
+    [[ -f "${SOURCE}" ]] || cli::assert "File missing. Cannot source path '${SOURCE}'."
+    source "${SOURCE}"
 }
 
 cli::loader::shim() {
@@ -510,29 +508,56 @@ cli::loader::shim() {
     [[ "${CLI_TOOL}" ]] || cli::assert "Shim failed to define CLI_TOOL."
     [[ "${CLI_TOOL}" =~ ${CLI_REGEX_NAME} ]] || cli::assert "Bad shim name."
 
+    if [[ ! -v CLI_DEPTH ]]; then
+        local -i CLI_DEPTH=0
+    else
+        local -i CLI_DEPTH=$(( CLI_DEPTH + 1 ))
+    fi
+
     # CLI_COMMAND (e.g. cli loader)
     cli::name::parse "$@"
-    local -a CLI_COMMAND=( "${CLI_TOOL}" "${MAPFILE[@]}" )
+    local -a "CLI_COMMAND_${CLI_DEPTH}"
+    local -n CLI_COMMAND="CLI_COMMAND_${CLI_DEPTH}"
+    CLI_COMMAND=( "${CLI_TOOL}" "${MAPFILE[@]}" )
+    readonly "CLI_COMMAND_${CLI_DEPTH}"
     shift ${#MAPFILE[@]}
 
     # CLI_SYMBOL (e.g. CLI_LOADER_CLI_LOADER)
     cli::name::to_symbol "${CLI_COMMAND[@]}"
-    local CLI_SYMBOL="CLI_LOADER_${REPLY}"
+    local -r "CLI_SYMBOL_${CLI_DEPTH}"="CLI_LOADER_${REPLY}"
+    local -n CLI_SYMBOL="CLI_SYMBOL_${CLI_DEPTH}"
 
     # CLI_GROUP (e.g. CLI_LOADER_CLI_LOADER_GROUP=cli)
     local -n CLI_GROUP="${CLI_SYMBOL}_GROUP"
     if [[ ! -v CLI_GROUP ]]; then
         CLI_GROUP="${CLI_COMMAND[@]: 0: $(( ${#CLI_COMMAND[@]} -1 )) }"
+        readonly "${CLI_SYMBOL}_GROUP"
     fi
 
     # CLI_NAME (e.g. CLI_LOADER_CLI_LOADER_NAME=loader)
     local -n CLI_NAME="${CLI_SYMBOL}_NAME"
     if [[ ! -v CLI_NAME ]]; then
         CLI_NAME=${CLI_COMMAND[@]: -1}
+        readonly "${CLI_SYMBOL}_NAME"
     fi
 
     # CLI_META (e.g. CLI_LOADER_CLI_LOADER_META)
-    local CLI_META="${CLI_SYMBOL}_META"
+    local -r "CLI_META_${CLI_DEPTH}"="${CLI_SYMBOL}_META"
+    local -n CLI_META="CLI_META_${CLI_DEPTH}"
+
+    # CLI_SOURCE (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
+    local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
+    if [[ ! -v CLI_SOURCE ]]; then
+        cli::shim::which "${CLI_COMMAND[@]}" \
+            || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
+        CLI_SOURCE="${REPLY}"
+
+        # file is executable if it exists
+        [[ ! -f "${CLI_SOURCE}" || -x "${CLI_SOURCE}" ]] \
+            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
+     
+        readonly "${CLI_SYMBOL}_SOURCE"
+    fi
 
     # CLI_TYPE (e.g. CLI_LOADER_CLI_LOADER_TYPE=command)
     local -n CLI_TYPE="${CLI_SYMBOL}_TYPE"
@@ -542,26 +567,16 @@ cli::loader::shim() {
         if [[ ${CLI_NAME} == '.group' ]]; then
             CLI_TYPE=group
         fi
-    fi
-
-    # CLI_SOURCE (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
-    local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
-    if [[ ! -v CLI_SOURCE ]]; then
-        cli::shim::which "${CLI_COMMAND[@]}" \
-            || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
-        CLI_SOURCE="${REPLY}"
 
         if [[ "${CLI_SOURCE}" == *.sh ]]; then
             CLI_TYPE=inline
         fi
 
+        readonly "${CLI_SYMBOL}_TYPE"
+
         # file exists unless its a group in which case it's optional
         [[ ${CLI_TYPE} == group || -f "${CLI_SOURCE}" ]] \
             || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' does not exist."
-
-        # file is executable if it exists
-        [[ ! -f "${CLI_SOURCE}" || -x "${CLI_SOURCE}" ]] \
-            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
     fi
 
     # CLI_CACHE (e.g. CLI_LOADER_CLI_LOADER_CACHE)
@@ -569,6 +584,7 @@ cli::loader::shim() {
     if [[ ! -v CLI_CACHE ]]; then
         cli::cache::path "${CLI_SOURCE}"
         CLI_CACHE="${REPLY}"
+        readonly "${CLI_SYMBOL}_CACHE"
     fi
 
     # CLI_FUNCTION, MAIN, INLINE, and SELF_TEST
@@ -583,17 +599,18 @@ cli::loader::shim() {
         else
             cli::name::to_function "${CLI_COMMAND[@]}"
         fi
+       
+        CLI_FUNCTION_MAIN="${REPLY}::main"
+        readonly "${CLI_SYMBOL}_FUNCTION_MAIN"
 
         CLI_FUNCTION_INLINE="${REPLY}"
-        CLI_FUNCTION_MAIN="${REPLY}::main"
-        CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
-        CLI_FUNCTION_HELP="${REPLY}::help"
-    fi
+        readonly "${CLI_SYMBOL}_FUNCTION_INLINE"
 
-    # CLI_IMPORT
-    local -n CLI_IMPORT="${CLI_SYMBOL}_IMPORT"
-    if [[ ! -v CLI_IMPORT ]]; then
-        declare -ag "${CLI_SYMBOL}_IMPORT+=()"
+        CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
+        readonly "${CLI_SYMBOL}_FUNCTION_SELF_TEST"
+        
+        CLI_FUNCTION_HELP="${REPLY}::help"
+        readonly "${CLI_SYMBOL}_FUNCTION_HELP"
     fi
 
     if [[ "${1-}" == ---* ]]; then
@@ -614,8 +631,6 @@ cli::loader::shim() {
                     echo "CLI_FUNCTION_SELF_TEST=${CLI_FUNCTION_SELF_TEST}"
                     echo "CLI_FUNCTION_HELP=${CLI_FUNCTION_HELP}"
                     ;;
-                '---cli')
-                    echo ${CLI_TOOL} ;;
                 '---command')
                     echo ${CLI_COMMAND[@]} ;;
                 '---name')
@@ -646,11 +661,6 @@ cli::loader::shim() {
         done
     fi
 
-    cli::loader::main::prolog "$@"
-}
-
-cli::loader::main::prolog() {
-
     # $0
     BASH_ARGV0="${CLI_SOURCE}"
 
@@ -669,8 +679,11 @@ cli::loader::main::prolog() {
 
     cli::loader::import_parent
 
-    # unset -f help
-    # unset -f self_test
+    # CLI_IMPORT
+    local -n CLI_IMPORT="${CLI_SYMBOL}_IMPORT"
+    if [[ ! -v CLI_IMPORT ]]; then
+        declare -ag "${CLI_SYMBOL}_IMPORT+=()"
+    fi
 
     # source the code!
     cli::loader::source "${CLI_SOURCE}"
@@ -685,6 +698,10 @@ cli::loader::main::prolog() {
     if [[ "${1-}" == ---* ]]; then
         while true; do
             case "$1" in
+                '---env')
+                    declare -p ;;
+                '---imports')
+                    for i in "${CLI_IMPORT[@]}"; do echo "${i}"; done ;;
                 '---exports')
                     ! cli::loader::cache::test 'exports.sh' || cli::assert
                     cli::loader::main::dispatch \
@@ -732,19 +749,6 @@ cli::loader::main::dispatch() {
     # help
     if cli::loader::main::help "$@"; then
         return
-    fi
-
-    if [[ "${1-}" == ---* ]]; then
-        while true; do
-            case "$1" in
-                '---env')
-                    declare -p ;;
-                '---imports')
-                    for i in "${CLI_IMPORT[@]}"; do echo "${i}"; done ;;
-                *) break ;;
-            esac 
-            return
-        done
     fi
 
     # self test
@@ -990,8 +994,6 @@ cli::loader::main::command::dispatch() {
                 ;; # cli ::write CLI_ARGS ;;
             '---args')
                 cli::dump 'ARG_*' ;;
-            '---cli')
-                cli::dump 'CLI_*' ;;
             '---read')
                 shift
                 while read -a REPLY; do ${CLI_FUNCTION_MAIN} "$@" "${REPLY[@]}"; done ;;
@@ -1088,9 +1090,6 @@ cli::loader::main() {
     cli::loader::emit::functions cli
     echo
 
-    declare -f cli
-    echo
-
     trap -p
     echo
 }
@@ -1127,7 +1126,12 @@ cli::loader::main::shim() {
     trap 'cli::stderr::on_err $?' ERR
 
     # source The Shim
-    source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
+    source "${BASH_SOURCE%/*}/../cli"
+
+    # source The Shim using an absolute path
+    source "$(cli ---tool-path)"
+
+    # root directory of cli commands
     local ROOT_DIR=$(cli ---root)
 
     # harvest imports
