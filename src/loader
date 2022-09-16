@@ -390,7 +390,6 @@ cli::loader::import_parent() {
 }
 
 cli::loader::backpatch() {
-
     cli::name::to_inline "${CLI_COMMAND[@]}"
     set "${REPLY}"
 
