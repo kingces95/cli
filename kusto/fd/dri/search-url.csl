@@ -1,0 +1,18 @@
+let searchTerm = "my-resource-name";
+let startTime = ago(1d);
+let endTime = ago(0s);
+let timeZoneOffset = 0h;
+traces
+| where timestamp_utc between (startTime .. endTime)
+| where * has searchTerm
+| where message startswith "Request starting"
+| extend o = customDimensions
+| extend timestamp = timestamp_utc + timeZoneOffset
+| project 
+    Date=format_datetime(timestamp, "yyyy-MM-dd"), 
+    Time=format_datetime(timestamp, "HH:mm:ss"), 
+    OperationId=Operation_Id, 
+    Method=o.Method, 
+    Host=o.Host, 
+    Path=o.Path, 
+    Query=o.QueryString

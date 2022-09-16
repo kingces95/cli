@@ -1,0 +1,6 @@
+endpoint-active-directory-graph-resource-id https://graph.ppe.windows.net/
+endpoint-active-directory-resource-id https://management.core.windows.net/
+endpoint-gallery https://df.gallery.azure-test.net/
+endpoint-resource-manager https://api-dogfood.resources.windows-int.net/
+endpoint-active-directory https://login.windows-ppe.net/
+suffix-keyvault-dns azure-test.net

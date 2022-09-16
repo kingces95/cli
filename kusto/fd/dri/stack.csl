@@ -1,0 +1,18 @@
+let operationId = "72f988bf-86f1-41af-91ab-2d7cd011db48";
+let startTime = 1d;
+let endTime = 0s;
+let timeZoneOffset = 0h;
+union traces, dependencies
+| where timestamp_utc  between (ago(startTime) .. ago(endTime))
+| where Operation_Id == operationId
+| extend task = iif(customDimensions.OrchestrationName != "", customDimensions.OrchestrationName, customDimensions.ActivityName)       
+| order by timestamp_utc desc 
+| where isnotempty(message)
+| extend timestamp = timestamp_utc + timeZoneOffset
+| project 
+    Date=format_datetime(timestamp, "yyyy-MM-dd"), 
+    Time=format_datetime(timestamp, "HH:mm:ss"), 
+    Severity=severityLevel, 
+    Service=Service, 
+    Task=task,
+    Message=message

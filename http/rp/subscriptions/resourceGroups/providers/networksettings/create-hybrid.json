@@ -1,0 +1,10 @@
+{
+  "location": "--location",
+  "properties": {
+    "subnetId": "--subnet-id",
+    "domainName": "--domain-name",
+    "domainUsername": "--domain-username",
+    "domainPassword": "--domain-password",
+    "domainJoinType": "--domain-join-type"
+  }
+}

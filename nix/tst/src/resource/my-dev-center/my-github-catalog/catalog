@@ -1,0 +1,5 @@
+option-list git-hub
+env git-hub-uri github-catalog-url 
+env git-hub-branch github-catalog-branch
+env git-hub-path github-catalog-path
+secret-id git-hub-secret-identifier github-pat

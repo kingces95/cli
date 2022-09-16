@@ -1,0 +1,12 @@
+id f686d426-8d16-42db-81b7-ab578e110ccd
+cloud Dogfood
+endpoint-active-directory-graph-resource-id https://graph.ppe.windows.net/
+endpoint-active-directory-resource-id https://management.core.windows.net/
+endpoint-gallery https://df.gallery.azure-test.net/
+endpoint-resource-manager https://api-dogfood.resources.windows-int.net/
+endpoint-active-directory https://login.windows-ppe.net/
+domain msft.ccsctp.net
+portal-host df.onecloud.azure-test.net
+dns-suffix devcenter.azure-test.net
+cli-version 0.1.0
+default-fidalgo-location centralus

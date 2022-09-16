@@ -1,0 +1,12 @@
+readonly NIX_MY_DISPLAY_NAME=""
+readonly NIX_MY_TZ_OFFSET=h
+readonly NIX_MY_IP_ALLOCATION="10.110.0.0/16"
+readonly NIX_MY_ENV_ID=0
+readonly NIX_MY_ENVIRONMENTS=(
+    DOGFOOD_INT
+    SELFHOST
+    INT
+    PPE
+)
+readonly NIX_MY_DEFAULT_PROFILE=administrator
+readonly NIX_MY_DEFAULT_ENVIRONMENT=PPE

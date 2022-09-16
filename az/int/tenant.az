@@ -1,0 +1,9 @@
+cloud AzureCloud
+id eb457173-3dfd-4145-bd18-68e25e0a10fa
+domain onmicrosoft.com
+default-location westus2
+portal-host portal.azure.com
+dns-suffix devcenters.fidalgo.azure.com
+cli-version 0.1.0
+subdomain fidalgobeta
+default-fidalgo-location centraluseuap

@@ -1,0 +1,6 @@
+let startTime = 1d;
+customMetrics
+| where timestamp_utc > ago(startTime)
+| where Name contains "Certificate.Active.RelativeAge"
+| summarize Count=count() by
+    Thumbprint=tostring(customDimensions.Thumbprint), Value

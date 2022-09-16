@@ -1,0 +1,4 @@
+option domain-join-type HybridAzureADJoin
+env domain-name cpc-domain-name
+secret domain-password azure-password
+env domain-username cpc-domain-join-account

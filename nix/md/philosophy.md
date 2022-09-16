@@ -1,0 +1,11 @@
+# Philosophy
+- Good ideas do not require force. 
+  - Developers should not be forced to adopt workflows, they should be enticed.
+    - No one, least of all me, is going to force anyone to use this workflow. I find it useful and hope you might too.
+- Data should be democratized. 
+  - The data should be stored in a form agnostic to a particular workflow. Developers should not be coereced to adopt a workflows because that is where the data is housed. 
+    - For example, Kusto queries should be in standalone files with a `.kusto` extensionKusto queries should not be embedded as strings in bash shell scripts.
+- That there exists a solution is (at least) as important as how it is implemented.
+  - Why bash? For one, few people use WSL2 and so installation would not collide with existing workflows.
+- Automation does not imply the project is inherently difficult to use.
+  - That I automated generation of fidalgo cli scripts is not an implicit statement I find the fidalgo cli inherently difficult to use. I automate because I don't want to type because I want to avoid typos.

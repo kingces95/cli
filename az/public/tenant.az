@@ -1,0 +1,8 @@
+cloud AzureCloud
+id 72f988bf-86f1-41af-91ab-2d7cd011db47
+domain onmicrosoft.com
+default-location westus2
+portal-host portal.azure.com
+dns-suffix devcenters.fidalgo.azure.com
+cli-version 0.1.0
+default-fidalgo-location centraluseuap

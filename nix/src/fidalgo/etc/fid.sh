@@ -1,0 +1,33 @@
+alias az-fd-admin="nix::cli::admin"
+alias az-fd-attached-network="nix::cli::admin attached-network"
+alias az-fd-catalog="nix::cli::admin catalog"
+alias az-fd-catalog-item="nix::cli::admin catalog-item"
+alias az-fd-deployment="nix::cli::admin deployment"
+alias az-fd-dev-center="nix::cli::admin dev-center"
+alias az-fd-devbox-definition="nix::cli::admin devbox-definition"
+alias az-fd-environment="nix::cli::admin environment"
+alias az-fd-environment-type="nix::cli::admin environment-type"
+alias az-fd-gallery="nix::cli::admin gallery"
+alias az-fd-image="nix::cli::admin image"
+alias az-fd-image-version="nix::cli::admin image-version"
+alias az-fd-mapping="nix::cli::admin mapping"
+alias az-fd-machine-definition="nix::cli::admin machine-definition"
+alias az-fd-network-setting="nix::cli::admin network-setting"
+alias az-fd-operation-statuses="nix::cli::admin operation-statuses"
+alias az-fd-pool="nix::cli::admin pool"
+alias az-fd-project="nix::cli::admin project"
+alias az-fd-sku="nix::cli::admin sku"
+alias az-fd-dev="nix::cli::dev"
+alias az-fd-dev-pool="nix::cli::dev pool"
+alias az-fd-dev-project="nix::cli::dev project"
+alias az-fd-vm="nix::cli::dev virtual-machine"
+alias az-fd-vm-delete="nix::cli::dev virtual-machine delete"
+alias az-fd-vm-show="nix::cli::dev virtual-machine show"
+alias az-fd-vm-create="nix::cli::dev virtual-machine create"
+
+nix::cli::admin() {
+    az fidalgo admin "$@"
+}
+nix::cli::dev() {
+    az fidalgo dev "$@"
+}

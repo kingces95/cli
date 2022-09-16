@@ -1,0 +1,7 @@
+let startTime = 1d;
+let endTime = 0d;
+customMetrics 
+| where timestamp_utc > ago(startTime)
+| where Name contains "Certificate.Loaded.Count" 
+| summarize Count=count() by
+    Value

@@ -1,0 +1,4 @@
+option enable-rbac-authorization true
+grant administrator Key Vault Administrator
+grant dev-center Key Vault Secrets User 
+secure github-pat github-pat-path

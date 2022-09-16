@@ -1,0 +1,24 @@
+jq
+gpg
+curl
+wget
+man
+lsof
+nano
+colordiff
+nc apt netcat
+netstat apt net-tools
+sshd apt openssh-server
+ssh apt openssh-client
+killall apt psmisc
+nuget apt nuget latest universe
+add-apt-repository apt software-properties-common
+docker apt moby-cli latest main focal https://packages.microsoft.com/ubuntu/20.04/prod  https://packages.microsoft.com/keys/microsoft.asc
+docker-buildx apt moby-buildx latest main focal https://packages.microsoft.com/ubuntu/20.04/prod  https://packages.microsoft.com/keys/microsoft.asc
+docker-compose apt moby-compose latest main focal https://packages.microsoft.com/ubuntu/20.04/prod  https://packages.microsoft.com/keys/microsoft.asc
+docker-engine apt moby-engine latest main focal https://packages.microsoft.com/ubuntu/20.04/prod  https://packages.microsoft.com/keys/microsoft.asc
+dotnet apt dotnet-runtime-5.0 latest main focal https://packages.microsoft.com/ubuntu/20.04/prod  https://packages.microsoft.com/keys/microsoft.asc
+gh apt gh latest main stable https://cli.github.com/packages https://cli.github.com/packages/githubcli-archive-keyring.gpg
+az apt azure-cli 2.36.0-1~focal main focal https://packages.microsoft.com/repos/azure-cli https://packages.microsoft.com/keys/microsoft.asc
+kusto nuget Microsoft.Azure.Kusto.Tools 6.0.1 net5.0
+azbridge deb azbridge.0.3.0-rtm.ubuntu.20.04-x64.deb https://github.com/kingces95/azure-relay-bridge-binaries/raw/main/azbridge.0.3.0-rtm.ubuntu.20.04-x64.deb

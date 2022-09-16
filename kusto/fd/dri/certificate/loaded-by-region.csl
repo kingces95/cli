@@ -1,0 +1,9 @@
+let startTime = 1d;
+traces
+| where timestamp_utc > ago(startTime)
+| where message startswith "Certificate.Loaded"
+| summarize Count=count() by 
+    Thumbprint=tostring(customDimensions.Thumbprint),
+    StampRegion=tostring(customDimensions.StampRegion),
+    RelativeAge=tostring(customDimensions.RelativeAge)
+| order by StampRegion, RelativeAge asc

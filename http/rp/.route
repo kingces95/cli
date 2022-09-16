@@ -1,0 +1,4 @@
+port    443
+host    management.azure.com
+scheme  https://
+query   api-version

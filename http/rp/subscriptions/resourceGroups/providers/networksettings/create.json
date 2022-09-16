@@ -1,0 +1,7 @@
+{
+  "location": "--location",
+  "properties": {
+    "subnetId": "--subnet-id",
+    "domainJoinType": "--domain-join-type"
+  }
+}

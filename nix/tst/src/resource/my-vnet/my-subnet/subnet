@@ -1,0 +1,2 @@
+option delegations Microsoft.Devcenter/networkSettings
+option address-prefixes 10.0.0.0/24

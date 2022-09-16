@@ -1,0 +1,10 @@
+let thumbprint = "72f988bf-86f1-41af-91ab-2d7cd011db48";
+let startTime = 1d;
+customMetrics
+| where timestamp_utc > ago(startTime)
+| where Name contains "Certificate.Active"
+| where customDimensions.Thumbprint == thumbprint
+| summarize Count=count() by
+    StampRegion=tostring(customDimensions.StampRegion),
+    MachineName
+| order by StampRegion asc
