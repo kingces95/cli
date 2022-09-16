@@ -55,7 +55,7 @@ Description
     
     Options behind a single dash must be a lowercase letter.
 
-    If an internal flag (e.g. '---which') appears before the first option, then
+    If an internal flag (e.g. '---path') appears before the first option, then
     parsing ends with success.
 
 Arguments

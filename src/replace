@@ -21,7 +21,7 @@ EOF
 
 process() {
     local CLI="$@"
-    local SOURCE=$(${CLI} ---which)
+    local SOURCE=$(${CLI} ---path)
     local -a IMPORTS=()
 
     MAPFILE=()

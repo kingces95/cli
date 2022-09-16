@@ -30,7 +30,7 @@ EOF
 }
 
 cli::list::main() (
-    local DIR=$(dirname $($@ .group ---which))
+    local DIR=$(dirname $($@ .group ---path))
 
     # include dot files
     local GLOB='* .[^.]*'

@@ -30,23 +30,28 @@ A command executes in an environment. The environment is defined by a set of var
 ## Summary
 The following lists all environment variables. Examples are for the command line `cli sample kitchen-sink --help`.
 
-CLI Type | Bash Type | Name | Description | Option
---- | --- | --- | --- | ---
-[Frame](#frame-variables) | array | [CLI_COMMAND](#cli_command) | Full command name | `---command`
-[Frame](#frame-variables) | string | [CLI_NAME](#cli_name) | Command name | `---name`
-[Frame](#frame-variables) | string | [CLI_TOOL](#cli_tool) | Tool name | `---tool`
-[Frame](#frame-variables) | string | [CLI_GROUP](#cli_group) | Parent group full name | `---group`
-[Frame](#frame-variables) | string | [CLI_TOOL_PATH](#cli_tool_path) | Absolute path to the tool | `---tool-name`
-[Metadata](#frame-metadata-variables) | string | [CLI_META](#cli_meta) | Metadata harvested from help |
-[Metadata](#frame-metadata-variables) | string | [CLI_TYPE](#cli_type) | Type; `command`, `inline`, or `group` | `---type`
-[Metadata](#frame-metadata-variables) | string | [CLI_SOURCE](#cli_source) | Path to command source file | `---source`
-[Metadata](#frame-metadata-variables) | string | [CLI_CACHE](#cli_cache) | Path to command cache directory | `---cache`
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_MAIN](#cli_function_main) | Command main function name
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_INLINE](#cli_function_inline) | Command inline function name
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_SELF_TEST](#cli_function_self_test) | Command self-test function name
-[Metadata](#frame-metadata-variables) | string | [CLI_FUNCTION_HELP](#cli_function_help) | Command help function name
-[Metadata](#frame-metadata-variables) | array | [CLI_IMPORT](#cli_import) | Imported commands |
-[Metadata](#frame-metadata-variables) | string | [CLI_SYMBOL](#cli_symbol) | Backing metadata variable name prefix |
+### [Frame](#frame-variables)
+Name | Description | Option
+--- | --- | ---
+[CLI_TOOL_PATH](#cli_tool_path) | Absolute path to the tool. | `---tool-path`
+[CLI_TOOL](#cli_tool) | Tool name. | `---tool`
+[CLI_COMMAND](#cli_command) | Array of command parts. | `---command`
+[CLI_NAME](#cli_name) | Command name. | `---name`
+[CLI_GROUP](#cli_group) | Parent group full name. | `---group`
+
+### [Metadata](#frame-metadata-variables)
+Name | Description | Option
+--- | --- | ---
+[CLI_META](#cli_meta) | Metadata harvested from help. |
+[CLI_TYPE](#cli_type) | Type; `command`, `inline`, or `group`. | `---type`
+[CLI_PATH](#CLI_PATH) | Path to command source file. | `---path`
+[CLI_CACHE](#cli_cache) | Path to command cache directory. | `---cache-dir`
+[CLI_FUNCTION_MAIN](#cli_function_main) | Command main function name.
+[CLI_FUNCTION_INLINE](#cli_function_inline) | Command inline function name.
+[CLI_FUNCTION_SELF_TEST](#cli_function_self_test) | Command self-test function name.
+[CLI_FUNCTION_HELP](#cli_function_help) | Command help function name.
+[CLI_IMPORT](#cli_import) | Array of imported commands. |
+[CLI_SYMBOL](#cli_symbol) | Backing metadata variable name prefix. |
 
 ## Frame Variables
 Frame variables are mutable bash variables that provide information about the command being executed. 
@@ -90,15 +95,15 @@ The type of the command. Valid types are:
 
 Switch `---type` will reflect on a command's type. For example, `cli list ---type` will print `command`.
 
-### `CLI_SOURCE` 
+### `CLI_PATH` 
 The path to the source file of the command.
 
-Switch `---which` will reflect on the path to a command's source file. For example, `cli list ---which` might print `/workspaces/cli/src/list`.
+Switch `---path` will reflect on the path to a command's source file. For example, `cli list ---path` might print `/workspaces/cli/src/list`.
 
 ### `CLI_CACHE` 
 Path to the temporary directory used by the loader to cache metadata associated with the command.
 
-Switch `---cache` will reflect on the path to a command's cache directory file. For example, `cli list ---cache` might print `/workspaces/cli/src/.cli/list`.
+Switch `---cache-dir` will reflect on the path to a command's cache directory file. For example, `cli list ---cache-dir` might print `/workspaces/cli/src/.cli/list`.
 
 ### `CLI_FUNCTION_MAIN`
 

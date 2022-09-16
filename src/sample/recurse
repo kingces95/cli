@@ -25,7 +25,7 @@ cli::sample::recurse::main() {
 }
 
 cli::sample::recurse::self_test() {
-    local CACHE="$(${CLI_COMMAND[@]} ---cache)/meta.sh"
+    local CACHE="$(${CLI_COMMAND[@]} ---cache-dir)/meta.sh"
     if [[ -f "${CACHE}" ]]; then
         rm "${CACHE}"
     fi

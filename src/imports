@@ -38,7 +38,7 @@ cli::imports::recurse() {
         seen["${import}"]=true
 
         if ${ARG_RESOLVE}; then
-            echo "${prefix}$(${import} ---which)"
+            echo "${prefix}$(${import} ---path)"
         fi
 
         ( 
