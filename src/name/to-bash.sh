@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::name::to_bash::help() {
     cat << EOF

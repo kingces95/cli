@@ -1123,7 +1123,6 @@ cli::loader::main::imports() {
         | awk '{ print $3 }' \
         | while read; do declare -f "${REPLY}"; done \
         | egrep -o 'cli(::[0-9a-z_]+)+' \
-        | cat - <(echo 'cli::shim::shebang') \
         | sort -u \
         | egrep -v "${FUNCTIONS_REGEX}" \
         | sed 's/::/ /g' \

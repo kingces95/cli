@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 CLI_IMPORT=(
     "cli attribute is-defined"
     "cli bash literal"

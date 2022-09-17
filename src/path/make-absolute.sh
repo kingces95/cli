@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::path::make_absolute::help() {
     cat << EOF

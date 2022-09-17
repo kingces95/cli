@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::path::make_relative::help() {
     cat << EOF

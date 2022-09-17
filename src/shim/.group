@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::shim::help() {
     cat << EOF
@@ -15,7 +14,6 @@ cli::shim::main() {
 }
 
 cli::shim::self_test() {
-    cli shim shebang --self-test
     cli shim source --self-test
     cli shim which --self-test
 }

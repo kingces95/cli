@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 
 cli::process::get_info::help() {
     cat << EOF | cli::core::type::help

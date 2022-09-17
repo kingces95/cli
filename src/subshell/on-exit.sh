@@ -1,4 +1,3 @@
-#!/usr/bin/env CLI_TOOL=cli bash-cli-part
 cli::subshell::on_exit::help() {
     cat << EOF
 Command
