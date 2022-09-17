@@ -390,20 +390,21 @@ cli::loader::import_parent() {
 }
 
 cli::loader::backpatch() {
-    cli::name::to_inline "${CLI_COMMAND[@]}"
-    set "${REPLY}"
 
-    cli::bash::function::is_declared "$1" \
-        || cli::assert "No stub '$1' found to backpatch."
+    cli::name::to_inline "${CLI_COMMAND[@]}"
+    local INLINE_FUNCTION="${REPLY}"
+
+    cli::bash::function::is_declared "${INLINE_FUNCTION}" \
+        || cli::assert "No stub '${INLINE_FUNCTION}' found to backpatch."
 
     # unset stub
-    unset -f "$1"
+    unset -f "${INLINE_FUNCTION}"
 
     # backpatch stub
     cli::loader::exports::source
 
-    cli::bash::function::is_declared "$1" \
-        || cli::assert "Failed to backpatch stub '$1'."
+    cli::bash::function::is_declared "${INLINE_FUNCTION}" \
+        || cli::assert "Failed to backpatch stub '${INLINE_FUNCTION}'."
 
     cli::loader::main::cover
 }
@@ -483,6 +484,13 @@ cli::loader::source() {
 
 cli::loader::shim() {
 
+    # CLI_TOOL (e.g. cli)
+    local CLI_TOOL="$1"
+    shift
+
+    [[ "${CLI_TOOL}" =~ ${CLI_REGEX_NAME} ]] \
+        || cli::assert "CLI_TOOL '${CLI_TOOL}' does not match regex '${CLI_REGEX_NAME}'."
+
     # error handling should work before doing anything
     if [[ "${1-}" == ---* ]]; then
 
@@ -502,10 +510,6 @@ cli::loader::shim() {
             return
         done
     fi
-
-    # CLI_TOOL (e.g. cli)
-    [[ "${CLI_TOOL}" ]] || cli::assert "Shim failed to define CLI_TOOL."
-    [[ "${CLI_TOOL}" =~ ${CLI_REGEX_NAME} ]] || cli::assert "Bad shim name."
 
     if [[ ! -v CLI_DEPTH ]]; then
         local -i CLI_DEPTH=0
@@ -548,7 +552,7 @@ cli::loader::shim() {
     local -n CLI_PATH="${CLI_SYMBOL}_SOURCE"
     if [[ ! -v CLI_PATH ]]; then
         cli::shim::which "${CLI_COMMAND[@]}" \
-            || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
+            || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed '${MAPFILE[@]}'."
         CLI_PATH="${REPLY}"
 
         # file is executable if it exists
@@ -630,6 +634,8 @@ cli::loader::shim() {
                     echo "CLI_FUNCTION_SELF_TEST=${CLI_FUNCTION_SELF_TEST}"
                     echo "CLI_FUNCTION_HELP=${CLI_FUNCTION_HELP}"
                     ;;
+                '---tool')
+                    echo "${CLI_TOOL}" ;;
                 '---command')
                     echo "${CLI_COMMAND[@]}" ;;
                 '---name')
@@ -687,11 +693,11 @@ cli::loader::shim() {
     # source the code!
     cli::loader::source "${CLI_PATH}"
 
-    [[ ${CLI_TYPE} == inline ]] \
-        || [[ "${CLI_FUNCTION_INLINE}" == 'cli' ]] \
-        || ! cli::bash::function::is_declared ${CLI_FUNCTION_INLINE} \
-        || cli::assert "Command '${CLI_COMMAND[*]}' source '${CLI_PATH}'" \
+    if [[ "${CLI_TYPE}" == "command" ]] \
+        && cli::bash::function::is_declared "${CLI_FUNCTION_INLINE}"; then
+        cli::assert "Command '${CLI_COMMAND[*]}' source '${CLI_PATH}'" \
             "declares '${CLI_FUNCTION_INLINE}' but is missing .sh".
+    fi
 
     # imports
     if [[ "${1-}" == ---* ]]; then
@@ -1091,6 +1097,9 @@ cli::loader::main() {
 
     trap -p
     echo
+
+    declare -f cli
+    echo
 }
 
 cli::loader::self_test() (
@@ -1124,11 +1133,8 @@ cli::loader::main::imports() {
 cli::loader::main::shim() {
     trap 'cli::stderr::on_err $?' ERR
 
-    # source The Shim
-    source "${BASH_SOURCE%/*}/../cli"
-
     # source The Shim using an absolute path
-    source "$(cli ---tool-path)"
+    source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
 
     # root directory of cli commands
     local ROOT_DIR=$(cli ---root)
