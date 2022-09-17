@@ -482,14 +482,29 @@ cli::loader::source() {
     source "${SOURCE}"
 }
 
+cli::loader::probe() {
+    local ROOT_DIR="$0"
+    [[ -d "${ROOT_DIR}" ]] \
+        || cli::assert "BASH_ARGV0 '${ROOT_DIR}' is not a directory."
+
+    local PATHS=()
+
+    local IFS=/
+    REPLY="${ROOT_DIR}/${CLI_COMMAND[*]:1}"
+    PATHS+=( "${REPLY}" )
+
+    # probe for .sh
+    if [[ ! -f "${REPLY}" ]]; then
+        REPLY+='.sh'
+        PATHS+=( "${REPLY}" )
+    fi
+
+    IFS=':'
+    [[ -f "${REPLY}" ]] \
+        || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Searched: '${PATHS[@]}'."
+}
+
 cli::loader::shim() {
-
-    # CLI_TOOL (e.g. cli)
-    local CLI_TOOL="$1"
-    shift
-
-    [[ "${CLI_TOOL}" =~ ${CLI_REGEX_NAME} ]] \
-        || cli::assert "CLI_TOOL '${CLI_TOOL}' does not match regex '${CLI_REGEX_NAME}'."
 
     # error handling should work before doing anything
     if [[ "${1-}" == ---* ]]; then
@@ -511,19 +526,24 @@ cli::loader::shim() {
         done
     fi
 
+    cli::name::parse "$@"
+    shift ${#MAPFILE[@]}
+
+    # CLI_DEPTH (e.g. cli)
     if [[ ! -v CLI_DEPTH ]]; then
         local -i CLI_DEPTH=0
     else
         local -i CLI_DEPTH=$(( CLI_DEPTH + 1 ))
     fi
+    
+    # CLI_TOOL (e.g. cli)
+    local CLI_TOOL="${MAPFILE[0]}"
 
     # CLI_COMMAND (e.g. cli loader)
-    cli::name::parse "$@"
-    local -a "CLI_COMMAND_${CLI_DEPTH}"
     local -n CLI_COMMAND="CLI_COMMAND_${CLI_DEPTH}"
-    CLI_COMMAND=( "${CLI_TOOL}" "${MAPFILE[@]}" )
+    local -a "CLI_COMMAND_${CLI_DEPTH}"
+    CLI_COMMAND=( "${MAPFILE[@]}" )
     readonly "CLI_COMMAND_${CLI_DEPTH}"
-    shift ${#MAPFILE[@]}
 
     # CLI_SYMBOL (e.g. CLI_LOADER_CLI_LOADER)
     cli::name::to_symbol "${CLI_COMMAND[@]}"
@@ -551,14 +571,13 @@ cli::loader::shim() {
     # CLI_PATH (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
     local -n CLI_PATH="${CLI_SYMBOL}_SOURCE"
     if [[ ! -v CLI_PATH ]]; then
-        cli::shim::which "${CLI_COMMAND[@]}" \
-            || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed '${MAPFILE[@]}'."
+        cli::loader::probe  
         CLI_PATH="${REPLY}"
 
         # file is executable if it exists
         [[ ! -f "${CLI_PATH}" || -x "${CLI_PATH}" ]] \
             || cli::assert "Source file '${CLI_PATH}' for command '${CLI_COMMAND[*]}' is not executable."
-     
+   
         readonly "${CLI_SYMBOL}_SOURCE"
     fi
 
@@ -666,8 +685,7 @@ cli::loader::shim() {
         done
     fi
 
-    # $0
-    BASH_ARGV0="${CLI_PATH}"
+    # BASH_ARGV0="${CLI_PATH}"
 
     # reset bash variables
     IFS="${CLI_IFS}"
@@ -1098,6 +1116,7 @@ cli::loader::main() {
     trap -p
     echo
 
+    declare -p CLI_LOADER_SHIM_ROOT_CLI
     declare -f cli
     echo
 }
@@ -1136,7 +1155,7 @@ cli::loader::main::shim() {
     source "$( cd $(dirname ${BASH_SOURCE}); cd ..; pwd)/cli"
 
     # root directory of cli commands
-    local ROOT_DIR=$(cli ---root)
+    local ROOT_DIR="$( cd $(dirname ${BASH_SOURCE}); pwd)"
 
     # harvest imports
     mapfile -t CLI_LOADER_CLI_LOADER_IMPORT < <(cli::loader::main::imports)

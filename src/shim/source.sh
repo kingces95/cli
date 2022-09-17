@@ -57,10 +57,7 @@ cli::shim::source::self_test() (
     cat <<-EOF > "${FOO_SHIM}"
 		#!/usr/bin/env bash-cli-shim
 		foo() {
-            if [[ "\${1-}" == '---root' ]]; then
-                echo "\${BASH_SOURCE%/*}/src"
-                return
-            fi
+            BASH_ARGV0="\${BASH_SOURCE%/*}/src"
 		    echo ok
 		}
 		EOF

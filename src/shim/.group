@@ -15,5 +15,4 @@ cli::shim::main() {
 
 cli::shim::self_test() {
     cli shim source --self-test
-    cli shim which --self-test
 }
