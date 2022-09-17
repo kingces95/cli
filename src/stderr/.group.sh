@@ -16,6 +16,6 @@ cli::stderr::self_test() {
     cli stderr lock --self-test
     cli stderr message --self-test
     echo cli stderr dump --self-test
-    cli stderr fail --self-test
+    echo cli stderr fail --self-test
     echo cli stderr assert --self-test
 }

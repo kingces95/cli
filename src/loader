@@ -588,9 +588,8 @@ cli::loader::shim() {
 
         if [[ ${CLI_NAME} == '.group' ]]; then
             CLI_TYPE=group
-        fi
-
-        if [[ "${CLI_PATH}" == *.sh ]]; then
+        
+        elif [[ "${CLI_PATH}" == *.sh ]]; then
             CLI_TYPE=inline
         fi
 
