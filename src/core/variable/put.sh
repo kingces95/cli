@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli core variable declare"
     "cli core variable get-info"

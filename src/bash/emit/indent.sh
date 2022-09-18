@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::emit::indent::help() {
     cat << EOF

@@ -1,3 +1,4 @@
+#! inline
 
 cli::set::test::help() {
     cat << EOF

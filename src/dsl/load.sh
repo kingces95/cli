@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli core type to-bash"
     "cli core variable declare"

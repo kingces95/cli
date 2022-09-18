@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli subshell on-exit"
     "cli temp remove"

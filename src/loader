@@ -574,12 +574,7 @@ cli::loader::shim() {
     local -n CLI_PATH="${CLI_SYMBOL}_SOURCE"
     if [[ ! -v CLI_PATH ]]; then
         cli::loader::probe  
-        CLI_PATH="${REPLY}"
-
-        # file is executable if it exists
-        [[ ! -f "${CLI_PATH}" || -x "${CLI_PATH}" ]] \
-            || cli::assert "Source file '${CLI_PATH}' for command '${CLI_COMMAND[*]}' is not executable."
-   
+        CLI_PATH="${REPLY}"   
         readonly CLI_PATH
     fi
 

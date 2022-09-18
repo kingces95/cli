@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash stack trace"
     "cli stderr dump"

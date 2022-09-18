@@ -1,3 +1,4 @@
+#! inline
 
 CLI_IMPORT=(
     "cli import inline-c"

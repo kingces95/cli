@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash emit initializer array"
     "cli bash emit initializer map"

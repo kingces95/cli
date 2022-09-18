@@ -1,3 +1,5 @@
+#! inline
+
 cli::subshell::on_exit::help() {
     cat << EOF
 Command

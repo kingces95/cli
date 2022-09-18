@@ -1,3 +1,5 @@
+#! inline
+
 cli::args::check::help() {
     cat << EOF
 Command

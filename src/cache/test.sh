@@ -1,3 +1,4 @@
+#! inline
 
 cli::cache::test::help() {
     cat << EOF

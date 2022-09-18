@@ -1,3 +1,4 @@
+#! inline
 
 cli::stderr::lock::help() {
     cat << EOF

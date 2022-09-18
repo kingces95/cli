@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash emit expression key"
     "cli bash emit initializer string"

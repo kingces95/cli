@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash stack call"
     "cli bash stack process"

@@ -1,3 +1,4 @@
+#! inline
 
 cli::core::variable::parse::help() {
     cat << EOF

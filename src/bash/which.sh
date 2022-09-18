@@ -1,3 +1,4 @@
+#! inline
 
 CLI_IMPORT=(
     "cli path get-info"

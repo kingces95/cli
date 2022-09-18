@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::emit::statement::assignment::help() {
     cat << EOF

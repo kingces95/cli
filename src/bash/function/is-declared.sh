@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::function::is_declared::help() {
     cat << EOF

@@ -1,3 +1,4 @@
+#! inline
 
 cli::temp::remove::help() {
     cat << EOF

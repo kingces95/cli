@@ -1,3 +1,4 @@
+#! inline
 
 cli::run_as::help() {
     cat << EOF

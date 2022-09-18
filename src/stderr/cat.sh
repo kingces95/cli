@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli stderr lock"
     "cli temp file"

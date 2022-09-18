@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::filter::glob::help() {
     cat << EOF

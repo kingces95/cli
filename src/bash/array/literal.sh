@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::array::literal::help() {
     cat << EOF

@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli temp fifo"
     "cli temp remove"

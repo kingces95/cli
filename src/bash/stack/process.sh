@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::stack::process::help() {
     cat << EOF

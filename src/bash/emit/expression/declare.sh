@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::emit::expression::declare::help() {
     cat << EOF

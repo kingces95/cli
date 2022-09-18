@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::yield::help() {
     cat << EOF

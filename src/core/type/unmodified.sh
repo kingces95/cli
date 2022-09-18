@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli core type get-info"
     "cli core type unmodify"

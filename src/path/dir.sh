@@ -1,3 +1,4 @@
+#! inline
 
 cli::path::dir::help() {
     cat << EOF

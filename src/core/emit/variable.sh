@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash emit variable"
     "cli core variable get"

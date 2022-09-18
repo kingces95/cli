@@ -1,3 +1,4 @@
+#! inline
 
 cli::process::tree::help() {
     cat << EOF

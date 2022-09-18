@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash variable get-info"
     "cli core type get"

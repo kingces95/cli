@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash emit block curly"
     "cli bash emit indent"

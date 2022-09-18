@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash join"
     "cli name to-bash"

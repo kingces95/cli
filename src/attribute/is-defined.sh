@@ -1,3 +1,4 @@
+#! inline
 
 cli::attribute::is_defined::help() {
     cat << EOF

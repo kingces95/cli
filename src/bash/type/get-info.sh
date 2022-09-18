@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::type::get_info::help() {
     cat << EOF | cli::core::type::help

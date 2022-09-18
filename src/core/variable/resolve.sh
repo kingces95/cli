@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli core variable get-info"
     "cli core variable name resolve"

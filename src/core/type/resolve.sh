@@ -1,3 +1,4 @@
+#! inline
 
 cli::core::type::resolve::help() {
     cat << EOF | cli::core::type::help

@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash key literal"
     "cli bash string literal"

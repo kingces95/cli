@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::printf::help() {
     cat << EOF

@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash emit function"
     "cli core emit scope"

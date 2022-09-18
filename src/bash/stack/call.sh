@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli attribute is-defined"
     "cli bash literal"

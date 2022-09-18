@@ -1,3 +1,5 @@
+#! inline
+
 CLI_IMPORT=(
     "cli bash filter glob"
     "cli bash map keys"

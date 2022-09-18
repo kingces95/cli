@@ -1,3 +1,4 @@
+#! inline
 
 cli::dump::help() {
     cat << EOF

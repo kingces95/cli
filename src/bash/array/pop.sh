@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::array::pop::help() {
     cat << EOF

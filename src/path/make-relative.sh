@@ -1,3 +1,4 @@
+#! inline
 
 cli::path::make_relative::help() {
     cat << EOF

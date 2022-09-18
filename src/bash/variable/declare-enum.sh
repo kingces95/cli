@@ -1,3 +1,4 @@
+#! inline
 
 cli::bash::variable::declare_enum::help() {
     cat << EOF
