@@ -11,7 +11,7 @@ cli::stderr::main() {
 }
 
 cli::stderr::self_test() {
-    cli stderr cat --self-test
+    echo cli stderr cat --self-test
     cli stderr on-err --self-test
     cli stderr lock --self-test
     cli stderr message --self-test

@@ -543,7 +543,9 @@ cli::loader::shim() {
     local -n CLI_COMMAND="CLI_COMMAND_${CLI_DEPTH}"
     local -a "CLI_COMMAND_${CLI_DEPTH}"
     CLI_COMMAND=( "${MAPFILE[@]}" )
-    readonly "CLI_COMMAND_${CLI_DEPTH}"
+    readonly CLI_COMMAND
+    
+    cli::loader::import_parent
 
     # CLI_SYMBOL (e.g. CLI_LOADER_CLI_LOADER)
     cli::name::to_symbol "${CLI_COMMAND[@]}"
@@ -554,14 +556,14 @@ cli::loader::shim() {
     local -n CLI_GROUP="${CLI_SYMBOL}_GROUP"
     if [[ ! -v CLI_GROUP ]]; then
         CLI_GROUP="${CLI_COMMAND[@]: 0: $(( ${#CLI_COMMAND[@]} -1 )) }"
-        readonly "${CLI_SYMBOL}_GROUP"
+        readonly CLI_GROUP
     fi
 
     # CLI_NAME (e.g. CLI_LOADER_CLI_LOADER_NAME=loader)
     local -n CLI_NAME="${CLI_SYMBOL}_NAME"
     if [[ ! -v CLI_NAME ]]; then
         CLI_NAME=${CLI_COMMAND[@]: -1}
-        readonly "${CLI_SYMBOL}_NAME"
+        readonly CLI_NAME
     fi
 
     # CLI_META (e.g. CLI_LOADER_CLI_LOADER_META)
@@ -578,26 +580,53 @@ cli::loader::shim() {
         [[ ! -f "${CLI_PATH}" || -x "${CLI_PATH}" ]] \
             || cli::assert "Source file '${CLI_PATH}' for command '${CLI_COMMAND[*]}' is not executable."
    
-        readonly "${CLI_SYMBOL}_SOURCE"
+        readonly CLI_PATH
     fi
 
     # CLI_TYPE (e.g. CLI_LOADER_CLI_LOADER_TYPE=command)
     local -n CLI_TYPE="${CLI_SYMBOL}_TYPE"
+    local -n CLI_FUNCTION_NAMESPACE="${CLI_SYMBOL}_FUNCTION_NAMESPACE"
+    local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
+    local -n CLI_FUNCTION_INLINE="${CLI_SYMBOL}_FUNCTION_INLINE"
+    local -n CLI_FUNCTION_SELF_TEST="${CLI_SYMBOL}_FUNCTION_SELF_TEST"
+    local -n CLI_FUNCTION_HELP="${CLI_SYMBOL}_FUNCTION_HELP"
     if [[ ! -v CLI_TYPE ]]; then
-        CLI_TYPE=command
 
         if [[ ${CLI_NAME} == '.group' ]]; then
             CLI_TYPE=group
-        
-        elif [[ "${CLI_PATH}" == *.sh ]]; then
-            CLI_TYPE=inline
+            cli::name::to_function ${CLI_GROUP}
+            CLI_FUNCTION_NAMESPACE="${REPLY}"
+            readonly CLI_FUNCTION_NAMESPACE
+        else
+            # file exists
+            [[ -f "${CLI_PATH}" ]] \
+                || cli::assert "Source file '${CLI_PATH}' for command '${CLI_COMMAND[*]}' does not exist."
+
+            cli::name::to_function "${CLI_COMMAND[@]}"
+            CLI_FUNCTION_NAMESPACE="${REPLY}"
+            readonly CLI_FUNCTION_NAMESPACE
+
+            if [[ "${CLI_PATH}" == *.sh ]]; then
+                CLI_TYPE=inline
+            else
+                CLI_TYPE=command
+            fi
         fi
 
-        readonly "${CLI_SYMBOL}_TYPE"
+        CLI_FUNCTION_MAIN="${CLI_FUNCTION_NAMESPACE}::main"
+        readonly CLI_FUNCTION_MAIN
 
-        # file exists unless its a group in which case it's optional
-        [[ ${CLI_TYPE} == group || -f "${CLI_PATH}" ]] \
-            || cli::assert "Source file '${CLI_PATH}' for command '${CLI_COMMAND[*]}' does not exist."
+        CLI_FUNCTION_INLINE="${CLI_FUNCTION_NAMESPACE}"
+        readonly CLI_FUNCTION_INLINE
+
+        CLI_FUNCTION_SELF_TEST="${CLI_FUNCTION_NAMESPACE}::self_test"
+        readonly CLI_FUNCTION_SELF_TEST
+        
+        CLI_FUNCTION_HELP="${CLI_FUNCTION_NAMESPACE}::help"
+        readonly CLI_FUNCTION_HELP
+
+        readonly CLI_FUNCTION_NAMESPACE
+        readonly CLI_TYPE
     fi
 
     # CLI_CACHE (e.g. CLI_LOADER_CLI_LOADER_CACHE)
@@ -605,33 +634,7 @@ cli::loader::shim() {
     if [[ ! -v CLI_CACHE ]]; then
         cli::cache::path "${CLI_PATH}"
         CLI_CACHE="${REPLY}"
-        readonly "${CLI_SYMBOL}_CACHE"
-    fi
-
-    # CLI_FUNCTION, MAIN, INLINE, and SELF_TEST
-    local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
-    local -n CLI_FUNCTION_INLINE="${CLI_SYMBOL}_FUNCTION_INLINE"
-    local -n CLI_FUNCTION_SELF_TEST="${CLI_SYMBOL}_FUNCTION_SELF_TEST"
-    local -n CLI_FUNCTION_HELP="${CLI_SYMBOL}_FUNCTION_HELP"
-    if [[ ! -v CLI_FUNCTION_MAIN ]]; then
-
-        if [[ ${CLI_TYPE} == group ]]; then
-            cli::name::to_function ${CLI_GROUP}
-        else
-            cli::name::to_function "${CLI_COMMAND[@]}"
-        fi
-       
-        CLI_FUNCTION_MAIN="${REPLY}::main"
-        readonly "${CLI_SYMBOL}_FUNCTION_MAIN"
-
-        CLI_FUNCTION_INLINE="${REPLY}"
-        readonly "${CLI_SYMBOL}_FUNCTION_INLINE"
-
-        CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
-        readonly "${CLI_SYMBOL}_FUNCTION_SELF_TEST"
-        
-        CLI_FUNCTION_HELP="${REPLY}::help"
-        readonly "${CLI_SYMBOL}_FUNCTION_HELP"
+        readonly CLI_CACHE
     fi
 
     if [[ "${1-}" == ---* ]]; then
@@ -668,6 +671,16 @@ cli::loader::shim() {
                     echo "${CLI_CACHE}" ;;
                 '---print') 
                     cat "${CLI_PATH}" ;;
+                *)
+                    break ;;
+            esac
+            return
+        done
+    fi
+    
+    if [[ "${1-}" == ---* ]]; then
+        while true; do
+            case "$1" in
                 '---source')
                     cli::loader::import ;;
                 '---backpatch')
@@ -684,11 +697,6 @@ cli::loader::shim() {
         done
     fi
 
-    # BASH_ARGV0="${CLI_PATH}"
-
-    # reset bash variables
-    IFS="${CLI_IFS}"
-
     # establish frame
     # local -A CLI_SCOPE=(
     #     [CLI_TOOL]='string'
@@ -699,8 +707,6 @@ cli::loader::shim() {
     # stack
     # local -a CLI_COMMAND_STACK=( "${CLI_COMMAND_STACK[@]}" "${CLI_COMMAND[*]}" )
 
-    cli::loader::import_parent
-
     # CLI_IMPORT
     local -n CLI_IMPORT="${CLI_SYMBOL}_IMPORT"
     if [[ ! -v CLI_IMPORT ]]; then
@@ -709,12 +715,6 @@ cli::loader::shim() {
 
     # source the code!
     cli::loader::source "${CLI_PATH}"
-
-    if [[ "${CLI_TYPE}" == "command" ]] \
-        && cli::bash::function::is_declared "${CLI_FUNCTION_INLINE}"; then
-        cli::assert "Command '${CLI_COMMAND[*]}' source '${CLI_PATH}'" \
-            "declares '${CLI_FUNCTION_INLINE}' but is missing .sh".
-    fi
 
     # imports
     if [[ "${1-}" == ---* ]]; then
@@ -1194,7 +1194,7 @@ cli::loader::main::shim() {
     done
 
     # load loader
-    CLI_LOADER_CACHE_SOURCED_PATHS[$(cli loader ---path)]=true
+    CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader']=true
     CLI_LOADER_CACHE_IMPORTED["cli .group"]=true
     cli loader ---source
 
