@@ -482,29 +482,9 @@ cli::loader::source() {
     source "${SOURCE}"
 }
 
-cli::loader::probe() {
-    local ROOT_DIR="$0"
-    [[ -d "${ROOT_DIR}" ]] \
-        || cli::assert "BASH_ARGV0 '${ROOT_DIR}' is not a directory."
-
-    local PATHS=()
-
-    local IFS=/
-    REPLY="${ROOT_DIR}/${CLI_COMMAND[*]:1}"
-    PATHS+=( "${REPLY}" )
-
-    # probe for .sh
-    if [[ ! -f "${REPLY}" ]]; then
-        REPLY+='.sh'
-        PATHS+=( "${REPLY}" )
-    fi
-
-    IFS=':'
-    [[ -f "${REPLY}" ]] \
-        || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Searched: '${PATHS[@]}'."
-}
-
 cli::loader::shim() {
+    [[ -d "$0" ]] \
+        || cli::assert "BASH_ARGV0 '${ROOT_DIR}' is not a directory."
 
     # error handling should work before doing anything
     if [[ "${1-}" == ---* ]]; then
@@ -573,8 +553,9 @@ cli::loader::shim() {
     # CLI_PATH (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
     local -n CLI_PATH="${CLI_SYMBOL}_SOURCE"
     if [[ ! -v CLI_PATH ]]; then
-        cli::loader::probe  
-        CLI_PATH="${REPLY}"   
+        IFS=/
+        CLI_PATH="$0/${CLI_COMMAND[*]:1}.sh"
+        IFS="${CLI_IFS}"
         readonly CLI_PATH
     fi
 
@@ -1190,7 +1171,7 @@ cli::loader::main::shim() {
     done
 
     # load loader
-    CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader']=true
+    CLI_LOADER_CACHE_SOURCED_PATHS['/workspaces/cli/src/loader.sh']=true
     CLI_LOADER_CACHE_IMPORTED["cli .group"]=true
     cli loader ---source
 
