@@ -601,7 +601,8 @@ cli::loader::shim() {
             CLI_FUNCTION_NAMESPACE="${REPLY}"
             readonly CLI_FUNCTION_NAMESPACE
 
-            if [[ "${CLI_PATH}" == *.sh ]]; then
+            read < "${CLI_PATH}"
+            if [[ "${REPLY}" =~ [\#][!][[:space:]]*inline ]]; then
                 CLI_TYPE=inline
             else
                 CLI_TYPE=command
