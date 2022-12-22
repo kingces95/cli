@@ -482,6 +482,73 @@ cli::loader::source() {
     source "${SOURCE}"
 }
 
+cli::loader::declare::group() {
+    [[ ! -v CLI_GROUP ]] || cli::assert
+    CLI_GROUP="${CLI_COMMAND[@]: 0: $(( ${#CLI_COMMAND[@]} -1 )) }"
+}
+cli::loader::declare::name() {
+    [[ ! -v CLI_NAME ]] || cli::assert
+    CLI_NAME=${CLI_COMMAND[@]: -1}
+}
+cli::loader::declare::source() {
+    cli::shim::which "${CLI_COMMAND[@]}" \
+        || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
+    
+    [[ ! -v CLI_SOURCE ]] || cli::assert
+    CLI_SOURCE="${REPLY}"
+}
+cli::loader::declare::type() {
+    local NAME="$1"
+    local SOURCE="$2"
+
+    [[ ! -v CLI_TYPE ]] || cli::assert
+    if [[ "${NAME}" == '.group' ]]; then
+        CLI_TYPE=group
+    elif [[ "${SOURCE}" == *.sh ]]; then
+        CLI_TYPE=inline
+    else
+        CLI_TYPE=command
+    fi
+}
+cli::loader::declare::cache() {
+    local SOURCE="$1"
+
+    cli::cache::path "${SOURCE}"
+    
+    [[ ! -v CLI_CACHE ]] || cli::assert
+    CLI_CACHE="${REPLY}"
+}
+cli::loader::declare::entry_points() {
+    local GROUP="$1"
+    local TYPE="$2"
+
+    if [[ ${TYPE} == group ]]; then
+        cli::name::to_function ${GROUP}
+    else
+        cli::name::to_function "${CLI_COMMAND[@]}"
+    fi
+    
+    [[ ! -v CLI_FUNCTION_MAIN ]] || cli::assert
+    CLI_FUNCTION_MAIN="${REPLY}::main"
+    
+    [[ ! -v CLI_FUNCTION_INLINE ]] || cli::assert
+    CLI_FUNCTION_INLINE="${REPLY}"
+    
+    [[ ! -v CLI_FUNCTION_SELF_TEST ]] || cli::assert
+    CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
+    
+    [[ ! -v CLI_FUNCTION_HELP ]] || cli::assert
+    CLI_FUNCTION_HELP="${REPLY}::help"
+}
+cli::loader::declare() {
+    cli::loader::declare::group 
+    cli::loader::declare::name
+    cli::loader::declare::source
+    cli::loader::declare::type "${CLI_NAME}" "${CLI_SOURCE}"
+    cli::loader::declare::cache "${CLI_SOURCE}"
+    cli::loader::declare::entry_points "${CLI_GROUP}" "${CLI_TYPE}"
+}
+
 cli::loader::shim() {
 
     # error handling should work before doing anything
@@ -528,90 +595,47 @@ cli::loader::shim() {
     local -n CLI_SYMBOL="CLI_SYMBOL_${CLI_DEPTH}"
 
     # CLI_GROUP (e.g. CLI_LOADER_CLI_LOADER_GROUP=cli)
-    local -n CLI_GROUP="${CLI_SYMBOL}_GROUP"
-    if [[ ! -v CLI_GROUP ]]; then
-        CLI_GROUP="${CLI_COMMAND[@]: 0: $(( ${#CLI_COMMAND[@]} -1 )) }"
-        readonly "${CLI_SYMBOL}_GROUP"
-    fi
-
     # CLI_NAME (e.g. CLI_LOADER_CLI_LOADER_NAME=loader)
+    # CLI_SOURCE (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
+    # CLI_TYPE (e.g. CLI_LOADER_CLI_LOADER_TYPE=command)
+    # CLI_CACHE (e.g. CLI_LOADER_CLI_LOADER_CACHE)
+    # CLI_FUNCTION, MAIN, INLINE, and SELF_TEST
+    local -n CLI_GROUP="${CLI_SYMBOL}_GROUP"
     local -n CLI_NAME="${CLI_SYMBOL}_NAME"
-    if [[ ! -v CLI_NAME ]]; then
-        CLI_NAME=${CLI_COMMAND[@]: -1}
-        readonly "${CLI_SYMBOL}_NAME"
+    local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
+    local -n CLI_TYPE="${CLI_SYMBOL}_TYPE"
+    local -n CLI_CACHE="${CLI_SYMBOL}_CACHE"
+    local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
+    local -n CLI_FUNCTION_INLINE="${CLI_SYMBOL}_FUNCTION_INLINE"
+    local -n CLI_FUNCTION_SELF_TEST="${CLI_SYMBOL}_FUNCTION_SELF_TEST"
+    local -n CLI_FUNCTION_HELP="${CLI_SYMBOL}_FUNCTION_HELP"
+
+    if [[ ! -v CLI_GROUP ]]; then
+        cli::loader::declare
+       
+        # file exists unless its a group in which case it's optional
+        [[ "${CLI_TYPE}" == group || -f "${CLI_SOURCE}" ]] \
+            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' does not exist."
+
+        # file is executable if it exists
+        [[ ! -f "${CLI_SOURCE}" || -x "${CLI_SOURCE}" ]] \
+            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
+
+        readonly \
+            "${CLI_SYMBOL}_GROUP" \
+            "${CLI_SYMBOL}_NAME" \
+            "${CLI_SYMBOL}_SOURCE" \
+            "${CLI_SYMBOL}_TYPE" \
+            "${CLI_SYMBOL}_CACHE" \
+            "${CLI_SYMBOL}_FUNCTION_MAIN" \
+            "${CLI_SYMBOL}_FUNCTION_INLINE" \
+            "${CLI_SYMBOL}_FUNCTION_SELF_TEST" \
+            "${CLI_SYMBOL}_FUNCTION_HELP"
     fi
 
     # CLI_META (e.g. CLI_LOADER_CLI_LOADER_META)
     local -r "CLI_META_${CLI_DEPTH}"="${CLI_SYMBOL}_META"
     local -n CLI_META="CLI_META_${CLI_DEPTH}"
-
-    # CLI_SOURCE (e.g. CLI_LOADER_CLI_LOADER_SOURCE=/workspaces/cli/src/loader)
-    local -n CLI_SOURCE="${CLI_SYMBOL}_SOURCE"
-    if [[ ! -v CLI_SOURCE ]]; then
-        cli::shim::which "${CLI_COMMAND[@]}" \
-            || cli::assert "Failed to find source for '${CLI_COMMAND[@]}'. Probed ${MAPFILE[@]}"
-        CLI_SOURCE="${REPLY}"
-
-        # file is executable if it exists
-        [[ ! -f "${CLI_SOURCE}" || -x "${CLI_SOURCE}" ]] \
-            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' is not executable."
-     
-        readonly "${CLI_SYMBOL}_SOURCE"
-    fi
-
-    # CLI_TYPE (e.g. CLI_LOADER_CLI_LOADER_TYPE=command)
-    local -n CLI_TYPE="${CLI_SYMBOL}_TYPE"
-    if [[ ! -v CLI_TYPE ]]; then
-        CLI_TYPE=command
-
-        if [[ ${CLI_NAME} == '.group' ]]; then
-            CLI_TYPE=group
-        fi
-
-        if [[ "${CLI_SOURCE}" == *.sh ]]; then
-            CLI_TYPE=inline
-        fi
-
-        readonly "${CLI_SYMBOL}_TYPE"
-
-        # file exists unless its a group in which case it's optional
-        [[ ${CLI_TYPE} == group || -f "${CLI_SOURCE}" ]] \
-            || cli::assert "Source file '${CLI_SOURCE}' for command '${CLI_COMMAND[*]}' does not exist."
-    fi
-
-    # CLI_CACHE (e.g. CLI_LOADER_CLI_LOADER_CACHE)
-    local -n CLI_CACHE="${CLI_SYMBOL}_CACHE"
-    if [[ ! -v CLI_CACHE ]]; then
-        cli::cache::path "${CLI_SOURCE}"
-        CLI_CACHE="${REPLY}"
-        readonly "${CLI_SYMBOL}_CACHE"
-    fi
-
-    # CLI_FUNCTION, MAIN, INLINE, and SELF_TEST
-    local -n CLI_FUNCTION_MAIN="${CLI_SYMBOL}_FUNCTION_MAIN"
-    local -n CLI_FUNCTION_INLINE="${CLI_SYMBOL}_FUNCTION_INLINE"
-    local -n CLI_FUNCTION_SELF_TEST="${CLI_SYMBOL}_FUNCTION_SELF_TEST"
-    local -n CLI_FUNCTION_HELP="${CLI_SYMBOL}_FUNCTION_HELP"
-    if [[ ! -v CLI_FUNCTION_MAIN ]]; then
-
-        if [[ ${CLI_TYPE} == group ]]; then
-            cli::name::to_function ${CLI_GROUP}
-        else
-            cli::name::to_function "${CLI_COMMAND[@]}"
-        fi
-       
-        CLI_FUNCTION_MAIN="${REPLY}::main"
-        readonly "${CLI_SYMBOL}_FUNCTION_MAIN"
-
-        CLI_FUNCTION_INLINE="${REPLY}"
-        readonly "${CLI_SYMBOL}_FUNCTION_INLINE"
-
-        CLI_FUNCTION_SELF_TEST="${REPLY}::self_test"
-        readonly "${CLI_SYMBOL}_FUNCTION_SELF_TEST"
-        
-        CLI_FUNCTION_HELP="${REPLY}::help"
-        readonly "${CLI_SYMBOL}_FUNCTION_HELP"
-    fi
 
     if [[ "${1-}" == ---* ]]; then
         while true; do
@@ -1062,14 +1086,20 @@ cli::loader::main() {
             declare -p CLI_COMMAND_STACK
             declare -p CLI_SCOPE
         )
-        declare -p CLI_LOADER_CACHE_IMPORTED
+
+        # readonly
         declare -p CLI_LOADER_KNOWN_COMMANDS
-        declare -p CLI_LOADER_CACHE_COVERED
         declare -p CLI_LOADER_LOCK
 
+        # caches
+        declare -p CLI_LOADER_CACHE_IMPORTED
+        declare -p CLI_LOADER_CACHE_COVERED
         declare -p CLI_LOADER_CACHE_SOURCED_PATHS
-        declare -p CLI_LOADER_CLI_LOADER_INTRINSIC
+
+        # backing (use cli::loader::emit::variables cli core loader?)
         declare -p CLI_LOADER_CLI_LOADER_SOURCE
+
+        declare -p CLI_LOADER_CLI_LOADER_INTRINSIC
         declare -p CLI_LOADER_CLI_LOADER_IMPORT
 
         cli::loader::emit::variables cli core
@@ -1125,8 +1155,10 @@ cli::loader::main::imports() {
 cli::loader::main::shim() {
     trap 'cli::stderr::on_err $?' ERR
 
+    local LOADER_DIR=$(dirname "${BASH_SOURCE%/}")
+
     # source The Shim
-    source "${BASH_SOURCE%/*}/../cli"
+    source "${LOADER_DIR}/../cli"
 
     # source The Shim using an absolute path
     source "$(cli ---tool-path)"
@@ -1136,6 +1168,11 @@ cli::loader::main::shim() {
 
     # harvest imports
     mapfile -t CLI_LOADER_CLI_LOADER_IMPORT < <(cli::loader::main::imports)
+
+    # dump imports
+    printf '%s\n' "${CLI_LOADER_CLI_LOADER_IMPORT[@]}" \
+        | sort \
+        > "${LOADER_DIR}/loader.imports"
 
     # list of dependencies
     local -a DEPENDENCY=( "${CLI_LOADER_CLI_LOADER_IMPORT[@]}" )
@@ -1153,9 +1190,18 @@ cli::loader::main::shim() {
 
         # bind
         local SEGMENTS=( ${COMMAND} )
+
+            # bind
         IFS='/'
         local SOURCE="${ROOT_DIR}/${SEGMENTS[*]:1}.sh"
         IFS="${CLI_IFS}"
+
+            # inline function name
+            IFS='/'
+            local FUNCTION_NAME="${SEGMENTS[*]}"
+            FUNCTION_NAME="${FUNCTION_NAME//\//::}"
+            FUNCTION_NAME="${FUNCTION_NAME//-/_}"
+            IFS="${CLI_IFS}"
 
         # source
         local -a CLI_IMPORT=()
@@ -1174,6 +1220,9 @@ cli::loader::main::shim() {
     # load loader
     CLI_LOADER_CACHE_SOURCED_PATHS[$(cli loader ---which)]=true
     CLI_LOADER_CACHE_IMPORTED["cli .group"]=true
+    
+    # declare backing CLI_LOADER_CLI_LOADER_SOURCE so testing caches proceed 
+    # and fail if the loader has been changed since the last cache refresh.
     cli loader ---source
 
     # reimport intrinsic dependencies to populate loader data structures
@@ -1181,19 +1230,6 @@ cli::loader::main::shim() {
     for COMMAND in "${!CLI_LOADER_CLI_LOADER_INTRINSIC[@]}"; do
         ${COMMAND} ---source
     done
-
-    # loader imports are all inline and have three functions: main, help, self_test
-    # importing an linine function only imports the main function so unset the others
-    while read; do
-        unset -f "${REPLY}"
-    done < <(
-        declare -F \
-            | egrep -v 'cli::loader::main::help' \
-            | egrep -v 'cli::loader::help' \
-            | egrep -v 'cli::loader::self_test' \
-            | egrep '(help|self_test)$' \
-            | awk '{ print $3 }'
-    )
 
     cli loader "$@"
 }
